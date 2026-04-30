@@ -102,9 +102,3 @@ Add real widgets when at least one of these becomes true:
 - A specific recurring question gets asked of the data ("how much did I sell this week?") → build that widget.
 
 Don't pre-design widgets. Let usage drive the spec, then update this doc.
-
----
-
-## Open questions
-
-None. The minimal-shape decision is the answer.

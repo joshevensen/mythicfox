@@ -43,7 +43,7 @@ Single scrolling page with a small TOC at the top for jumping between sections. 
 |---|---|
 | Title | "Settings" |
 | Subtitle | "Manage pricing rules and review import/export history." |
-| TOC | Two anchor links: `#pricing-rules` and `#file-history` |
+| TOC | Three anchor links: `#pricing-rules`, `#file-history`, `#seller-stats` |
 
 The TOC is a small inline row of pill links — no fixed sidebar. As sections are added later, more links appear here.
 
@@ -169,6 +169,68 @@ None.
 
 ---
 
+## Section: Seller Stats Scraper
+
+Anchor: `#seller-stats`
+
+Health indicator + manual refresh for the daily TCGPlayer storefront scraper that maintains the `seller_stats` singleton. See [saas-design.md §Seller stats scraper](../saas-design.md) for how the job works.
+
+### Layout
+
+A small card showing the current state of the scraper:
+
+```
+Seller stats scraper
+────────────────────────────────────────
+Last successful scrape:   Apr 28, 2026 6:00am
+Last attempt:             Apr 29, 2026 6:00am
+Status:                   ✅ Healthy
+
+Current values:
+  Rating:                 4.9
+  Reviews:                312
+  Feedback comments:      3 captured
+
+[ Refresh now ]   [ View raw data ]
+```
+
+| Field | Source |
+|---|---|
+| Last successful scrape | `seller_stats.scraped_at` (formatted as datetime) |
+| Last attempt | `seller_stats.last_attempt_at` |
+| Status | derived: `✅ Healthy` if `consecutive_failures = 0`, else `⚠️ Failed N days in a row` |
+| Rating / Reviews / Comments | `seller_stats.rating`, `review_count`, `feedback.length` |
+
+When `consecutive_failures >= 3`, this card renders with an amber border and surfaces `last_error` text — *"Selectors may have changed. Check the storefront page for redesigns."* This is the early-warning system before stale data goes public.
+
+### Actions
+
+- **Refresh now** — dispatches the scraper job synchronously. Useful when you spot a redesign and want to test selectors immediately. Disabled while a job is in flight.
+- **View raw data** — opens a small modal with the full `seller_stats` row as JSON. Useful for debugging the parser output.
+
+There is no manual edit form for the singleton — values come from the scraper. If the scraper is permanently broken (e.g. TCGPlayer blocks access), the fallback is the option-A approach mentioned in [saas-design.md](../saas-design.md): wire up a manual edit form here. That's a future change, not v1.
+
+---
+
+## Mobile layout
+
+The page is naturally vertical and works well on phones with minor adjustments:
+
+- **Pricing Rules sub-sections** stack the same way; the "edit" affordance becomes the entire product header (full-row tap). Set rows stay a tap-target list.
+- **Pricing Rules modal and Set Rules modal** become full-screen sheets on phones. The "Inherit from {Product}" indicator sits below each input as a single line instead of beside it.
+- **File History table** switches to card rows like the other heavy tables:
+  ```
+  ┌──────────────────────────────────────┐
+  │  TCGplayer_OrderList.csv     [⬇]     │
+  │  import · orders                     │
+  │  Apr 14, 2026 1:41pm                 │
+  │  [Active]                            │
+  └──────────────────────────────────────┘
+  ```
+- File History's filter panel becomes a full-screen drawer; the toggle for "Hide expired" stays inline above the cards.
+
+---
+
 ## Data
 
 Reads:
@@ -177,11 +239,13 @@ Reads:
 - `sets` (all rows, joined to products)
 - `cards` count per `set_id` to show "Sets (N)" — or `sets` count grouped by product
 - `files` (paginated)
+- `seller_stats` (singleton)
 
 Writes:
 
 - `products` updates via the product rules modal
 - `sets` updates via the set rules modal
+- `seller_stats` is **only** written by the scraper job; the Refresh-now button dispatches that job. No manual edit UI in v1.
 - No direct writes to `files` from this page; rows are created by the import/export flows on Catalog and Inventory pages.
 
 ### Indexes (DB)
@@ -202,9 +266,3 @@ Writes:
 | File History empty | "No files yet — imports and exports will appear here." |
 | File History filtered to zero | "No files match these filters." + Clear filters button. |
 | File History download error | Toast: "Couldn't generate download URL — file may be missing from storage." |
-
----
-
-## Open questions
-
-None.

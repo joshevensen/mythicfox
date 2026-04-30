@@ -38,7 +38,7 @@ From TCGPlayer Seller Portal → **Orders** tab. Default filter is "last 90 days
 |Column|Type|Notes|
 |---|---|---|
 |id|bigint PK||
-|tcgplayer_order_number|string unique|TCGPlayer's `Order #`. **Upsert key.** Format: opaque hyphen-separated hex string, e.g. `623394E9-23CAFE-565FC`|
+|tcgplayer_order_number|string unique|TCGPlayer's `Order #`. **Upsert key.** Format: hyphen-separated hex string, e.g. `623394E9-23CAFE-565FC`. The first segment is the **seller ID** (matches the path slug at the end of the TCGPlayer storefront URL — `https://www.tcgplayer.com/sellers/Mythic-Fox-Games/{seller_id}`). For Mythic Fox Games this prefix is `623394E9` (case-insensitive). Imported order numbers should start with this prefix; rejecting non-matching rows is a useful sanity check against accidentally importing someone else's exports.|
 |tcgplayer_status|string|TCGPlayer's `Status` value verbatim — `Completed - Paid`, `Canceled`, or whatever else TCGPlayer emits. No mapping or enum on our side|
 |buyer_firstname|string nullable|From ShippingExport. Null when only OrderList is available (e.g. canceled order with no shipping data)|
 |buyer_lastname|string nullable|Same|

@@ -2,8 +2,6 @@
 
 Cross-cutting UI conventions referenced by every per-page doc. Decisions made here aren't repeated downstream — page docs assume these defaults and only call out deviations.
 
-This file replaces gap #3 from the old gaps.md.
-
 ---
 
 ## Stack
@@ -91,7 +89,18 @@ For tables that need bulk actions:
 - Hover state: subtle background change
 
 ### Responsive behavior
-The app is admin-only and assumed used on desktop or tablet. The Add Cards page is the only flow optimized for mobile (sort cards in hand, scroll & increment). Other pages may render with horizontal scroll on narrow screens — that's acceptable.
+
+**The whole app is mobile-first.** Every page must function on a 375px-wide screen — not just gracefully degrade. Touch targets ≥ 44 × 44px throughout. Some pages have layouts specifically tuned for phone use (Add Cards, public homepage); others use responsive patterns to keep heavy data tables usable on narrow screens.
+
+**For data tables on narrow screens** (`< 768px`), `MfTable` switches its presentation:
+
+- **Mobile**: each row renders as a stacked card — primary identity on top (e.g. `MfCardIdentity`), key data fields below as label/value pairs, action icons at the bottom. No horizontal scroll. Filters move into a full-screen drawer triggered by a filter button in the page header.
+- **Tablet (768–1024px)**: standard table layout with horizontal scroll if columns overflow. Filter panel collapsible inline.
+- **Desktop (≥ 1024px)**: standard table layout, filter panel above the table.
+
+The card-row layout per page is defined inline in that page's doc (under a "Mobile layout" subsection where it's non-obvious). Pages with simple tables — small column count, no inline editing — can fall back to horizontal scroll instead of card rows; this is called out per page.
+
+**Forms and modals**: full-width inputs on mobile, max-width centered on desktop. Modals become full-screen sheets on phones, centered dialogs on tablet/desktop.
 
 ---
 
@@ -105,7 +114,7 @@ The app is admin-only and assumed used on desktop or tablet. The Add Cards page 
 
 ### Input types
 - **Money** — PrimeVue InputNumber with `mode="currency" currency="USD" locale="en-US"`. Two-decimal format. Stored in cents; the InputNumber binds to a v-model that converts cents ↔ dollars at the boundary.
-- **Quantity** — PrimeVue InputNumber, integer, min=0, with +/- buttons. Tappable on mobile (Add Cards page).
+- **Quantity** — PrimeVue InputNumber, integer, min=0, with +/- buttons sized for touch (≥ 44px tap targets) since these inputs appear on phones across multiple pages.
 - **Text search** — debounced 300ms before triggering server fetch.
 - **Date** — PrimeVue Calendar, ISO display format `YYYY-MM-DD`.
 
@@ -161,10 +170,10 @@ Two-line stack: product name + number + set on top, condition + rarity beneath i
 ## Navigation
 
 ### Top nav
-- Sticky horizontal nav bar across all admin pages
-- Sections: **Dashboard · Orders · Catalog · Inventory · Settings**
-- Right side: user menu (avatar/name → "Log out")
-- Mythic Fox logo on the left links to Dashboard
+
+Sticky across all admin pages. Sections: **Dashboard · Orders · Catalog · Inventory · Settings**. Right side: user menu (avatar/name → "Log out"). Mythic Fox logo on the left links to Dashboard.
+
+**Mobile behavior** (`< 768px`): the horizontal nav collapses into a hamburger menu on the left. Tapping opens a full-screen drawer with the section list and the user menu. The Mythic Fox logo stays visible center/top. This avoids cramming five nav items into a phone-width strip.
 
 **Catalog vs Inventory** are distinct: Catalog browses every card the system knows about (seeded from PricingCustomExport), including ones with zero stock. Inventory shows only cards currently stocked, with override-pricing controls and the "Export Pricing" round-trip. Pricing actions live inside whichever page they apply to — there is no standalone Pricing nav item.
 
@@ -184,9 +193,3 @@ PrimeVue Toast for transient feedback — successful saves, completed exports, f
 ## Permissions
 
 There is one user (the owner). Every admin page requires authentication via Fortify. The public homepage is the only unauthenticated route. No role/permission system; no per-page authorization beyond "logged in vs not."
-
----
-
-## Open questions
-
-None right now. Everything above is a proposal — push back on any point and we'll adjust before drafting the per-page docs that depend on it.

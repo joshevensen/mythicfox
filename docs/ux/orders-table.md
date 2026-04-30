@@ -145,6 +145,27 @@ Writes:
 
 ---
 
+## Mobile layout
+
+On screens `< 768px`, each order renders as a stacked card instead of a table row:
+
+```
+┌──────────────────────────────────────┐
+│  Joseph Current                      │  ← buyer, primary
+│  623394E9-8874A5-0BD46               │  ← order #, monospace, muted
+│                                      │
+│  Apr 14, 2026  ·  3 items  ·  $12.73 │
+│                                      │
+│  [Completed - Paid · shipped pill]   │
+│                                      │
+│  [🖨 Print slip]   [🔗 TCGPlayer]     │
+└──────────────────────────────────────┘
+```
+
+Filter panel becomes a full-screen drawer triggered by a filter button in the page header. Bulk-selection checkbox sits at the top-left of each card. The Import Orders header button stays primary; on phones it sticks to the bottom of the viewport so it's reachable with one thumb.
+
+---
+
 ## States
 
 | State | Display |
@@ -156,9 +177,3 @@ Writes:
 | Import in flight | Import button shows "Importing…" with spinner. Existing table rows unchanged until refresh. |
 | Import success | Toast and auto-reload. |
 | Import partial failure | Some files parsed, some didn't. Banner shows which failed and why. Successful files still applied. |
-
----
-
-## Open questions
-
-None.

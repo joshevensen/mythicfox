@@ -80,6 +80,29 @@ The format is hard-coded — no localization, no configurable currency.
 
 ---
 
+## Cross-cutting tables
+
+### `seller_stats` (singleton)
+
+Caches the public TCGPlayer storefront rating and feedback for display on the public homepage. Refreshed by a scheduled scraping job (see §Scheduled jobs). Always exactly one row.
+
+|Column|Type|Notes|
+|---|---|---|
+|id|bigint PK|Always `1` — singleton enforced at the application layer|
+|rating|decimal(2,1) nullable|0.0–5.0; e.g. `4.9`|
+|review_count|integer nullable|Total number of reviews|
+|feedback|json nullable|Array of recent comment objects: `[{ text, rating, author, date }]`. Null until the scraper finds public comments. May be an empty array if the page exposes ratings but no comment text.|
+|scraped_at|timestamp nullable|Last **successful** scrape. Null until the first one succeeds.|
+|last_attempt_at|timestamp nullable|Most recent attempt — success or failure.|
+|last_error|text nullable|Error message from the last failed scrape, cleared on next success.|
+|consecutive_failures|integer|Default 0. Reset to 0 on success. Used by the alert threshold.|
+|created_at|timestamp||
+|updated_at|timestamp||
+
+The public homepage's "What buyers say" section reads from this row. If `scraped_at IS NULL`, the section hides entirely — no placeholder, no fake numbers.
+
+---
+
 ## Files
 
 ### `files` table
@@ -158,6 +181,36 @@ The row is **never** hard-deleted from the database. Lost the bytes, kept the au
 - Pest for tests
 - PrimeVue for UI components (per ux-design.md)
 - Print CSS rendered in the browser for packing slips (per packingslip-spec.md) — no server-side PDF generation
+- **Browsershot** (headless Chrome wrapper) for the TCGPlayer storefront scraper. Required because the seller page is JS-rendered; a plain `Http::get()` won't return content. Browsershot is server-side only — does not affect frontend rendering.
+
+### Scheduled jobs
+
+Laravel scheduler runs in production via Forge cron (`* * * * * php artisan schedule:run`). Jobs:
+
+| Job | Cadence | Purpose |
+|---|---|---|
+| `files:purge` | Weekly | Hard-deletes `imports/...` storage objects older than 90 days; sets `expired_at` on the `files` row (see §Retention) |
+| `seller-stats:refresh` | Daily | Scrapes the public TCGPlayer storefront and updates the `seller_stats` singleton (see §Seller stats scraper) |
+| `db:backup` | Nightly | `pg_dump` of the production database, uploaded to DO Spaces |
+
+### Seller stats scraper
+
+A Laravel job (`App\Jobs\RefreshSellerStats` invoked by the `seller-stats:refresh` artisan command) that maintains the `seller_stats` singleton row.
+
+**Source**: `https://www.tcgplayer.com/sellers/Mythic-Fox-Games/{seller_id}` (the storefront URL from `config/services.php`).
+
+**Mechanism**:
+
+1. Render the storefront page in Browsershot (headless Chrome) so JS-mounted DOM is fully present.
+2. Parse the rendered HTML for: (a) the rating value, (b) the total review count, (c) any visible feedback comments. The selectors will need maintenance if TCGPlayer redesigns; capture them in a small `TcgplayerStorefrontParser` class so changes are isolated.
+3. **On success**: update `rating`, `review_count`, and `feedback` (if comment text was found). Set `scraped_at = now()`, `last_attempt_at = now()`, clear `last_error`, reset `consecutive_failures = 0`.
+4. **On failure**: leave `rating`/`review_count`/`feedback` untouched (the homepage keeps showing the last good values). Set `last_attempt_at = now()`, populate `last_error`, increment `consecutive_failures`.
+
+**Failure threshold**: when `consecutive_failures >= 3`, the Settings page shows an admin warning ("Seller stats scraper has failed 3+ days in a row — selectors may have changed") so the operator notices before the public data goes stale. The homepage continues showing last-known-good values regardless of failures.
+
+**Politeness**: one request per day, no parallelism, with `User-Agent` set to identify the source. No aggressive retry on failure — wait for tomorrow's run.
+
+**Public ToS**: TCGPlayer's terms generally discourage automated access. This is the seller's own data on the seller's own public-facing page; risk is low at one fetch per day, but non-zero. If TCGPlayer ever flags the account, the right move is to switch to manual curation (a Settings form to update `seller_stats` by hand). The scraper is a convenience, not a hard dependency.
 
 ### Local development
 

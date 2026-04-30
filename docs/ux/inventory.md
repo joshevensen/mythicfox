@@ -175,6 +175,32 @@ Writes:
 
 ---
 
+## Mobile layout
+
+On screens `< 768px`, the table switches to card rows because the column count (Card Name + Number + Market + Low + Calculated + Override + Qty + actions) is too wide for a phone.
+
+```
+┌──────────────────────────────────────┐
+│ ☐  Boltyn                            │
+│    #BOL001                           │
+│                                      │
+│    Market $0.19    Low $0.13         │
+│    Calculated $0.04                  │
+│    Override [    edit    ]           │
+│    Qty      [    3       ]           │
+│                                      │
+│    [↺ Reset]   [🗑 Remove]            │
+└──────────────────────────────────────┘
+```
+
+- Override and Qty cells expose their inline edit on tap, same behavior as desktop.
+- Filter panel becomes a full-screen drawer triggered by a filter button in the page header. The required-filter empty state remains the same — "Pick a product, set, and condition to view inventory."
+- Bulk action bar (visible when ≥1 row selected) stays sticky at the top.
+- The **Export Pricing** primary button sticks to the bottom of the viewport on phones so it's reachable with one thumb.
+- The preview modal becomes a full-screen sheet on phones; the Old / New / Δ table inside scrolls horizontally if needed since each row is short.
+
+---
+
 ## States
 
 | State | Display |
@@ -189,9 +215,3 @@ Writes:
 | Recompute in flight | Export button shows spinner; preview modal opens once recompute completes. |
 | Pricing export download success | Toast: "Pricing CSV downloaded — N rows, M changed." |
 | Pricing export download failure | Modal stays open, error banner inside the modal. `last_exported_price` is **not** updated. User can retry. |
-
----
-
-## Open questions
-
-None right now — the preview-modal mechanics are the most opinionated call (chose modal over route since you said "just me"). The `last_exported_price` schema addition is the only schema change this page introduces; flagged inline above for visibility.

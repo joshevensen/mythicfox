@@ -139,6 +139,31 @@ The aggregated parent-row query is non-trivial. A view or materialized query cla
 
 ---
 
+## Mobile layout
+
+On screens `< 768px`, parent rows render as stacked cards. The expand toggle becomes a tap-to-open accordion that reveals the condition variants beneath the card.
+
+```
+┌──────────────────────────────────────┐
+│  Boltyn                       ▸      │
+│  #BOL001  ·  Welcome to Rathe        │
+│  Rare                                │
+│  Total Qty: 4                        │
+└──────────────────────────────────────┘
+```
+
+Tap anywhere on the card to expand. Sub-rows render as a tighter list inside:
+
+```
+   Near Mint            Qty 2     id 4941474
+   Lightly Played       Qty 1     id 4941566
+   Near Mint Foil       Qty 1     id 4941474
+```
+
+Filter panel becomes a full-screen drawer triggered by a filter button in the page header. The Upload PricingCustomExport button stays primary; on phones it sticks to the bottom of the viewport for one-thumb reach.
+
+---
+
 ## States
 
 | State | Display |
@@ -149,9 +174,3 @@ The aggregated parent-row query is non-trivial. A view or materialized query cla
 | Error | `MfErrorBanner` above the table with retry; previously-loaded rows stay visible. |
 | During import | Upload button shows "Importing…" spinner; existing table rows unchanged until refresh. |
 | Stale data | "Magic refreshed 8 days ago" rendered in amber/warning text next to the upload button when any product's `priced_at` is null or older than 3 days. |
-
----
-
-## Open questions
-
-None.

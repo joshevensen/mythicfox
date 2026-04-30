@@ -93,9 +93,3 @@ Reads / writes:
 | Submitting | Submit button shows spinner, fields disabled. |
 | Invalid credentials | Inline error above the form; password field cleared, email retained. |
 | Rate-limited | Inline error with countdown; submit button disabled until countdown expires. |
-
----
-
-## Open questions
-
-None.

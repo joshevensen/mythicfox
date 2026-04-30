@@ -29,7 +29,7 @@ Vertical stack, full-screen on mobile, max-width container on desktop.
 
 ```
 ┌────────────────────────────────────┐
-│ [Product ▾] [Set ▾] [Condition ▾]  │  ← sticky top
+│ [Product ▾] [Set ▾] [Condition ▾]  │  ← top of page (scrolls away)
 ├────────────────────────────────────┤
 │  Card Name           [-] 0 [+]     │
 │  Card Name           [-] 0 [+]     │  ← scrollable body
@@ -41,9 +41,9 @@ Vertical stack, full-screen on mobile, max-width container on desktop.
 └────────────────────────────────────┘
 ```
 
-### Sticky top — scope selectors
+### Top — scope selectors
 
-Three selectors set the page's scope. All three required before the card list renders.
+Three selectors set the page's scope. All three required before the card list renders. **Not sticky** — the selectors live at the top of the page and scroll away with normal page scroll. Scope is set once per pile, so always-visible isn't worth the vertical space.
 
 | Selector | Type | Notes |
 |---|---|---|
@@ -51,7 +51,7 @@ Three selectors set the page's scope. All three required before the card list re
 | Set | single-select, chained to Product | Lists all sets within the chosen product |
 | Condition | single-select | One of the 11 TCGPlayer condition strings — see [catalog-schema.md §Condition vocabulary](../catalog-schema.md) |
 
-Single-select on each (not multi). The whole page is scoped to one combination at a time. Re-scope to enter a different pile.
+Single-select on each (not multi). The whole page is scoped to one combination at a time. To re-scope (after finishing a pile), scroll back to the top — instant on mobile via tap-status-bar (iOS) or quick swipe up (Android). Auto-save kicks in when scope changes per §Re-scoping mid-session.
 
 ### Card list
 
@@ -149,14 +149,8 @@ This page is the **only** admin surface explicitly optimized for phone. Consider
 
 - **Tap target sizes**: +/- buttons ≥ 44 × 44px. Qty number tap area same.
 - **No horizontal scroll**: row content fits viewport width on a 375px-wide screen.
-- **Sticky header collapses on scroll**: when scrolling down, scope selectors shrink to a single chip showing `Magic / Welcome to Rathe / Near Mint` (tap to re-expand). Maximizes list visibility.
 - **Soft keyboard handling**: when the numeric keypad opens, the fixed bottom Save button stays above it (not obscured).
 - **Pull-to-refresh disabled** — accidental gesture during scroll-and-tap shouldn't reload.
+- **Scroll-to-top to re-scope**: scope selectors are at the top of the page, not sticky. Use the platform gesture (tap status bar on iOS, swipe up on Android) to snap to top when you're ready for a new pile.
 
-Desktop renders the same layout, just centered with a max-width and full sticky-header always expanded.
-
----
-
-## Open questions
-
-None.
+Desktop renders the same layout, just centered with a max-width.

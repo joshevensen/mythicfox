@@ -85,7 +85,7 @@ PrimeVue InputNumber wrapper. Binds to a v-model in **cents** (the storage unit)
 - `nullable?: boolean` — if true, empty input emits null instead of 0
 
 ### `<MfQtyInput>`
-PrimeVue InputNumber wrapper for integer quantities. Min 0, +/- buttons, large tap targets for mobile (Add Cards page).
+PrimeVue InputNumber wrapper for integer quantities. Min 0, +/- buttons, large tap targets for mobile (≥ 44px). Used on Add Cards, Inventory, and anywhere else qty is editable.
 
 **Props**:
 - `modelValue: number`
@@ -187,7 +187,3 @@ File upload component for CSV / PDF imports. Drag-and-drop or click-to-browse. V
 - **Color palette** — Mythic Orange `#EA5A1F`, Fox Teal `#2E899B`, Games Brown `#5C2D0E`. Defined in [ux-patterns.md §Brand colors](ux-patterns.md). Status pills stay semantic (Tailwind green/amber/red) to avoid muddling brand and meaning.
 - **Iconography** — **PrimeIcons** throughout. Reference by class name (`pi pi-printer`, `pi pi-external-link`, etc.). Component wrappers that take an `icon` prop accept the name only (without the `pi pi-` prefix); the wrapper applies the prefix.
 - **Component-level testing** — **deferred**. Pest covers backend; Vue component tests via Vitest + Vue Test Utils get added when something gets complex enough to warrant them, not from day one.
-
-## Open questions
-
-None. As per-page docs surface new components, this list grows organically.
