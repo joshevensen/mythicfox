@@ -1,6 +1,6 @@
 # Public Homepage
 
-The unauthenticated landing page at the root of mythicfoxgames.com. Brand presence, trust signal, and a clear path to the TCGPlayer storefront. Lives in the same Laravel app as the admin SaaS — same deploy, same brand assets — but on the root path with no auth requirement.
+The unauthenticated landing page at the root of mythicfoxgames.com. Brand presence, trust signal, and a clear path to the TCGPlayer storefront. Lives in the same Laravel app as the admin tool — same deploy, same brand assets — but on the root path with no auth requirement.
 
 **Route**: `/` (root; public)
 **Access**: public — no auth required
@@ -33,8 +33,9 @@ A static, hand-crafted brand page. No CMS, no database content — content lives
 
 - Establish that mythicfoxgames.com is a real business with a real shop
 - Direct interested visitors to the TCGPlayer storefront where they actually transact
-- Provide a contact path for buy-list inquiries / support
 - Surface a discreet path to admin login for the operator
+
+Customer support runs through TCGPlayer's messaging system — there is no email or contact form on the homepage. Order-related conversations belong on the marketplace anyway (audit logs, dispute mediation). A buy-list contact path will be added when the buy-list feature itself ships.
 
 This page is **not** a storefront. TCGPlayer remains the sales channel — see [saas-design.md §TCGPlayer as the marketplace](../saas-design.md).
 
@@ -60,10 +61,7 @@ Single responsive page. Mobile-first; desktop layout is the same content with wi
 ├────────────────────────────────────────┤
 │  WHAT BUYERS SAY                       │
 │  Rating + count + 3 review quotes      │
-│  (hidden until first scrape succeeds). │
-├────────────────────────────────────────┤
-│  CONTACT                               │
-│  mailto: link.                         │
+│  (hidden if scrape never ran or stale).│
 ├────────────────────────────────────────┤
 │  FOOTER                                │
 │  © 2025 – {year} · Admin               │
@@ -86,7 +84,7 @@ A short paragraph introducing Mythic Fox Games, framed around what real TCG buye
 
 > Mythic Fox Games is a TCGPlayer storefront. We buy and sell any trading card game — currently specializing in Magic: The Gathering, Lorcana, and Flesh & Blood. Most of our inventory comes from sealed product we open ourselves, so cards arrive pack-fresh — never played, never shuffled. Every card is graded honestly, packed in penny sleeves with TCGuardian shipping protectors, and shipped within one business day. If anything arrives wrong, message me — I'll make it right.
 
-The buy-side ("we buy any TCG") routes through the contact email for now; a structured buy list is mentioned as a future feature in [saas-design.md](../saas-design.md).
+The buy-side ("we buy any TCG") doesn't have a public-facing contact path in v1 — interested sellers reach out via TCGPlayer messaging like any other customer. A structured buy list is a future feature per [saas-design.md](../saas-design.md), and that's where a dedicated buy-list intake will live when it ships.
 
 ### What you get
 
@@ -109,19 +107,14 @@ Reads from the `seller_stats` singleton (see [saas-design.md §`seller_stats`](.
 
 - **Star rating + count** at the top, e.g. *"⭐ 4.9 from 312 reviews on TCGPlayer"*. Star glyphs use PrimeIcons (`pi pi-star-fill` / `pi pi-star`); rating value and count are pulled from `seller_stats.rating` and `seller_stats.review_count`.
 - **3 quoted reviews** beneath, when comments were captured by the scrape (`seller_stats.feedback` non-empty). Each card shows the comment text, the reviewer's display name, and the date. If `feedback` is empty (the public page exposes ratings but not comment text) the section just shows the rating + count.
-- **The whole section hides** when `seller_stats.scraped_at IS NULL` (the scraper hasn't succeeded yet, or has been disabled). No placeholder, no fake data.
+- **The whole section hides** in either of these cases:
+  - `seller_stats.scraped_at IS NULL` — the scraper has never succeeded.
+  - `seller_stats.scraped_at < now() - 14 days` — last successful scrape is older than 14 days. Past that point, fresh data has been missing long enough that displaying old values is more misleading than helpful (a rating from a month ago could be wildly out of date).
+- **No placeholder, no fake data**, in either case. The page just renders without the section.
 
 Visual treatment: simple cards in a single row on desktop, stacked on mobile. Quote text uses `mf-brown` for emphasis; star glyphs use `mf-orange` (per [ux-patterns.md §Brand colors](ux-patterns.md)).
 
 The rating + review count is **not a clickable link** — the Hero "Shop on TCGPlayer →" CTA already sends visitors to the storefront, and a second link to the same destination just clutters.
-
-### Contact
-
-A single line with the operator's contact email rendered as a `mailto:` link:
-
-> Questions or buy-list inquiries? **josh@mythicfoxgames.com**
-
-No contact form for v1 — the email link is enough and avoids the spam-filtering / form-validation work.
 
 ### Footer
 
@@ -206,3 +199,13 @@ The rest of the page (hero copy, about paragraph, feature blocks, contact, foote
 | (No other states.) | |
 
 There are no loading, error, or empty states because there's no dynamic content.
+
+---
+
+## Things to consider
+
+- **Pack-fresh framing depends on operational reality.** If you ever pivot away from primarily cracking sealed product (e.g. start buying collections in volume), the homepage promise becomes a lie. Audit the copy whenever sourcing strategy changes.
+- **Brand-name product mentions create copy debt.** "TCGuardian shipping protectors" is specific. If you switch packaging, the page needs an update. Same for "1 business day" — vacations break the promise. Consider a banner mechanism for vacation mode rather than touching the static copy each time.
+- **Static OG-less social previews are bland.** With OG image descoped, links shared on Twitter/Facebook/Discord show a generic site preview. If sharing becomes a marketing channel, an OG image is the single most impactful add.
+- **No analytics specced.** No Google Analytics, no Plausible, nothing. If you ever want to know how many visitors actually click "Shop on TCGPlayer →," that requires adding instrumentation. Defer until there's a real question to answer.
+- **Favicon source needs the same care as the logo.** Regenerate the full PNG/ICO set (`magick favicon.png ...`) any time the brand asset changes; a partial update results in mismatched browser tabs vs home-screen icons.

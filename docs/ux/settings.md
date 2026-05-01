@@ -196,12 +196,21 @@ Current values:
 
 | Field | Source |
 |---|---|
-| Last successful scrape | `seller_stats.scraped_at` (formatted as datetime) |
+| Last successful scrape | `seller_stats.scraped_at` (formatted as datetime, plus relative — *"6 days ago"*) |
 | Last attempt | `seller_stats.last_attempt_at` |
-| Status | derived: `✅ Healthy` if `consecutive_failures = 0`, else `⚠️ Failed N days in a row` |
+| Status | derived per the table below |
 | Rating / Reviews / Comments | `seller_stats.rating`, `review_count`, `feedback.length` |
 
-When `consecutive_failures >= 3`, this card renders with an amber border and surfaces `last_error` text — *"Selectors may have changed. Check the storefront page for redesigns."* This is the early-warning system before stale data goes public.
+**Status states** — derived from `consecutive_failures` and `scraped_at` age:
+
+| Condition | Status | Card treatment |
+|---|---|---|
+| `consecutive_failures = 0` AND `scraped_at` within 7 days | ✅ Healthy | Default |
+| `consecutive_failures ≥ 3` | ⚠️ Failed N days in a row | Amber border; surfaces `last_error` — *"Selectors may have changed. Check the storefront page for redesigns."* |
+| `scraped_at` is 7–13 days old | ⚠️ Stale — homepage hides in {N} days | Amber border; reminds operator the public section will disappear at day 14 |
+| `scraped_at` ≥ 14 days OR null AND scraper has run before | 🔴 Public section hidden | Red border; *"The 'What buyers say' section is no longer rendering on the homepage. Last good scrape: {date}."* |
+
+The cascading thresholds are the early-warning system: 3 consecutive failures flags a likely selector breakage; 7 days of staleness gives the operator a week's head-start to fix it before the public section disappears at day 14 per [public-homepage.md §What buyers say](public-homepage.md).
 
 ### Actions
 
@@ -266,3 +275,16 @@ Writes:
 | File History empty | "No files yet — imports and exports will appear here." |
 | File History filtered to zero | "No files match these filters." + Clear filters button. |
 | File History download error | Toast: "Couldn't generate download URL — file may be missing from storage." |
+
+---
+
+## Things to consider
+
+- **Pricing Rules section length.** A product with 50+ sets makes the section very long. Consider collapsible product blocks (default-collapsed except the most-recently-edited) when set counts grow.
+- **Stale set rows.** Sets removed from TCGPlayer's catalog are still in the local `sets` table. There's no cleanup mechanism. If they accumulate, consider a manual "archive" action so old sets can be hidden from the rules list without losing the historical data.
+- **Pricing rule changes don't recompute existing prices.** Updating `base_price` on Magic doesn't immediately re-derive `inventory.calculated_price` for every Magic card — that happens on the next pricing-export run. The operator might forget to export and see stale calculations. Consider showing a "Rules changed since last export — N rows have stale calculations" banner on the Inventory page.
+- **Set rules modal doesn't validate semantic consistency.** A set could be configured with `base_price: $0.50` and `high_price: $0.30`, which would break the algorithm's assumptions. Server-side validation should reject `base_price > high_price`.
+- **`Refresh now` on the seller-stats scraper runs synchronously.** If the scraper takes 10+ seconds (Browsershot loading), the UI blocks. Better: dispatch the job async, show "Refreshing…" status, poll for completion.
+- **File History pagination at 20 rows.** Rapid uploads mean recent files quickly fall off page 1. Consider a "Recent (last 5)" inline list above the paginated table.
+- **`overridden` badge logic.** A set is "overridden" if any of its four rule fields is non-null. If a user fills then clears all four fields, the row should drop the badge — make sure the recompute happens.
+- **Seller-stats scraper raw-data modal exposes JSON.** Useful for debugging but a future schema change would change the JSON shape — keep the modal flexible (just dump the row) rather than hand-formatted.

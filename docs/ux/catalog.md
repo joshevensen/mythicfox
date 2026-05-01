@@ -141,26 +141,24 @@ The aggregated parent-row query is non-trivial. A view or materialized query cla
 
 ## Mobile layout
 
-On screens `< 768px`, parent rows render as stacked cards. The expand toggle becomes a tap-to-open accordion that reveals the condition variants beneath the card.
+Standard responsive behavior per [ux-patterns.md §Responsive behavior](ux-patterns.md). Page-specific deviations:
 
-```
-┌──────────────────────────────────────┐
-│  Boltyn                       ▸      │
-│  #BOL001  ·  Welcome to Rathe        │
-│  Rare                                │
-│  Total Qty: 4                        │
-└──────────────────────────────────────┘
-```
-
-Tap anywhere on the card to expand. Sub-rows render as a tighter list inside:
-
-```
-   Near Mint            Qty 2     id 4941474
-   Lightly Played       Qty 1     id 4941566
-   Near Mint Foil       Qty 1     id 4941474
-```
-
-Filter panel becomes a full-screen drawer triggered by a filter button in the page header. The Upload PricingCustomExport button stays primary; on phones it sticks to the bottom of the viewport for one-thumb reach.
+- **Parent-row card layout** on screens `< 768px`:
+  ```
+  ┌──────────────────────────────────────┐
+  │  Boltyn                       ▸      │
+  │  #BOL001  ·  Welcome to Rathe        │
+  │  Rare                                │
+  │  Total Qty: 4                        │
+  └──────────────────────────────────────┘
+  ```
+- **Tap anywhere on the card to expand** (not just the chevron). Sub-rows render as a tighter list inside the expanded card:
+  ```
+     Near Mint            Qty 2     id 4941474
+     Lightly Played       Qty 1     id 4941566
+     Near Mint Foil       Qty 1     id 4941474
+  ```
+- **Upload PricingCustomExport button sticks to the bottom of the viewport** on phones for one-thumb reach.
 
 ---
 
@@ -174,3 +172,14 @@ Filter panel becomes a full-screen drawer triggered by a filter button in the pa
 | Error | `MfErrorBanner` above the table with retry; previously-loaded rows stay visible. |
 | During import | Upload button shows "Importing…" spinner; existing table rows unchanged until refresh. |
 | Stale data | "Magic refreshed 8 days ago" rendered in amber/warning text next to the upload button when any product's `priced_at` is null or older than 3 days. |
+
+---
+
+## Things to consider
+
+- **The aggregated parent-row query is the heaviest read in the app.** With ~776K cards in Magic alone, a `GROUP BY (set_id, product_name, number)` with a `COUNT(*)` over conditions and a `LEFT JOIN inventory` is non-trivial. Index carefully and consider a denormalized `card_groups` materialized view if the live query becomes the bottleneck.
+- **Expand-all is a footgun.** PrimeVue can support "expand all rows" on a DataTable. With hundreds of cards and many condition variants each, that's an enormous DOM. The table should explicitly disable expand-all (or at least confirm before doing it).
+- **"In stock" toggle adds a `HAVING` clause.** This forces aggregation before filtering, which can slow down queries on big result sets. Test query plans with realistic volumes.
+- **PricingCustomExport refreshes per product, not per set.** The "Magic refreshed N days ago" indicator reflects the latest full-product refresh. A user who uploads a per-set filtered export only refreshes that set's prices; the per-product `priced_at` stamp doesn't capture the partial nature. If per-set imports become common, consider `priced_at` per set instead.
+- **Catalog rows accumulate forever.** TCGPlayer never reduces their catalog; old sets stay live. Over years this grows unbounded. No archive mechanism is specced — if it becomes a problem, an "archive product" concept could hide rotated-out sets without losing them.
+- **Mobile card-row tap-to-expand has a learnability cost.** Users on phones won't necessarily expect a card to open inline. Consider a small chevron affordance + brief animation on first expand to teach the interaction.

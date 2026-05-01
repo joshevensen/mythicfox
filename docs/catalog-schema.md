@@ -284,20 +284,23 @@ The seller can dismiss and continue. Stale data does not block the export — it
 | Rarity | `cards.rarity` |
 | Condition | `cards.condition` |
 | TCG Market Price | `cards.market_price` (formatted decimal) |
-| TCG Direct Low | empty |
-| TCG Low Price With Shipping | empty |
+| TCG Direct Low | empty (intentional — see note below) |
+| TCG Low Price With Shipping | empty (intentional — see note below) |
 | TCG Low Price | `cards.low_price` (formatted decimal) |
 | Total Quantity | `inventory.quantity` |
 | Add to Quantity | `0` |
 | TCG Marketplace Price | `COALESCE(inventory.override_price, inventory.calculated_price)` (formatted decimal); empty if both null |
 | Photo URL | empty |
 
+`TCG Direct Low` and `TCG Low Price With Shipping` are reference data computed by TCGPlayer, not values the seller sets — TCGPlayer's MyPricing importer reads back only the seller's `TCG Marketplace Price` column. Emitting empty values for these columns is the right call. **Verify on the first real export round-trip**; if the importer rejects empty cells for these fields, backfill with a sane default (e.g. echo `TCG Low Price`) at that time.
+
 ---
 
-## Open questions
+## Things to consider
 
-1. **Variant display in the Add Cards UI**. Each `cards` row is a (product, condition) SKU. The Add Cards flow ([ux-design.md](ux-design.md)) uses a session-level condition selector — picking `Near Mint` filters cards to just the NM SKUs of each product. Confirm the intent before building: does the user want to see all 11 condition variants in the selector, or a friendlier reduced set (e.g., merged "NM" with sub-variant pickers per row)?
-
-2. **Unused price columns at export time**. `TCG Direct Low` and `TCG Low Price With Shipping` are emitted empty. Verify that TCGPlayer's importer accepts empty values for these columns or whether they need to be passed through (which would require storing them in the import — currently dropped).
-
-3. **PricingCustomExport file size**. The Magic catalog dump is ~103MB / 776K rows. Streaming row-by-row import is required; loading the whole file in memory is not viable. Worker job + chunked parser.
+- **Catalog table size at scale.** With Magic, Lorcana, and Flesh & Blood seeded, `cards` will easily hit hundreds of thousands of rows. The `(set_id, product_name, number)` aggregation for the catalog page is the heaviest read query in the app — index it carefully and benchmark with a realistic-size catalog before launch. Consider a denormalized `card_groups` materialized view if the live aggregation slows down.
+- **TCGPlayer can rename cards.** Rare but happens (errata, re-prints with new wording). Upsert by `tcgplayer_id` keeps the row stable, but `product_name` updates silently. If historical accuracy matters, capture the rename in an audit trail or never overwrite identity fields after first insert.
+- **Pricing-rule debugging.** When a calculated price looks wrong, the dual-input algorithm path isn't obvious from the result alone (segmented by `high_price`, then offset, then floored). Log the inputs and segment decision per row during the export run so the seller can trace any surprising number.
+- **Bootstrap mode is a one-shot.** Running MyPricing-bootstrap a second time after live operation is started will reset `inventory.quantity` to whatever TCGPlayer's `Total Quantity` says, potentially clobbering local edits. The Settings page should clearly distinguish "bootstrap" from "reconciliation" and require explicit confirmation for bootstrap.
+- **`last_exported_price` only updates on Download.** Cancelling out of the preview modal doesn't update the baseline, so re-opening shows the same diff. Intentional, but documented for clarity.
+- **PricingCustomExport file size on staging/local.** The 103MB Magic dump shouldn't be checked into git. Local dev environments need a smaller fixture (a per-set export) for fast iteration.

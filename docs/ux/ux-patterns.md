@@ -18,15 +18,76 @@ Cross-cutting UI conventions referenced by every per-page doc. Decisions made he
 
 Extracted from the Mythic Fox Games logo. The PrimeVue theme is configured to use these as primary/secondary; Tailwind utility classes get matching aliases.
 
-| Token | Hex | Use |
-|---|---|---|
-| `mf-orange` | `#EA5A1F` | Primary CTAs, primary brand accents, key emphasis |
-| `mf-teal` | `#2E899B` | Links, focus rings, secondary accents |
-| `mf-brown` | `#5C2D0E` | Headings on light backgrounds, deep accents |
-| Neutrals | Tailwind `slate` / `gray` palette | Backgrounds, body text, borders, muted text |
-| Semantic green / amber / red | Tailwind `emerald-500` / `amber-500` / `red-500` (default) | Status pills, success / warning / error states. Kept semantic, not brand-tinted. |
+| Token | Light hex | Dark hex | Use |
+|---|---|---|---|
+| `mf-orange` | `#EA5A1F` | `#FF7B45` | Primary CTAs, primary brand accents, key emphasis |
+| `mf-teal` | `#2E899B` | `#5BB5C9` | Links, focus rings, secondary accents |
+| `mf-brown` | `#5C2D0E` | `#D9B896` | Headings, deep accents (light); warm-toned emphasis (dark) |
+| Neutrals | Tailwind `slate` / `gray` palette | Same — Aura inverts | Backgrounds, body text, borders, muted text |
+| Semantic green / amber / red | Tailwind `emerald-500` / `amber-500` / `red-500` | Tailwind `emerald-400` / `amber-400` / `red-400` | Status pills, success / warning / error states. Kept semantic, not brand-tinted. |
 
 Brand colors should never be used to encode meaning — orange ≠ "warning," teal ≠ "info." Use the semantic colors for state.
+
+**Dark mode behavior**
+
+The dark variants exist because the light values become unreadable on dark surfaces. Specifically:
+
+- `mf-brown` (light: `#5C2D0E`) on a `slate-900` background fails contrast badly — it's a dark color on a dark background. The dark variant `#D9B896` is a warm cream that maintains the brand's warmth while staying readable.
+- `mf-orange` and `mf-teal` are technically usable in light values on dark backgrounds, but their lighter dark-mode variants pop better — orange feels more vibrant, teal feels more like a link.
+- All three dark variants stay within the original hue family so the brand identity carries across modes.
+- Status-pill semantic colors shift one shade lighter in dark mode (e.g. `emerald-500` → `emerald-400`) for the same readability reason.
+
+PrimeVue Aura handles the rest — surface backgrounds, body text, borders, and form-element chrome automatically invert when the `.dark` class is on `<html>` (already wired into the vue-starter-kit's appearance toggle in [resources/views/app.blade.php](../../resources/views/app.blade.php)).
+
+**Implementation**
+
+Tokens live as CSS custom properties so all consumers (Tailwind utilities, PrimeVue preset, raw CSS) read from one source:
+
+```css
+:root {
+  --mf-orange: #EA5A1F;
+  --mf-teal: #2E899B;
+  --mf-brown: #5C2D0E;
+}
+
+html.dark {
+  --mf-orange: #FF7B45;
+  --mf-teal: #5BB5C9;
+  --mf-brown: #D9B896;
+}
+```
+
+The PrimeVue preset wires `--mf-orange` into Aura's primary semantic slot:
+
+```ts
+import Aura from '@primevue/themes/aura'
+import { definePreset } from '@primevue/themes'
+
+const MythicFoxPreset = definePreset(Aura, {
+  semantic: {
+    primary: {
+      50:  '{orange.50}',  100: '{orange.100}', 200: '{orange.200}',
+      300: '{orange.300}', 400: '{orange.400}', 500: 'var(--mf-orange)',
+      600: '{orange.600}', 700: '{orange.700}', 800: '{orange.800}',
+      900: '{orange.900}', 950: '{orange.950}',
+    },
+  },
+})
+```
+
+(The non-500 shades use Aura's built-in orange ramp; only `500` — the actual primary — is pinned to our brand value. Aura interpolates around it for hover/active/disabled states.)
+
+Tailwind aliases map to the same CSS variables in `tailwind.config.ts`:
+
+```ts
+colors: {
+  'mf-orange': 'var(--mf-orange)',
+  'mf-teal':   'var(--mf-teal)',
+  'mf-brown':  'var(--mf-brown)',
+}
+```
+
+Then `bg-mf-orange`, `text-mf-teal`, `border-mf-brown` work everywhere and auto-swap with mode.
 
 ---
 
@@ -61,7 +122,12 @@ PrimeVue **DataTable** in `lazy` mode — server-side pagination, sorting, and f
 - "Clear all filters" button appears when ≥1 filter is active
 
 ### URL-driven state
-**Yes** — pagination, sort, and filters all serialize to query string. URLs are shareable / bookmarkable / refresh-safe.
+**Yes** — pagination, sort, and filters all serialize to query string. The shareability angle is irrelevant for a single-user app, but the other properties of URL state earn their keep:
+
+- **Refresh-safe.** Accidentally hitting refresh doesn't lose filter context.
+- **Back-button works correctly.** Navigate away, come back — filters restored.
+- **Bookmarks are the saved-views mechanism.** Get a filter combo you use often? `Cmd+D` it. The browser is already a perfectly good saved-views manager — no need to build a custom one in the app.
+- **Dashboard quick-action shortcuts.** Tiles like Import Orders pass `?import=1` to trigger destination-page modals on mount (per [dashboard.md](dashboard.md)). That mechanism only works because URL state is the convention.
 
 Query string format:
 ```
@@ -94,11 +160,42 @@ For tables that need bulk actions:
 
 **For data tables on narrow screens** (`< 768px`), `MfTable` switches its presentation:
 
-- **Mobile**: each row renders as a stacked card — primary identity on top (e.g. `MfCardIdentity`), key data fields below as label/value pairs, action icons at the bottom. No horizontal scroll. Filters move into a full-screen drawer triggered by a filter button in the page header.
+- **Mobile**: each row renders as a stacked card via the `mobile-row` slot (see below). No horizontal scroll. Filters move into a full-screen drawer triggered by a filter button in the page header.
 - **Tablet (768–1024px)**: standard table layout with horizontal scroll if columns overflow. Filter panel collapsible inline.
 - **Desktop (≥ 1024px)**: standard table layout, filter panel above the table.
 
-The card-row layout per page is defined inline in that page's doc (under a "Mobile layout" subsection where it's non-obvious). Pages with simple tables — small column count, no inline editing — can fall back to horizontal scroll instead of card rows; this is called out per page.
+#### Mobile-row slot pattern
+
+`MfTable` exposes a single `mobile-row` slot that pages fill in once. Below 768px the table hides its headers, omits column borders, and renders each row by passing the row data into this slot. The page is responsible only for what one card looks like — pagination, sorting, filtering, selection, expand state, and skeleton loading are still owned by `MfTable`.
+
+```vue
+<MfTable :endpoint :columns :selectable>
+  <template #mobile-row="{ row, selected, toggleSelect, expanded, toggleExpand }">
+    <div class="mf-card-row" :class="{ selected }">
+      <input v-if="selectable" type="checkbox" :checked="selected" @change="toggleSelect" />
+      <MfCardIdentity :card="row" />
+      <div class="qty">Qty {{ row.quantity }}</div>
+      <!-- page-specific content here -->
+    </div>
+  </template>
+</MfTable>
+```
+
+**Slot props** (all stable across pages):
+
+| Prop | Type | Notes |
+|---|---|---|
+| `row` | object | Full row data, same shape as desktop cells receive |
+| `selected` | boolean | True if row is in the current selection (only meaningful when `selectable` is on) |
+| `toggleSelect` | () => void | Toggles selection for this row |
+| `expanded` | boolean | True if this row is currently expanded (only meaningful when `expandable` is on) |
+| `toggleExpand` | () => void | Toggles expand state |
+
+**Why a single slot, not a templating contract**: declarative metadata (column definitions auto-mapped to mobile sections) was tempting but doesn't survive contact with real pages. Inventory needs inline-edit cells, Catalog needs tap-to-expand with sub-rows, Orders needs paired action icons — these are all distinct shapes that compress poorly into a metadata schema. A flexible slot is a better trade than a rigid one.
+
+**Pages with simple tables** — small column count, no inline editing — can omit the `mobile-row` slot, in which case `MfTable` falls back to a horizontal-scroll table layout on mobile. Called out per page.
+
+The exact shape of each page's mobile card is illustrated in that page's "Mobile layout" subsection (e.g. [catalog.md](catalog.md), [inventory.md](inventory.md), [orders-table.md](orders-table.md), [settings.md](settings.md)). Those examples are visual references for what the slot template renders — the mechanism for getting them on screen is uniform.
 
 **Forms and modals**: full-width inputs on mobile, max-width centered on desktop. Modals become full-screen sheets on phones, centered dialogs on tablet/desktop.
 
@@ -193,3 +290,12 @@ PrimeVue Toast for transient feedback — successful saves, completed exports, f
 ## Permissions
 
 There is one user (the owner). Every admin page requires authentication via Fortify. The public homepage is the only unauthenticated route. No role/permission system; no per-page authorization beyond "logged in vs not."
+
+---
+
+## Things to consider
+
+- **Status pill colors aren't accessible by color alone.** Color-blind users can't distinguish green/amber/red without help. Add a small icon (✓ / ⏱ / ✕) inside the pill, or a text label, so the meaning carries even without color perception.
+- **Dark mode coverage is at the token layer, not the layout layer.** Brand-color CSS variables swap on `.dark` and PrimeVue Aura inverts surfaces automatically — but per-page mockups and ASCII layouts in this doc set were drafted assuming light-mode shading. Spot-check each page in dark mode during build; small contrast or border tweaks may surface.
+- **PrimeVue version churn.** PrimeVue major versions occasionally introduce breaking changes (component prop renames, API shifts). Pin a major version and update deliberately rather than auto-tracking; the `Mf*` wrappers help insulate page code but they themselves need to be updated.
+- **Wayfinder typed routes** require regenerating after route changes. Add the regeneration to the post-deploy / dev-server scripts so it doesn't go stale silently.

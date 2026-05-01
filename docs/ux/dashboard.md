@@ -102,3 +102,13 @@ Add real widgets when at least one of these becomes true:
 - A specific recurring question gets asked of the data ("how much did I sell this week?") → build that widget.
 
 Don't pre-design widgets. Let usage drive the spec, then update this doc.
+
+---
+
+## Things to consider
+
+- **Query-param shortcuts need URL cleanup.** `?import=1` and `?export=1` should be removed from the URL once the modal opens, otherwise refreshing the destination page re-fires the modal. `router.replace` (or equivalent) on mount.
+- **The 4 quick-action tiles will silently fossilize.** Nothing automatically promotes new pages to the dashboard. When you add a feature page, decide whether it deserves a tile — and if so, edit this doc.
+- **Greeting depends on `users.name`.** Solo user, so the greeting will say what you put in. If multi-user ever happens, the greeting still works, but nothing currently encourages naming users descriptively.
+- **No real-data version of the dashboard exists.** When you eventually start adding widgets, you'll be building against your own real production data. Test queries against representative volumes before exposing live metrics so the dashboard doesn't become slow.
+- **The "More dashboards coming soon" line ages poorly.** If the dashboard sits as-is for years without widgets being added, the line feels like an unfulfilled promise. Either commit to adding widgets in the near term or rephrase to something less commitment-flavored ("Workflow tools below — more coming when they earn their place").

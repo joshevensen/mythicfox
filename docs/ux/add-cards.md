@@ -94,6 +94,8 @@ After save:
 
 Saves of qty = 0 are **skipped silently** (per the original scaffolding). No row is created, no error surfaced.
 
+**Save button is disabled while a save is in flight** — prevents double-clicks from firing two parallel saves. The "Saving…" spinner state already implies this; making it explicit here so it's not just a visual cue. No debouncing on +/- taps — Vue's reactivity is synchronous, so the Save handler always reads the latest qty when clicked.
+
 ### Re-scoping mid-session
 
 If the user changes any of Product / Set / Condition while there are pending qty inputs > 0:
@@ -154,3 +156,14 @@ This page is the **only** admin surface explicitly optimized for phone. Consider
 - **Scroll-to-top to re-scope**: scope selectors are at the top of the page, not sticky. Use the platform gesture (tap status bar on iOS, swipe up on Android) to snap to top when you're ready for a new pile.
 
 Desktop renders the same layout, just centered with a max-width.
+
+---
+
+## Things to consider
+
+- **Pending qty inputs live only in browser memory.** Closing the tab or losing connectivity mid-pile loses unsaved counts. Consider periodic auto-save (every 30 seconds when there are pending entries > 0) or a localStorage-backed draft so a refresh restores in-flight work.
+- **Auto-save on re-scope can fail silently if you don't surface the error.** The current spec says the switch is cancelled on failure with a banner — make sure this is visible enough that the operator notices before tapping the selector again.
+- **No undo for a wrong save.** If you accidentally enter qty 10 when you meant 1 and hit Save, that 10 has been added to inventory. Recovery requires going to the Inventory page and editing the qty back down. A "last save: undo" toast would help, but adds complexity — defer unless this happens often.
+- **Sets with hundreds of cards.** Some Lorcana / Magic sets exceed 200 cards. Loaded all at once is fine for v1, but at 500+ rows the DOM can get sluggish on lower-end phones. Consider virtual scrolling if a target set ever feels slow.
+- **Duplicate scrolling when re-scoping.** After auto-save, the new scope renders with everything at qty 0 again, but scroll position resets to the top. That's actually correct (new pile, fresh start), but worth confirming the scroll behavior doesn't disorient.
+- **Pull-to-refresh is platform-fickle.** Disabling it from JS works on most browsers but isn't universal — iOS Safari can still trigger it in edge cases. Test on real devices.

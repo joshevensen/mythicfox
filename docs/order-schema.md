@@ -167,6 +167,27 @@ For each new order, look up matching PullSheet rows (via the parsed `Order Quant
 - For each newly-created `order_items` row, find the matching PDF line by joining on `(order_id, product_line, set_name, product_name, number, rarity, condition)`. All six fields must match exactly (TCGPlayer emits identical strings across PullSheet and PDF descriptions).
 - Set `unit_price` and `total_price` from the matched PDF line. If no PDF line matches (PDF wasn't uploaded, or matching failed), leave them null and log a warning.
 
+### 5. Decrement inventory (new orders only, non-cancelled)
+
+For each newly-created `order_items` row, decrement the matching `inventory.quantity`:
+
+1. **Skip cancelled orders entirely.** If `orders.tcgplayer_status = 'Canceled'`, do not decrement for any of that order's line items. Cancellations don't consume stock.
+2. **Find the catalog row** by snapshot fields:
+   - `products.name = order_items.product_line`
+   - `sets.name = order_items.set_name` (within that product)
+   - `cards.product_name = order_items.product_name` AND `cards.number = order_items.number` AND `cards.condition = order_items.condition`
+3. **Find the inventory row** by `inventory.card_id = cards.id`.
+4. **Decrement**: `inventory.quantity = MAX(0, inventory.quantity - order_items.quantity)`. Floor at zero — no negative inventory.
+5. **On no-match** (no `cards` row for the snapshot, or no `inventory` row for the card): log a warning, skip the decrement for that line item, and add the line to the import-result summary.
+
+The import result toast aggregates the outcomes:
+
+> *"Imported N orders. K line items couldn't be matched to inventory and were not decremented."*
+
+When K > 0, the operator can investigate manually (typically a catalog rename or a card sold off-platform that was never tracked locally).
+
+Decrement runs **only for newly-created order_items rows**, never on re-imports — which combined with the "order_items are immutable once created" rule (§Idempotency) makes the decrement idempotent: re-importing the same batch never double-decrements.
+
 ### Idempotency
 
 | Re-import scenario | Behavior |
@@ -191,7 +212,7 @@ The "never refill" rule is intentional — it preserves the immutability of hist
 The two practical decisions that consume status are explicit string comparisons at the call site:
 
 - **"Which orders need a packing slip?"** → `tcgplayer_status = 'Completed - Paid'` AND `tracking_number IS NULL`.
-- **"Skip canceled orders for inventory decrement"** (whenever inventory decrement is implemented) → skip rows where `tcgplayer_status = 'Canceled'`.
+- **"Skip canceled orders for inventory decrement"** (per [§Import flow step 5](#5-decrement-inventory-new-orders-only-non-cancelled)) → skip rows where `tcgplayer_status = 'Canceled'`.
 
 If TCGPlayer ever introduces new status strings, queries that filter by specific values will need updating, but no schema change is required.
 
@@ -219,7 +240,12 @@ All dates are stored as ISO `YYYY-MM-DD`.
 
 ---
 
-## Open questions
+## Things to consider
 
-1. **PDF parsing robustness.** Long card descriptions might wrap to multiple lines in the PDF, breaking single-line regex matching. Verify with edge cases (very long card names, multiple sets per line) before relying on the matcher in production.
-2. **Inventory decrement on order import.** Does importing an order automatically decrement `inventory.quantity` for each `order_items` line? If yes, the implementation needs a (cards-by-snapshot-fields) lookup since `order_items` has no FK. If no, inventory drifts from reality. Decision deferred to feature build time.
+- **The PDF parser is the most fragile piece of the import pipeline.** TCGPlayer can change the packing-slip PDF layout at any time and silently break the line-price extraction. Build a small regression test from real PDFs, and have the import surface a warning when matched-PDF-line count is suspiciously low for an order.
+- **Order # case sensitivity.** Order numbers from CSV are upper-case (`623394E9-…`) but the storefront URL uses lower-case (`/sellers/Mythic-Fox-Games/623394e9`). Normalize at import (canonical lower or upper) and compare case-insensitively to avoid duplicate-order bugs.
+- **New TCGPlayer status strings.** Today only `Completed - Paid` and `Canceled` have been observed. Direct orders or future TCGPlayer features may emit values like `Pending`, `Refunded`, `Returned`. The schema stores the string verbatim, but the inventory-decrement logic only knows to skip `Canceled` — any other "shouldn't decrement" status would silently consume stock. When a new value first appears, audit the decrement logic.
+- **Snapshot-field matching can drift.** The inventory decrement match key (`product_line`, `set_name`, `product_name`, `number`, `condition`) is a fuzzy match against the catalog. If TCGPlayer renames a card *between* an order being placed and being imported, the decrement won't find the inventory row. The no-match warning in the import-result toast surfaces this, but watch for a creep of mysterious unmatched rows over time.
+- **Null `unit_price` on order_items.** Line prices stay null when the PDF wasn't included in the import batch. Any future revenue report that sums `unit_price × quantity` needs to handle null gracefully — either by falling back to `inventory.calculated_price` (less accurate) or by skipping the line.
+- **The "never refill" idempotency rule is asymmetric.** Mutable header fields (`tcgplayer_status`, tracking) update on re-import; line items don't. Make sure the operator understands this so they don't expect line-price corrections from re-uploading the PDF later.
+- **Bulk re-imports never undo decrements.** If a buggy import accidentally decrements inventory wrong, fixing it requires manual reconciliation — there's no rollback. Consider a quick "show inventory delta from last import" admin tool if this ever bites.

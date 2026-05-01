@@ -31,15 +31,22 @@ Standard page padding + max-width wrapper. Wraps every admin page's body so marg
 ## Tables & lists
 
 ### `<MfTable>`
-The workhorse wrapper around PrimeVue DataTable. Bakes in: `lazy` mode, server-side pagination/sort/filter, default page size 50, page-size options [25, 50, 100, 200], URL-driven state, skeleton-row loading, standard empty/error states.
+The workhorse wrapper around PrimeVue DataTable. Bakes in: `lazy` mode, server-side pagination/sort/filter, default page size 50, page-size options [25, 50, 100, 200], URL-driven state, skeleton-row loading, standard empty/error states, and the responsive switch to card-row layout on mobile.
 
 **Props**:
 - `endpoint: string` — the Inertia route or API URL the table fetches from
 - `columns: ColumnDef[]` — typed column definitions (key, label, sortable, align, formatter, slot)
 - `defaultSort?: { column, dir }`
 - `selectable?: boolean` — enables row checkboxes + bulk action bar
+- `expandable?: boolean` — enables per-row expand toggle (used by Catalog)
 - `rowAction?: 'navigate' | 'modal' | 'none'` — row click behavior
-- Slots: `filters`, `bulk-actions`, `empty`, per-column cell slots
+- Slots:
+  - `filters` — filter panel content
+  - `bulk-actions` — bulk action bar contents (rendered when ≥1 row selected)
+  - `empty` — empty state override
+  - `expand-row` — sub-row contents for expandable tables (catalog's condition variants); slot props: `{ row }`
+  - **`mobile-row`** — per-row card layout for screens `< 768px`. Single source of truth for the page's mobile representation. Slot props: `{ row, selected, toggleSelect, expanded, toggleExpand }`. See [ux-patterns.md §Mobile-row slot pattern](ux-patterns.md). Pages without this slot fall back to horizontal-scroll table on mobile.
+  - per-column cell slots
 
 ### `<MfFilterPanel>`
 Collapsible panel above a table. Renders filter controls and the active-filter chips. Reads/writes URL state.
@@ -187,3 +194,14 @@ File upload component for CSV / PDF imports. Drag-and-drop or click-to-browse. V
 - **Color palette** — Mythic Orange `#EA5A1F`, Fox Teal `#2E899B`, Games Brown `#5C2D0E`. Defined in [ux-patterns.md §Brand colors](ux-patterns.md). Status pills stay semantic (Tailwind green/amber/red) to avoid muddling brand and meaning.
 - **Iconography** — **PrimeIcons** throughout. Reference by class name (`pi pi-printer`, `pi pi-external-link`, etc.). Component wrappers that take an `icon` prop accept the name only (without the `pi pi-` prefix); the wrapper applies the prefix.
 - **Component-level testing** — **deferred**. Pest covers backend; Vue component tests via Vitest + Vue Test Utils get added when something gets complex enough to warrant them, not from day one.
+
+---
+
+## Things to consider
+
+- **Wrapper drift from PrimeVue.** Each `Mf*` wrapper is a maintenance fork. When PrimeVue ships breaking changes, every wrapper might need updates. Acceptable trade-off for consistency, but track which wrappers are wrapping which PrimeVue components so audits are quick.
+- **`MfCardIdentity` accepts two shapes.** Convenient (one component for catalog and orders) but creates a soft contract that both `card` and `orderItem` keep the same identity field names. If the schemas ever diverge, this component silently breaks. Consider tightening to a single explicit interface (`{ name, number, set, condition?, rarity? }`).
+- **Theme tokens need a single source of truth.** `mf-orange` etc. are defined in [ux-patterns.md](ux-patterns.md) but configured in two places: the Tailwind theme (for utility classes) and the PrimeVue theme preset (for component primaries). Keep them aligned — a mismatch produces off-brand color drift.
+- **Component test seed.** When tests are eventually added, start with the wrappers that have non-trivial logic: `MfTable` (URL state, lazy mode), `MfMoneyInput` (cents↔dollars conversion), `MfStatusPill` (the green/amber/red derivation). Display-only components like `MfMoney` and `MfDate` are lower-value to test.
+- **Removing a wrapper later is hard.** Once page code says `<MfTable>`, swapping back to bare PrimeVue `<DataTable>` is a sweep across the app. Only introduce a wrapper when the value is clear; don't wrap "just in case."
+- **No Storybook / component playground specced.** When wrapper variants multiply, manual visual QA gets tedious. Consider adding Histoire (Vue's Storybook-like) once 5+ wrappers have visual variants worth previewing in isolation.

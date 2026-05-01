@@ -91,6 +91,21 @@ Click the Override cell → renders an `MfMoneyInput` in place, pre-filled with 
 
 Saves on Enter or blur; cancel on Escape. The "12 overrides active" indicator at the top updates live.
 
+### Save semantics (inline edits)
+
+Both Qty and Override inline edits follow the same save pattern. Designed to handle rapid editing (e.g. tabbing through cells) without queue thrashing or lost writes.
+
+| Rule | Behavior |
+|---|---|
+| **Skip no-ops** | If the cell value didn't change, no save fires. Tab-through-without-editing produces zero network traffic. |
+| **Coalesce in-flight saves to the same cell** | If a save is already in flight for the cell being edited, abort the in-flight request (`AbortController`) and dispatch a new one with the latest value. |
+| **Last-write-wins** | If two saves to the same cell race despite coalescing (e.g. abort didn't reach the server in time), the second response is authoritative. The cell renders whatever value the server confirms. |
+| **Independent cells run in parallel** | Editing different cells never blocks each other. Each cell tracks its own save state. |
+
+No blunt debouncing on blur — a 200–300ms delay would feel laggy when editing quickly. Coalescing is invisible to the user and accomplishes the same goal.
+
+Server-side: each save is an idempotent UPDATE on a single inventory row. Concurrent updates to different rows don't conflict. Concurrent updates to the same row collapse to last-write-wins via the standard transaction.
+
 ### Per-row actions
 
 Right-edge actions column. Two icon buttons (or a kebab menu if cramped):
@@ -177,27 +192,27 @@ Writes:
 
 ## Mobile layout
 
-On screens `< 768px`, the table switches to card rows because the column count (Card Name + Number + Market + Low + Calculated + Override + Qty + actions) is too wide for a phone.
+Standard responsive behavior per [ux-patterns.md §Responsive behavior](ux-patterns.md). Page-specific deviations:
 
-```
-┌──────────────────────────────────────┐
-│ ☐  Boltyn                            │
-│    #BOL001                           │
-│                                      │
-│    Market $0.19    Low $0.13         │
-│    Calculated $0.04                  │
-│    Override [    edit    ]           │
-│    Qty      [    3       ]           │
-│                                      │
-│    [↺ Reset]   [🗑 Remove]            │
-└──────────────────────────────────────┘
-```
-
-- Override and Qty cells expose their inline edit on tap, same behavior as desktop.
-- Filter panel becomes a full-screen drawer triggered by a filter button in the page header. The required-filter empty state remains the same — "Pick a product, set, and condition to view inventory."
-- Bulk action bar (visible when ≥1 row selected) stays sticky at the top.
-- The **Export Pricing** primary button sticks to the bottom of the viewport on phones so it's reachable with one thumb.
-- The preview modal becomes a full-screen sheet on phones; the Old / New / Δ table inside scrolls horizontally if needed since each row is short.
+- **Card-row layout** on screens `< 768px` (the column count is too wide for a phone):
+  ```
+  ┌──────────────────────────────────────┐
+  │ ☐  Boltyn                            │
+  │    #BOL001                           │
+  │                                      │
+  │    Market $0.19    Low $0.13         │
+  │    Calculated $0.04                  │
+  │    Override [    edit    ]           │
+  │    Qty      [    3       ]           │
+  │                                      │
+  │    [↺ Reset]   [🗑 Remove]            │
+  └──────────────────────────────────────┘
+  ```
+- **Override and Qty cells expose their inline edit on tap**, same behavior as desktop.
+- **Bulk action bar** (visible when ≥1 row selected) stays sticky at the top of the card list.
+- **Export Pricing primary button sticks to the bottom of the viewport** on phones for one-thumb reach.
+- **Preview modal's Old / New / Δ table** scrolls horizontally inside the full-screen sheet if columns overflow (each row is short, so this is rare).
+- **Required-filter empty state is unchanged**: "Pick a product, set, and condition to view inventory."
 
 ---
 
@@ -215,3 +230,15 @@ On screens `< 768px`, the table switches to card rows because the column count (
 | Recompute in flight | Export button shows spinner; preview modal opens once recompute completes. |
 | Pricing export download success | Toast: "Pricing CSV downloaded — N rows, M changed." |
 | Pricing export download failure | Modal stays open, error banner inside the modal. `last_exported_price` is **not** updated. User can retry. |
+
+---
+
+## Things to consider
+
+- **Required-filter empty state vs deep-link.** A bookmarked URL with all three filters lands directly in the table — bypassing the "Pick filters" prompt. That's intentional, but verify the URL-state restoration applies all three before rendering, or you'll briefly flash the empty state on every revisit.
+- **The Remove vs Mark out of stock asymmetry is confusing.** Per-row Remove clears override + qty; bulk Mark out of stock keeps overrides. If users get tripped up, surface the difference more clearly in the confirm dialog body text.
+- **Export Pricing recomputes ALL inventory.** For larger inventories this isn't instant — could take seconds. The button should show a spinner immediately and the recompute should run via a job queue if it ever exceeds a few seconds, with a "completed" notification.
+- **First-ever export shows everything as "changed".** With no `last_exported_price` baseline yet, every row counts as changed. The diff is overwhelming. Consider a one-time "First export — all rows are new" banner inside the preview modal.
+- **Override count indicator can become inaccurate after bulk actions.** Be sure the count refetches after Clear-overrides bulk so the indicator stays in sync.
+- **Cancel after recompute leaves `calculated_price` updated but not committed to TCGPlayer.** The next preview will still show the same diff. That's fine, but make sure the operator understands recompute always happens, even on Cancel.
+- **The Mark-out-of-stock bulk preserves overrides.** That's by design (the user might temporarily be out and want to keep the price). But it means a "soft sell-out" trail forms over time — overrides on rows with qty=0. Periodic cleanup may eventually be warranted.

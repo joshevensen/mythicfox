@@ -93,3 +93,14 @@ Reads / writes:
 | Submitting | Submit button shows spinner, fields disabled. |
 | Invalid credentials | Inline error above the form; password field cleared, email retained. |
 | Rate-limited | Inline error with countdown; submit button disabled until countdown expires. |
+
+---
+
+## Things to consider
+
+- **The generic error message is a security feature, not a UX miss.** "Email or password incorrect" prevents account enumeration. Don't be tempted to make it more specific (e.g. "no such account") even when debugging — keep the wording generic.
+- **No password reset = full lockout if you forget.** Recovery is via the `php artisan user:reset-password` command on the droplet (per [saas-design.md §Auth](../saas-design.md)). Keep the command name and droplet SSH access documented somewhere outside the droplet itself, or you'll have a bad time.
+- **Long session lifetime (~2 weeks).** Convenient if you're the only user on a personal device, risky if you ever sign in from a shared machine. Consider shortening to a few days if device sharing becomes a real scenario.
+- **Login is the only public-auth surface.** That makes it a high-value target for credential stuffing and XSS. Sanitize inputs, keep the rate limiter on (5/min default is right), and don't add any features here that introduce additional code paths.
+- **Browser autofill behavior varies.** `autocomplete=email` and `autocomplete=current-password` are correct and let password managers work, but some setups (e.g. iOS keychain) need extra hints to autofill cleanly. Validate on real devices.
+- **"Already signed in → redirect to /dashboard"** is enforced server-side. Don't rely on client-side guards alone — Inertia route-level middleware should do it.

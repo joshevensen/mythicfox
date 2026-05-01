@@ -26,5 +26,13 @@ There is no order detail page — clicking the TCGPlayer-link icon on an order r
 
 - **Mobile-first throughout the app.** Every page must function on a 375px-wide screen. Add Cards and the public homepage have layouts specifically tuned for phone use; other pages use responsive table patterns (card-row layout on phones, horizontal scroll on tablets, full table on desktop). See [ux/ux-patterns.md §Responsive behavior](ux/ux-patterns.md).
 - Admin lives behind `/login` (Fortify). The public homepage is the only unauthenticated route besides `/login` itself.
-- Open questions still live inside the relevant per-page doc's "Open questions" section. The cross-doc `gaps.md` has been retired now that every gap has a home.
+- All page-level open questions have been resolved. The cross-doc `gaps.md` has been retired.
 - Brand colors, icon library, and testing posture are settled in [ux/ux-patterns.md](ux/ux-patterns.md) and [ux/components.md](ux/components.md).
+
+---
+
+## Things to consider
+
+- **This file is a TOC; don't let it grow back.** Page-specific detail belongs in the per-page docs, not here. When adding a new page, add a single row to the table above and create a fresh doc under `ux/`.
+- **Stale link risk.** If a per-page doc gets renamed or deleted, the table above goes stale. Keep this in sync as part of any per-page doc change.
+- **Mobile-first is enforced via [ux/ux-patterns.md](ux/ux-patterns.md).** Per-page docs only call out *deviations* — desktop-only features need explicit justification.

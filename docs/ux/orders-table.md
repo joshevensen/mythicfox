@@ -177,3 +177,14 @@ Filter panel becomes a full-screen drawer triggered by a filter button in the pa
 | Import in flight | Import button shows "Importing…" with spinner. Existing table rows unchanged until refresh. |
 | Import success | Toast and auto-reload. |
 | Import partial failure | Some files parsed, some didn't. Banner shows which failed and why. Successful files still applied. |
+
+---
+
+## Things to consider
+
+- **Bulk print can produce huge documents.** 50 orders × 2 pages = 100 pages. Browser print preview may struggle, and a long single print job is hard to recover from if the printer jams. Consider a sensible cap (e.g. max 25 orders per bulk print) with a confirm-to-proceed if the operator selects more.
+- **"Open in TCGPlayer" depends on TCGPlayer's URL structure.** `https://sellerportal.tcgplayer.com/orders/{order#}` — if TCGPlayer changes that URL pattern, every order row's icon link breaks silently. Worth a once-a-quarter manual verification.
+- **The status column derivation can shift quietly.** A single tracking-number entry on TCGPlayer's side flips an order from amber to green on the next import. If the operator wants to know "what changed since last visit," there's no signal — consider an "imported in the last 24h" indicator on row chips eventually.
+- **Date-range default of last 90 days hides older orders.** If you ever import historical data (e.g. a year of past orders), they won't show by default. Consider a "show all time" preset link in the date filter for those moments.
+- **Per-order print route renders a single slip.** Make sure the route is unauthenticated-friendly only insofar as it requires admin auth (it shouldn't be public — addresses are PII). Render lives behind the standard auth middleware.
+- **Status filter populated from `DISTINCT tcgplayer_status`.** A typo'd or one-off status string from TCGPlayer will appear as an option forever. If it ever happens, the cleanup is a manual UPDATE on the orders table.

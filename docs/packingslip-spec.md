@@ -149,3 +149,15 @@ If you have any questions or concerns about this order:
 - Each slip emits a **two-page pair** (side A then side B), separated by `page-break-after: always`. Multi-slip orders emit additional page pairs in sequence; long-edge duplex pairs each side A with the following side B at the printer.
 - No persistent artifact. The slip can be re-rendered at any time from `orders` + `order_items` data — there is no `files` row created for packing slips.
 - For the rare case where a PDF copy is wanted (e.g. emailing a customer), the browser's built-in "Save as PDF" handles it on the same page.
+
+---
+
+## Things to consider
+
+- **Print rendering varies by browser.** Chrome's print engine is the reference; Safari and Firefox subtly differ in margin handling and `@page` support. Test the actual fold-line positions on the production browser of choice (Chrome) before relying on the millimeter-level alignment.
+- **Printer margins can shift the page.** Even with `@page { margin: 0 }`, some printers add a non-printable border (typically 0.1–0.2") that effectively shifts the address window's apparent position relative to the envelope. Test with the actual printer + envelope combo before printing real customer orders.
+- **Duplex orientation isn't programmatic.** The browser print dialog can't enforce long-edge flip; the operator has to pick it manually. A printed slip with the wrong duplex setting puts addresses on the wrong panel. Consider a one-time post-it on the printer, or print a test slip after every printer config change.
+- **Long card names overflow the table.** The card-list column in the slip body has a fixed width. Cards with very long names (some Lorcana/F&B cards push 40+ characters) will either truncate or wrap. Decide which behavior is acceptable and style accordingly; truncation with an ellipsis is the safer default.
+- **Multi-slip orders need multi-envelope packing.** When an order has more than 20 cards, multiple full slips print. The operator needs to remember to pack into multiple envelopes. The slip itself doesn't visually flag "1 of 3" — consider adding a "Sheet X of N" header on multi-slip orders so the operator can't accidentally pack them all into one envelope.
+- **Print preview lies.** Browsers occasionally render print preview slightly differently from the actual paper output. Always validate on the physical printer before assuming the spec is correct.
+- **Address window slop.** The 1/4" vertical clearance accommodates packet position variance inside the envelope. If new envelope stock has different inner dimensions than the current spec, the addresses may peek outside the windows. Verify with each new envelope batch.

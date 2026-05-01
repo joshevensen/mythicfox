@@ -1,4 +1,4 @@
-# Mythic Fox Games — SaaS Design Document
+# Mythic Fox Games — System Design
 
 ## Overview
 
@@ -10,7 +10,7 @@ The system has three functional areas:
 2. **Pricing Tool** — Refresh TCGPlayer listing prices from a fresh market-data export, apply rules, push back as a CSV
 3. **Packing Slip Generator** — Generate custom packing slips from TCGPlayer order exports
 
-A public-facing brand page at mythicfoxgames.com will serve as a trust indicator and future buy list platform. The admin SaaS is behind login.
+A public-facing brand page at mythicfoxgames.com will serve as a trust indicator and future buy list platform. The admin tool is behind login.
 
 ---
 
@@ -99,7 +99,12 @@ Caches the public TCGPlayer storefront rating and feedback for display on the pu
 |created_at|timestamp||
 |updated_at|timestamp||
 
-The public homepage's "What buyers say" section reads from this row. If `scraped_at IS NULL`, the section hides entirely — no placeholder, no fake numbers.
+The public homepage's "What buyers say" section reads from this row. The section hides entirely (no placeholder, no fake numbers) in either of these cases:
+
+- `scraped_at IS NULL` — the scraper has never succeeded.
+- `scraped_at < now() - 14 days` — last successful scrape is older than two weeks. Past that point, displaying old values risks misleading visitors more than helping them.
+
+The 14-day threshold is the product-side guardrail against scraper failure. The Settings page surfaces a warning before this threshold trips (see [ux/settings.md §Seller Stats Scraper](ux/settings.md)) so the operator can investigate before the public homepage section silently disappears.
 
 ---
 
@@ -241,6 +246,19 @@ A Laravel job (`App\Jobs\RefreshSellerStats` invoked by the `seller-stats:refres
 ## Public Website (mythicfoxgames.com)
 
 - Brand/trust page for Mythic Fox Games
-- Admin login routes to the SaaS dashboard
+- Admin login routes to the dashboard
 - Future: buy list for purchasing collections from the public
 - Not a storefront — TCGPlayer remains the sales channel
+
+---
+
+## Things to consider
+
+- **Single-droplet, no failover.** A droplet outage is full app downtime. Acceptable for a solo operation, but means awareness of droplet health is on you. Forge has a basic uptime widget; consider an external monitor (UptimeRobot, DO's own monitoring) so you hear about outages quickly.
+- **Backups need a tested restore.** Nightly `pg_dump` to Spaces is fine until you actually try to restore one and discover something's wrong with the backup script. Run a restore drill quarterly into a throwaway database.
+- **Browsershot pulls in headless Chrome.** ~700MB of disk plus memory overhead per render. Only the seller-stats scraper uses it (per [§Seller stats scraper](#seller-stats-scraper)) — if Chrome dependency becomes a maintenance pain, consider replacing the scraper with a pure-HTML fetch + regex if TCGPlayer's storefront ever stops requiring JS to render.
+- **No staging means bad commits hit prod.** Forge auto-deploys on `main` push. Mitigations: run tests in GitHub Actions before the merge; keep a documented rollback playbook (`git revert`, push, wait for redeploy); never push directly without local verification.
+- **Forge's deploy script doesn't run database migrations on a separate environment first.** Migrations that work locally on your dev DB might fail on prod's larger dataset (e.g. a non-null constraint added to a column with millions of rows). Test migrations against a recent prod snapshot.
+- **90-day import retention loses old source files.** If something goes wrong four months later and you need to re-import a historical batch, the original CSVs are gone. Either extend retention to 180+ days, or accept that "re-import a 4-month-old batch" requires re-downloading from TCGPlayer.
+- **Admin recovery path depends on droplet shell access.** No password reset means if SSH ever breaks, you're locked out. Keep `.env` and the artisan commands documented somewhere outside the droplet (e.g. a personal note manager).
+- **Single-user is intentional, not a debt.** This app is a personal management tool, not a multi-tenant SaaS. Auth, dashboard greeting, scraper triggering, retention policies all assume one operator — that's a feature. The `users` table exists (Fortify scaffolding) and auth/sessions don't *require* one user, so nothing is a brick wall if priorities ever change. But there's no plan to support multiple users, no roadmap for multi-tenancy, and no design pressure to keep the option open. Treat single-user as a fixed assumption, not a future migration target.
