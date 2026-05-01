@@ -125,7 +125,7 @@ Treat the parsed components (physical / finish / edition) as a presentation conc
 
 ## Pricing logic
 
-Pricing rules live on `products` (required) and `sets` (optional override). Set rules take **full** precedence when defined — there is no partial inheritance. Null values on a set fall back to the product's values entirely.
+Pricing rules live on `products` (required) and `sets` (optional override). Each rule field on a set is independently nullable: a non-null set value wins for that field; a null set value falls back to the product's value for that same field. Fallback is **per-field**, not all-or-nothing — a set can override `high_offset` while leaving `market_offset` to inherit from the product.
 
 ### Rule fields
 
