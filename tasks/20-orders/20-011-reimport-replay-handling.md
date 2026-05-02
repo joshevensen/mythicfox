@@ -1,7 +1,7 @@
 ---
 id: "20-011"
 title: "Re-import and replay handling (idempotency hardening)"
-status: pending
+status: complete
 phase: "20-orders"
 size: M
 depends_on: ["20-008", "20-009"]
@@ -19,18 +19,18 @@ The intent is to lock the contract: any future change to `OrderImporter` must ke
 
 ## Acceptance criteria
 
-- [ ] Every row in `docs/order-schema.md#idempotency` has a matching Pest feature test:
+- [x] Every row in `docs/order-schema.md#idempotency` has a matching Pest feature test:
   - Same batch uploaded twice → no new `orders` rows, no new `order_items` rows. `OrderImportResult.ordersInserted == 0`, `ordersUpdated == 0`.
   - Status changes upstream (e.g. `Completed - Paid` → `Canceled`) → `tcgplayer_status` updates in place; `order_items` untouched; `ordersUpdated == 1`.
   - Tracking added after first import → `tracking_number` and `carrier` update; nothing else changes.
   - Order in OrderList but not in earlier import (newer order) → inserted fresh, line items created, decrement runs.
   - Order had null line prices, later batch includes the PDF → **line prices stay null** ("never refill" rule).
-- [ ] **Files audit**: re-uploading the same physical file produces a fresh `files` row with a fresh ULID-based path. The original row stays. (Per `docs/saas-design.md#files`, the table is an audit log; deduplication is not desired.) Test asserts two rows exist after two uploads of the same file.
-- [ ] **Decrement is not re-applied**: re-importing a batch where every order is pre-existing causes **zero** inventory changes. Test sets up a card with quantity `10`, imports an order for `qty 3` (inventory now `7`), re-imports the same batch (inventory stays `7`).
-- [ ] **Status-flip-to-Canceled does not undo decrement**: if an order is imported as `Completed - Paid` (decrement runs) and re-imported as `Canceled`, the inventory **stays decremented**. The cancellation check in `20-009` is "skip decrement on canceled orders during the **initial** import" — it is not a refund. Document this in the test name and assert against actual inventory.
-- [ ] `OrderImportResult` (defined in `20-008`) gains a clean `summaryLine(): string` method that emits `"Imported {N} orders ({M} new, {K} updated)."` plus, when applicable, ` "L line items couldn't be matched to inventory and were not decremented."` — matching the toast string in `docs/order-schema.md#5-decrement-inventory-new-orders-only-non-cancelled`.
-- [ ] Pest unit test for `summaryLine()` covers all permutations: only-new, only-updated, mixed, with and without unmatched lines.
-- [ ] `composer test` passes.
+- [x] **Files audit**: re-uploading the same physical file produces a fresh `files` row with a fresh ULID-based path. The original row stays. (Per `docs/saas-design.md#files`, the table is an audit log; deduplication is not desired.) Test asserts two rows exist after two uploads of the same file.
+- [x] **Decrement is not re-applied**: re-importing a batch where every order is pre-existing causes **zero** inventory changes. Test sets up a card with quantity `10`, imports an order for `qty 3` (inventory now `7`), re-imports the same batch (inventory stays `7`).
+- [x] **Status-flip-to-Canceled does not undo decrement**: if an order is imported as `Completed - Paid` (decrement runs) and re-imported as `Canceled`, the inventory **stays decremented**. The cancellation check in `20-009` is "skip decrement on canceled orders during the **initial** import" — it is not a refund. Document this in the test name and assert against actual inventory.
+- [x] `OrderImportResult` (defined in `20-008`) gains a clean `summaryLine(): string` method that emits `"Imported {N} orders ({M} new, {K} updated)."` plus, when applicable, ` "L line items couldn't be matched to inventory and were not decremented."` — matching the toast string in `docs/order-schema.md#5-decrement-inventory-new-orders-only-non-cancelled`.
+- [x] Pest unit test for `summaryLine()` covers all permutations: only-new, only-updated, mixed, with and without unmatched lines.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
