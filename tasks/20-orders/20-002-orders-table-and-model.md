@@ -1,7 +1,7 @@
 ---
 id: "20-002"
 title: "Create `orders` table and Eloquent model"
-status: pending
+status: complete
 phase: "20-orders"
 size: M
 depends_on: ["20-001"]
@@ -18,7 +18,7 @@ The `orders` table holds one row per imported TCGPlayer order. It is a denormali
 
 ## Acceptance criteria
 
-- [ ] Migration `create_orders_table` creates a table with every column in `docs/order-schema.md#orders`:
+- [x] Migration `create_orders_table` creates a table with every column in `docs/order-schema.md#orders`:
   - `id` (bigint PK)
   - `tcgplayer_order_number` (string, **unique**)
   - `tcgplayer_status` (string)
@@ -38,18 +38,18 @@ The `orders` table holds one row per imported TCGPlayer order. It is a denormali
   - `carrier` (string nullable)
   - `imported_at` (timestamp)
   - `created_at`, `updated_at`
-- [ ] Indexes per `docs/ux/orders-table.md#indexes-db`:
+- [x] Indexes per `docs/ux/orders-table.md#indexes-db`:
   - Unique index on `tcgplayer_order_number` (already implied by the unique constraint).
   - Index on `order_date`.
   - Index on `buyer_name`.
   - Index on `tcgplayer_status`.
-- [ ] `App\Models\Order` Eloquent model:
+- [x] `App\Models\Order` Eloquent model:
   - `$fillable` covers every non-`id` / non-timestamp column.
   - Casts: `order_date` → `date`, `imported_at` → `datetime`, `buyer_paid` → `boolean`, `product_weight` → `decimal:2`, `item_count`/`product_amount`/`shipping_amount`/`total_amount` → `integer`.
   - Has a `items()` HasMany relation to `OrderItem` (the model exists by `20-003` — declare the relation here referring to `\App\Models\OrderItem::class`; this is fine since `20-003` is a hard prerequisite for any importer that loads them).
-- [ ] Pest feature test asserting model insert/read round-trip with all fields populated.
-- [ ] Pest test asserting the unique constraint on `tcgplayer_order_number` raises an integrity-constraint exception when violated.
-- [ ] `composer test` passes.
+- [x] Pest feature test asserting model insert/read round-trip with all fields populated.
+- [x] Pest test asserting the unique constraint on `tcgplayer_order_number` raises an integrity-constraint exception when violated.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
