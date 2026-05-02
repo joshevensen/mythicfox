@@ -2,6 +2,7 @@
 
 namespace App\Services\Orders\Parsers;
 
+use App\Services\Orders\SellerIdValidator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -24,6 +25,13 @@ use Smalot\PdfParser\Parser;
  */
 class PackingSlipPdfParser
 {
+    private readonly SellerIdValidator $sellerIdValidator;
+
+    public function __construct(?SellerIdValidator $sellerIdValidator = null)
+    {
+        $this->sellerIdValidator = $sellerIdValidator ?? new SellerIdValidator;
+    }
+
     /**
      * @return Collection<int, PackingSlipLine>
      */
@@ -45,6 +53,8 @@ class PackingSlipPdfParser
 
                 continue;
             }
+
+            $this->sellerIdValidator->assertValid($orderNumber);
 
             $lineItemRows = $this->extractLineItems($reconstructed, $pageIndex);
 

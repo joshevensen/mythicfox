@@ -3,12 +3,20 @@
 namespace App\Services\Orders\Parsers;
 
 use App\Exceptions\OrderImport\InvalidShippingExportException;
+use App\Services\Orders\SellerIdValidator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
 class ShippingExportParser
 {
+    private readonly SellerIdValidator $sellerIdValidator;
+
+    public function __construct(?SellerIdValidator $sellerIdValidator = null)
+    {
+        $this->sellerIdValidator = $sellerIdValidator ?? new SellerIdValidator;
+    }
+
     private const RequiredHeaders = [
         'Order #',
         'FirstName',
@@ -89,8 +97,11 @@ class ShippingExportParser
         $itemCountRaw = trim((string) ($row['Item Count'] ?? ''));
         $weightRaw = trim((string) ($row['Product Weight'] ?? ''));
 
+        $orderNumber = strtoupper($orderNumberRaw);
+        $this->sellerIdValidator->assertValid($orderNumber);
+
         return new ShippingExportRow(
-            tcgplayerOrderNumber: strtoupper($orderNumberRaw),
+            tcgplayerOrderNumber: $orderNumber,
             buyerFirstname: trim((string) ($row['FirstName'] ?? '')),
             buyerLastname: trim((string) ($row['LastName'] ?? '')),
             address1: $this->nullifyEmpty($row['Address1'] ?? null),

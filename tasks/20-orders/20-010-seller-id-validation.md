@@ -1,7 +1,7 @@
 ---
 id: "20-010"
 title: "Validate `tcgplayer_order_number` against `TCGPLAYER_SELLER_ID`"
-status: pending
+status: complete
 phase: "20-orders"
 size: S
 depends_on: ["20-004", "20-005", "20-006", "20-007"]
@@ -16,19 +16,19 @@ Every TCGPlayer order number is a hyphen-separated hex string whose **first segm
 
 ## Acceptance criteria
 
-- [ ] A reusable validator (e.g. `App\Services\Orders\SellerIdValidator`) exposes `isValid(string $orderNumber): bool` and `assertValid(string $orderNumber): void` (the latter throws `App\Exceptions\OrderImport\WrongSellerException` carrying the offending order number and the configured seller ID).
-- [ ] The validator reads the configured ID via `config('services.tcgplayer.seller_id')` (already wired by `00-004`).
-- [ ] Comparison is **case-insensitive** — `623394E9-…` and `623394e9-…` both match a seller ID configured as `623394e9`.
-- [ ] The validator splits the order number on `-` and compares only the first segment. Trailing segments (`23CAFE-565FC`, etc.) are not consulted.
-- [ ] All four parsers (`20-004`–`20-007`) call `assertValid()` on every emitted order number before returning the row. A bad order number aborts that file's parse with the domain exception; the merge step in `20-008` catches it, adds it to `OrderImportResult.errors`, and skips the file (matching the partial-failure behavior already specified there).
-- [ ] If `TCGPLAYER_SELLER_ID` is empty/null, the validator's `isValid()` returns `true` (skips the check). This avoids breaking the test suite when the config isn't set, and lets the operator opt out by leaving the env empty. Document this fall-through in the class docblock.
-- [ ] Pest unit tests:
+- [x] A reusable validator (e.g. `App\Services\Orders\SellerIdValidator`) exposes `isValid(string $orderNumber): bool` and `assertValid(string $orderNumber): void` (the latter throws `App\Exceptions\OrderImport\WrongSellerException` carrying the offending order number and the configured seller ID).
+- [x] The validator reads the configured ID via `config('services.tcgplayer.seller_id')` (already wired by `00-004`).
+- [x] Comparison is **case-insensitive** — `623394E9-…` and `623394e9-…` both match a seller ID configured as `623394e9`.
+- [x] The validator splits the order number on `-` and compares only the first segment. Trailing segments (`23CAFE-565FC`, etc.) are not consulted.
+- [x] All four parsers (`20-004`–`20-007`) call `assertValid()` on every emitted order number before returning the row. A bad order number aborts that file's parse with the domain exception; the merge step in `20-008` catches it, adds it to `OrderImportResult.errors`, and skips the file (matching the partial-failure behavior already specified there).
+- [x] If `TCGPLAYER_SELLER_ID` is empty/null, the validator's `isValid()` returns `true` (skips the check). This avoids breaking the test suite when the config isn't set, and lets the operator opt out by leaving the env empty. Document this fall-through in the class docblock.
+- [x] Pest unit tests:
   - Configured `623394e9`; `623394E9-…-...` and `623394e9-…-...` both validate.
   - Configured `623394e9`; `ABCD1234-…-...` raises `WrongSellerException`.
   - Configured `''`; any order number passes.
   - Empty / single-segment order number raises `WrongSellerException`.
-- [ ] Pest feature test: an OrderList containing an alien seller's order number → import surfaces the exception in the result's `errors` collection without persisting any orders from that file.
-- [ ] `composer test` passes.
+- [x] Pest feature test: an OrderList containing an alien seller's order number → import surfaces the exception in the result's `errors` collection without persisting any orders from that file.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

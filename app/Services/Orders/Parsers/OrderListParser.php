@@ -3,12 +3,20 @@
 namespace App\Services\Orders\Parsers;
 
 use App\Exceptions\OrderImport\InvalidOrderListException;
+use App\Services\Orders\SellerIdValidator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
 class OrderListParser
 {
+    private readonly SellerIdValidator $sellerIdValidator;
+
+    public function __construct(?SellerIdValidator $sellerIdValidator = null)
+    {
+        $this->sellerIdValidator = $sellerIdValidator ?? new SellerIdValidator;
+    }
+
     private const RequiredHeaders = [
         'Order #',
         'Buyer Name',
@@ -92,8 +100,11 @@ class OrderListParser
 
         $buyerPaidRaw = trim((string) ($row['Buyer Paid'] ?? ''));
 
+        $orderNumber = strtoupper($orderNumberRaw);
+        $this->sellerIdValidator->assertValid($orderNumber);
+
         return new OrderListRow(
-            tcgplayerOrderNumber: strtoupper($orderNumberRaw),
+            tcgplayerOrderNumber: $orderNumber,
             tcgplayerStatus: trim((string) ($row['Status'] ?? '')),
             buyerName: trim((string) ($row['Buyer Name'] ?? '')),
             orderDate: $orderDate->startOfDay(),

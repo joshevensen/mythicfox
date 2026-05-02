@@ -3,11 +3,19 @@
 namespace App\Services\Orders\Parsers;
 
 use App\Exceptions\OrderImport\InvalidPullSheetException;
+use App\Services\Orders\SellerIdValidator;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
 class PullSheetParser
 {
+    private readonly SellerIdValidator $sellerIdValidator;
+
+    public function __construct(?SellerIdValidator $sellerIdValidator = null)
+    {
+        $this->sellerIdValidator = $sellerIdValidator ?? new SellerIdValidator;
+    }
+
     private const RequiredHeaders = [
         'Product Line',
         'Product Name',
@@ -56,8 +64,10 @@ class PullSheetParser
                 }
 
                 foreach ($this->splitOrderQuantity($row['Order Quantity'] ?? '', $rowNumber) as [$orderNumber, $quantity]) {
+                    $canonical = strtoupper($orderNumber);
+                    $this->sellerIdValidator->assertValid($canonical);
                     $items->push(new PullSheetLineItem(
-                        tcgplayerOrderNumber: strtoupper($orderNumber),
+                        tcgplayerOrderNumber: $canonical,
                         quantity: $quantity,
                         productLine: trim((string) ($row['Product Line'] ?? '')),
                         setName: trim((string) ($row['Set'] ?? '')),
