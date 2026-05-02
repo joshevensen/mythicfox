@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 43 / 67 tasks complete**
+**Total: 44 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -61,11 +61,11 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **30-012** `M` — [Build MfConfirmDialog + MfToast + MfErrorBanner feedback components](30-components/30-012-mfconfirm-toast-error-banner.md)
 - [x] **30-013** `M` — [Build MfFileDropzone (drag-drop + click-to-browse uploader)](30-components/30-013-mffiledropzone.md)
 
-## Phase 40 — Public pages (2 / 4)
+## Phase 40 — Public pages (3 / 4)
 
 - [x] **40-001** `M` — [Public layout shell + brand styling for public-facing pages](40-public-pages/40-001-public-layout-and-brand-styling.md)
 - [ ] **40-002** `L` — [Public homepage at `/` — hero, about, what-you-get, what-buyers-say](40-public-pages/40-002-public-homepage.md)
-- [ ] **40-003** `M` — [Login page at `/login` — email + password](40-public-pages/40-003-login-page.md)
+- [x] **40-003** `M` — [Login page at `/login` — email + password](40-public-pages/40-003-login-page.md)
 - [x] **40-004** `S` — [Public footer + sitemap.xml + robots.txt](40-public-pages/40-004-public-footer-and-shared-chrome.md)
 
 ## Phase 50 — Admin pages (0 / 6)
