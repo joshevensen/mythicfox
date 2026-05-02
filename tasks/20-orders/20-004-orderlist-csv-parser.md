@@ -1,7 +1,7 @@
 ---
 id: "20-004"
 title: "Implement OrderList CSV parser"
-status: pending
+status: complete
 phase: "20-orders"
 size: M
 depends_on: ["20-002"]
@@ -19,10 +19,10 @@ references:
 
 ## Acceptance criteria
 
-- [ ] `App\Services\Orders\Parsers\OrderListParser` (or equivalent class) exposes a method like `parse(string $absolutePath): Collection<OrderListRow>` returning a typed DTO/array per CSV row.
-- [ ] The parser is **quote-aware** — uses `League\Csv` or `fgetcsv`, not naive `str_getcsv` on raw lines. Internal commas inside quoted natural-language dates (`"Friday, 14 November 2025"`) must round-trip cleanly.
-- [ ] Columns are mapped **by header name**, not position — `docs/order-schema.md#csv-parsing-notes` notes the header declares 10 columns but data rows have 9.
-- [ ] Each parsed row exposes:
+- [x] `App\Services\Orders\Parsers\OrderListParser` (or equivalent class) exposes a method like `parse(string $absolutePath): Collection<OrderListRow>` returning a typed DTO/array per CSV row.
+- [x] The parser is **quote-aware** — uses `League\Csv` or `fgetcsv`, not naive `str_getcsv` on raw lines. Internal commas inside quoted natural-language dates (`"Friday, 14 November 2025"`) must round-trip cleanly.
+- [x] Columns are mapped **by header name**, not position — `docs/order-schema.md#csv-parsing-notes` notes the header declares 10 columns but data rows have 9.
+- [x] Each parsed row exposes:
   - `tcgplayer_order_number` — uppercased from `Order #`
   - `tcgplayer_status` — verbatim string from `Status`
   - `buyer_name` — verbatim from `Buyer Name`
@@ -31,14 +31,14 @@ references:
   - `shipping_amount` — integer cents
   - `total_amount` — integer cents
   - `buyer_paid` — boolean (`True` → true, `False` → false; case-insensitive)
-- [ ] On a malformed/missing column the parser raises a domain exception (`App\Exceptions\OrderImport\InvalidOrderListException`) carrying the row number and the missing/invalid header — so the import flow can surface it via the error banner.
-- [ ] Pest unit test fixture covers:
+- [x] On a malformed/missing column the parser raises a domain exception (`App\Exceptions\OrderImport\InvalidOrderListException`) carrying the row number and the missing/invalid header — so the import flow can surface it via the error banner.
+- [x] Pest unit test fixture covers:
   - A canonical OrderList.csv (2–3 rows including one canceled order). Use a snippet of `docs/assets/OrderList.csv` if present, or hand-craft one matching the documented column layout.
   - The 9-vs-10 header/data mismatch is tolerated.
   - Money-to-cents conversion is exact for `0.20`, `10.11`, `1234.56`.
   - Date parsing handles single-digit and two-digit days.
   - An invalid file (missing header) raises `InvalidOrderListException`.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

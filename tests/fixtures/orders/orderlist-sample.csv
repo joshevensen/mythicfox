@@ -1,0 +1,4 @@
+Order #,Buyer Name,Order Date,Status,Shipping Type,Product Amt,Shipping Amt,Total Amt,Buyer Paid,Carrier Information
+"623394E9-23CAFE-565FC","Thomas Birch","Friday, 14 November 2025","Completed - Paid","Standard","6.9","1.99","8.89","True"
+"623394E9-805EEF-0F0CC","NICHOLAS STARR","Thursday, 20 November 2025","Completed - Paid","Standard","1.5","1.99","3.49","True"
+"623394e9-AAAAAA-BBBBB","Lower Case Buyer","Sunday, 7 December 2025","Canceled","Standard","12.34","0.00","12.34","False"
