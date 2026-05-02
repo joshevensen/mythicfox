@@ -2,6 +2,8 @@
 
 Ordered build plan derived from `/docs`. An autonomous agent works through these one at a time, marking each complete before moving on.
 
+**Live progress tracker: [CHECKLIST.md](CHECKLIST.md)** — every task with a checkbox, grouped by phase. Update it whenever a task ships.
+
 ## How the agent works through tasks
 
 1. Find the lowest-numbered task whose `status` is `pending` and whose `depends_on` are all `complete`.
