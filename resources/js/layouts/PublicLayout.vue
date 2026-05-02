@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import PublicFooter from '@/components/PublicFooter.vue';
 
 type Props = {
     title: string;
@@ -20,7 +21,6 @@ defineProps<Props>();
         <main class="flex-1">
             <slot />
         </main>
-        <!-- Footer placeholder — replaced by PublicFooter in task 40-004 -->
-        <footer />
+        <PublicFooter />
     </div>
 </template>
