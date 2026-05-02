@@ -1,5 +1,7 @@
 # Mythic Fox
 
+[![CI](https://github.com/joshevensen/mythicfox/actions/workflows/ci.yml/badge.svg)](https://github.com/joshevensen/mythicfox/actions/workflows/ci.yml)
+
 Personal admin tool for the Mythic Fox Games TCGPlayer storefront. Single-operator Laravel app — order import from TCGPlayer CSV/PDF exports, inventory + pricing management, packing-slip rendering, and a small public marketing site.
 
 See [docs/saas-design.md](docs/saas-design.md) for the full design.

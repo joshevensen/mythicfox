@@ -2,20 +2,20 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 5 / 67 tasks complete**
+**Total: 6 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
 ---
 
-## Phase 00 — Foundation (5 / 6)
+## Phase 00 — Foundation (6 / 6)
 
 - [x] **00-001** `S` — [Switch local development DB from SQLite to PostgreSQL](00-foundation/00-001-postgres-local-dev.md)
 - [x] **00-002** `S` — [Strip Fortify down to single-user login (disable 2FA, registration, password reset)](00-foundation/00-002-fortify-single-user-config.md)
 - [x] **00-003** `S` — [Add `user:create` and `user:reset-password` Artisan commands](00-foundation/00-003-user-management-artisan-commands.md)
 - [x] **00-004** `S` — [Add app config keys and `.env.example` entries for TCGPlayer, DO Spaces, and brand](00-foundation/00-004-app-config-and-env-keys.md)
 - [x] **00-005** `S` — [Install Browsershot and smalot/pdfparser composer packages](00-foundation/00-005-install-build-dependencies.md)
-- [ ] **00-006** `M` — [Confirm Pest baseline and add GitHub Actions CI](00-foundation/00-006-baseline-tests-and-ci.md)
+- [x] **00-006** `M` — [Confirm Pest baseline and add GitHub Actions CI](00-foundation/00-006-baseline-tests-and-ci.md)
 
 ## Phase 10 — Catalog (0 / 10)
 
