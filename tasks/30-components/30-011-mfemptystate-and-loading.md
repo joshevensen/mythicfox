@@ -1,7 +1,7 @@
 ---
 id: "30-011"
 title: "Build MfEmptyState (and confirm MfTable's skeleton loading)"
-status: pending
+status: complete
 phase: "30-components"
 size: S
 depends_on: ["30-007"]
@@ -16,21 +16,21 @@ Two empty cases exist across tables and pages: "no data exists" (with an actiona
 
 ## Acceptance criteria
 
-- [ ] `resources/js/components/MfEmptyState.vue` exists with props per `docs/ux/components.md#mfemptystate`:
+- [x] `resources/js/components/MfEmptyState.vue` exists with props per `docs/ux/components.md#mfemptystate`:
   - `title: string`
   - `body?: string`
   - `ctaLabel?: string`
   - `ctaRoute?: string` — when present alongside `ctaLabel`, renders an Inertia `<Link>` styled as a PrimeVue `Button`.
-- [ ] Layout: vertically centered, optionally with a muted icon above the title (PrimeIcons `pi pi-inbox` or similar for tables; pages can override via a `icon` prop — add it).
-- [ ] Add `icon?: string` prop (PrimeIcons name without the `pi pi-` prefix). Component prepends `pi pi-`. Default: none.
-- [ ] When used inside `MfTable` (default empty state), it renders centered within the table-body area, not the whole page.
-- [ ] Dark-mode safe: text colors via Tailwind `slate` neutrals or PrimeVue Aura tokens.
-- [ ] Verify (visually or via test): the skeleton loading rows in `MfTable` (built in `30-007`) render at default page size during a lazy fetch — no work needed here unless something looks off; if so, fix in `MfTable` and reference the fix in this task's commit.
-- [ ] Demo route OR Vue Test Utils test:
+- [x] Layout: vertically centered, optionally with a muted icon above the title (PrimeIcons `pi pi-inbox` or similar for tables; pages can override via a `icon` prop — add it).
+- [x] Add `icon?: string` prop (PrimeIcons name without the `pi pi-` prefix). Component prepends `pi pi-`. Default: none.
+- [x] When used inside `MfTable` (default empty state), it renders centered within the table-body area, not the whole page.
+- [x] Dark-mode safe: text colors via Tailwind `slate` neutrals or PrimeVue Aura tokens.
+- [x] Verify (visually or via test): the skeleton loading rows in `MfTable` (built in `30-007`) render at default page size during a lazy fetch — no work needed here unless something looks off; if so, fix in `MfTable` and reference the fix in this task's commit.
+- [x] Demo route OR Vue Test Utils test:
   - Mount `<MfEmptyState title="No orders yet" body="Import your first order CSVs" cta-label="Import" cta-route="/orders?import=1" />`.
   - Assert title, body, and CTA link all render with correct text and href.
   - Mount with only `title` prop; assert body and CTA are absent.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
