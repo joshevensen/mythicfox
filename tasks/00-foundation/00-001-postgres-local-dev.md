@@ -1,7 +1,7 @@
 ---
 id: "00-001"
 title: "Switch local development DB from SQLite to PostgreSQL"
-status: pending
+status: complete
 phase: "00-foundation"
 size: S
 depends_on: []
@@ -16,13 +16,13 @@ Production runs PostgreSQL on a DigitalOcean droplet. Local dev should match so 
 
 ## Acceptance criteria
 
-- [ ] `.env.example` defaults to `DB_CONNECTION=pgsql` with `DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=mythicfox`, `DB_USERNAME`=postgres and `DB_PASSWORD` is null.
-- [ ] `.env` updated to match (developer's local Postgres credentials).
-- [ ] `database/database.sqlite` removed and `composer.json` `post-create-project-cmd` no longer touches the SQLite file.
-- [ ] `php artisan migrate:fresh` succeeds against a local Postgres database (created via DBngin or equivalent).
-- [ ] All existing Fortify migrations (users, sessions, cache, jobs, two-factor columns) apply cleanly on Postgres.
-- [ ] `php artisan test` still passes — set `DB_CONNECTION=pgsql` in `phpunit.xml` test env, or use a dedicated `mythicfox_test` database (preferred). Document the choice in this task's commit message.
-- [ ] `composer test` passes.
+- [x] `.env.example` defaults to `DB_CONNECTION=pgsql` with `DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=mythicfox`, `DB_USERNAME`=postgres and `DB_PASSWORD` is null.
+- [x] `.env` updated to match (developer's local Postgres credentials).
+- [x] `database/database.sqlite` removed and `composer.json` `post-create-project-cmd` no longer touches the SQLite file.
+- [x] `php artisan migrate:fresh` succeeds against a local Postgres database (created via DBngin or equivalent).
+- [x] All existing Fortify migrations (users, sessions, cache, jobs, two-factor columns) apply cleanly on Postgres.
+- [x] `php artisan test` still passes — set `DB_CONNECTION=pgsql` in `phpunit.xml` test env, or use a dedicated `mythicfox_test` database (preferred). Document the choice in this task's commit message.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
