@@ -1,7 +1,7 @@
 ---
 id: "30-002"
 title: "Install PrimeVue + PrimeIcons and register Mythic Fox Aura preset"
-status: pending
+status: complete
 phase: "30-components"
 size: M
 depends_on: ["30-001"]
@@ -17,15 +17,15 @@ Every `Mf*` wrapper extends a PrimeVue primitive. The PrimeVue plugin must be re
 
 ## Acceptance criteria
 
-- [ ] `npm install primevue @primevue/themes primeicons` succeeds; packages appear in `package.json` `dependencies` (not `devDependencies`).
-- [ ] `resources/js/app.ts` (or wherever `createInertiaApp` lives) registers PrimeVue via `app.use(PrimeVue, { theme: { preset: MythicFoxPreset, options: { darkModeSelector: '.dark' } } })`.
-- [ ] `MythicFoxPreset` defined in `resources/js/lib/primevue-preset.ts` (new file) using `definePreset(Aura, { semantic: { primary: { 500: 'var(--mf-orange)', ... } } })` per the snippet in `docs/ux/ux-patterns.md#brand-colors`. Non-500 shades use Aura's built-in `{orange.NNN}` ramp.
-- [ ] PrimeIcons CSS imported once at the entry point: `import 'primeicons/primeicons.css'`.
-- [ ] PrimeVue `ConfirmationService` and `ToastService` plugins also registered on the app — required by `useConfirm()` (`30-012` MfConfirmDialog) and `useToast()` (`30-012` MfToast).
-- [ ] A throwaway page or route renders a bare PrimeVue `<Button label="Test" />` with the `pi pi-check` icon and the button background matches `--mf-orange` in light mode, `#FF7B45` in dark mode. Remove the verification button when confirmed.
-- [ ] `darkModeSelector: '.dark'` is set so PrimeVue's built-in dark mode follows the `<html class="dark">` toggle the starter already uses.
-- [ ] No PrimeVue-specific CSS reset clashes with Tailwind base — verify the existing pages still render. If clashes appear, follow the PrimeVue + Tailwind docs (`tailwindcss-primeui` plugin) and document the choice in the commit.
-- [ ] `composer test` passes (incl. `npm run lint:check` and `vue-tsc --noEmit`).
+- [x] `npm install primevue @primevue/themes primeicons` succeeds; packages appear in `package.json` `dependencies` (not `devDependencies`).
+- [x] `resources/js/app.ts` (or wherever `createInertiaApp` lives) registers PrimeVue via `app.use(PrimeVue, { theme: { preset: MythicFoxPreset, options: { darkModeSelector: '.dark' } } })`.
+- [x] `MythicFoxPreset` defined in `resources/js/lib/primevue-preset.ts` (new file) using `definePreset(Aura, { semantic: { primary: { 500: 'var(--mf-orange)', ... } } })` per the snippet in `docs/ux/ux-patterns.md#brand-colors`. Non-500 shades use Aura's built-in `{orange.NNN}` ramp.
+- [x] PrimeIcons CSS imported once at the entry point: `import 'primeicons/primeicons.css'`.
+- [x] PrimeVue `ConfirmationService` and `ToastService` plugins also registered on the app — required by `useConfirm()` (`30-012` MfConfirmDialog) and `useToast()` (`30-012` MfToast).
+- [x] A throwaway page or route renders a bare PrimeVue `<Button label="Test" />` with the `pi pi-check` icon and the button background matches `--mf-orange` in light mode, `#FF7B45` in dark mode. Remove the verification button when confirmed.
+- [x] `darkModeSelector: '.dark'` is set so PrimeVue's built-in dark mode follows the `<html class="dark">` toggle the starter already uses.
+- [x] No PrimeVue-specific CSS reset clashes with Tailwind base — verify the existing pages still render. If clashes appear, follow the PrimeVue + Tailwind docs (`tailwindcss-primeui` plugin) and document the choice in the commit.
+- [x] `composer test` passes (incl. `npm run lint:check` and `vue-tsc --noEmit`).
 
 ## Implementation notes
 
