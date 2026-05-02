@@ -1,7 +1,7 @@
 ---
 id: "30-001"
 title: "Wire brand color tokens into Tailwind theme (light + dark)"
-status: pending
+status: complete
 phase: "30-components"
 size: S
 depends_on: ["phase:00-foundation"]
@@ -17,13 +17,13 @@ Every later `Mf*` component reads brand colors via Tailwind utility classes (`bg
 
 ## Acceptance criteria
 
-- [ ] CSS custom properties defined in `resources/css/app.css` (or a dedicated `resources/css/tokens.css` imported from `app.css`) for `--mf-orange`, `--mf-teal`, `--mf-brown` with the light values from the table in `docs/ux/ux-patterns.md#brand-colors`. The light hex values: `#EA5A1F`, `#2E899B`, `#5C2D0E`.
-- [ ] `html.dark` overrides for the same three tokens with the dark hex values: `#FF7B45`, `#5BB5C9`, `#D9B896`.
-- [ ] Tailwind v4 theme aliases expose the tokens as utilities (`mf-orange`, `mf-teal`, `mf-brown`) — registered via `@theme` directive in `app.css` per Tailwind v4 conventions, not a `tailwind.config.ts` file (project is on Tailwind 4 — see `package.json`).
-- [ ] Verify in a temporary `resources/js/pages/Welcome.vue` swatch (or the existing one) that `bg-mf-orange`, `text-mf-teal`, `border-mf-brown` render the correct colors in both light and dark modes. Remove the swatch when done — it's a verification step, not committed code.
-- [ ] Body text and surface backgrounds continue to follow Tailwind `slate`/`gray` neutrals; this task does NOT change neutral palette.
-- [ ] Semantic status colors (`emerald-500/400`, `amber-500/400`, `red-500/400`) remain the standard Tailwind palette — referenced from `MfStatusPill` later, no aliasing needed here.
-- [ ] `composer test` passes.
+- [x] CSS custom properties defined in `resources/css/app.css` (or a dedicated `resources/css/tokens.css` imported from `app.css`) for `--mf-orange`, `--mf-teal`, `--mf-brown` with the light values from the table in `docs/ux/ux-patterns.md#brand-colors`. The light hex values: `#EA5A1F`, `#2E899B`, `#5C2D0E`.
+- [x] `html.dark` overrides for the same three tokens with the dark hex values: `#FF7B45`, `#5BB5C9`, `#D9B896`.
+- [x] Tailwind v4 theme aliases expose the tokens as utilities (`mf-orange`, `mf-teal`, `mf-brown`) — registered via `@theme` directive in `app.css` per Tailwind v4 conventions, not a `tailwind.config.ts` file (project is on Tailwind 4 — see `package.json`).
+- [x] Verify in a temporary `resources/js/pages/Welcome.vue` swatch (or the existing one) that `bg-mf-orange`, `text-mf-teal`, `border-mf-brown` render the correct colors in both light and dark modes. Remove the swatch when done — it's a verification step, not committed code.
+- [x] Body text and surface backgrounds continue to follow Tailwind `slate`/`gray` neutrals; this task does NOT change neutral palette.
+- [x] Semantic status colors (`emerald-500/400`, `amber-500/400`, `red-500/400`) remain the standard Tailwind palette — referenced from `MfStatusPill` later, no aliasing needed here.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

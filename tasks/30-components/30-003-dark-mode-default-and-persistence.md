@@ -1,7 +1,7 @@
 ---
 id: "30-003"
 title: "Make dark mode the default with persistence across sessions"
-status: pending
+status: complete
 phase: "30-components"
 size: S
 depends_on: ["30-002"]
@@ -17,14 +17,14 @@ Per `tasks/README.md` project decisions: "Dark mode: mandatory and the default."
 
 ## Acceptance criteria
 
-- [ ] On first visit (no persisted preference, no inline pre-hydration script value), `<html class="dark">` is set before first paint — no flash of light mode.
-- [ ] The pre-hydration inline script in `resources/views/app.blade.php` reads localStorage for the saved preference; if absent, defaults to `dark` (NOT `system`).
-- [ ] The Vue-side `useAppearance` (or equivalent composable in `resources/js/composables/`) defaults to `dark` instead of `system` for new users.
-- [ ] The existing `AppearanceTabs.vue` component continues to work — user can flip to light, the choice persists, and reloading honors it.
-- [ ] PrimeVue's `darkModeSelector: '.dark'` (set in `30-002`) means PrimeVue components automatically follow.
-- [ ] The Tailwind brand-color tokens from `30-001` swap correctly: `bg-mf-orange` shows `#EA5A1F` in light mode and `#FF7B45` in dark mode after toggling.
-- [ ] Pest test (or Vitest test if Vue testing is set up): asserts the appearance composable's default value is `'dark'`. If neither test framework is wired for this kind of assertion, a Pest browser test (`visit('/')->assertPresent('html.dark')`) is acceptable.
-- [ ] `composer test` passes.
+- [x] On first visit (no persisted preference, no inline pre-hydration script value), `<html class="dark">` is set before first paint — no flash of light mode.
+- [x] The pre-hydration inline script in `resources/views/app.blade.php` reads localStorage for the saved preference; if absent, defaults to `dark` (NOT `system`).
+- [x] The Vue-side `useAppearance` (or equivalent composable in `resources/js/composables/`) defaults to `dark` instead of `system` for new users.
+- [x] The existing `AppearanceTabs.vue` component continues to work — user can flip to light, the choice persists, and reloading honors it.
+- [x] PrimeVue's `darkModeSelector: '.dark'` (set in `30-002`) means PrimeVue components automatically follow.
+- [x] The Tailwind brand-color tokens from `30-001` swap correctly: `bg-mf-orange` shows `#EA5A1F` in light mode and `#FF7B45` in dark mode after toggling.
+- [x] Pest test (or Vitest test if Vue testing is set up): asserts the appearance composable's default value is `'dark'`. If neither test framework is wired for this kind of assertion, a Pest browser test (`visit('/')->assertPresent('html.dark')`) is acceptable.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

@@ -1,7 +1,7 @@
 ---
 id: "30-005"
 title: "Build MfTopNav (sticky top navigation with mobile hamburger drawer)"
-status: pending
+status: complete
 phase: "30-components"
 size: M
 depends_on: ["30-004"]
@@ -17,18 +17,18 @@ The top nav is on every authenticated page and is the only navigation surface (n
 
 ## Acceptance criteria
 
-- [ ] `resources/js/components/MfTopNav.vue` exists.
-- [ ] Renders, left-to-right on desktop (≥ 768px):
+- [x] `resources/js/components/MfTopNav.vue` exists.
+- [x] Renders, left-to-right on desktop (≥ 768px):
   - Mythic Fox logo (links to `/dashboard` via Wayfinder typed route).
   - Section links: **Dashboard · Orders · Catalog · Inventory · Settings** — using Inertia `<Link>` and Wayfinder route helpers (no hardcoded URL strings; per `AGENTS.md` Wayfinder rules).
   - User menu on the right (avatar/name → dropdown with "Log out") — wraps PrimeVue `Menu` or PrimeVue `OverlayPanel`. Logs out via Inertia POST to the Fortify logout route.
-- [ ] Active route highlighting: the link matching the current Inertia `usePage().url` gets a visible active state (e.g. `bg-mf-orange/10 text-mf-orange`). The match is prefix-based (`/orders/*` → Orders link active).
-- [ ] Mobile (`< 768px`): horizontal nav collapses to a hamburger button on the left. Tapping opens a full-screen drawer (PrimeVue `Drawer` / Sidebar component) with the section list and the user menu's contents. Logo stays centered/top-visible.
-- [ ] Sticky positioning: `sticky top-0 z-40` (or equivalent) so it stays pinned during scroll.
-- [ ] Dark mode: surface and text colors come from PrimeVue Aura semantic tokens or Tailwind `slate` neutrals — no hardcoded hex.
-- [ ] No props. Component is fully self-contained.
-- [ ] Demo route OR Pest+Vue Test Utils test: a route `/dev/components/topnav` (gated to `local` env, or a Pest browser test against an existing page that includes the layout) verifies the nav renders all five section links and the active state matches the current route. Either approach satisfies the criterion.
-- [ ] `composer test` passes.
+- [x] Active route highlighting: the link matching the current Inertia `usePage().url` gets a visible active state (e.g. `bg-mf-orange/10 text-mf-orange`). The match is prefix-based (`/orders/*` → Orders link active).
+- [x] Mobile (`< 768px`): horizontal nav collapses to a hamburger button on the left. Tapping opens a full-screen drawer (PrimeVue `Drawer` / Sidebar component) with the section list and the user menu's contents. Logo stays centered/top-visible.
+- [x] Sticky positioning: `sticky top-0 z-40` (or equivalent) so it stays pinned during scroll.
+- [x] Dark mode: surface and text colors come from PrimeVue Aura semantic tokens or Tailwind `slate` neutrals — no hardcoded hex.
+- [x] No props. Component is fully self-contained.
+- [x] Demo route OR Pest+Vue Test Utils test: a route `/dev/components/topnav` (gated to `local` env, or a Pest browser test against an existing page that includes the layout) verifies the nav renders all five section links and the active state matches the current route. Either approach satisfies the criterion.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

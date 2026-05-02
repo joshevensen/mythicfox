@@ -1,9 +1,15 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import PrimeVue from 'primevue/config';
+import ConfirmationService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
+import 'primeicons/primeicons.css';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import MfAppLayout from '@/layouts/MfAppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { MythicFoxPreset } from '@/lib/primevue-preset';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -17,12 +23,26 @@ createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
+            case name === 'Dashboard':
+                return MfAppLayout;
             default:
                 return AppLayout;
         }
     },
     progress: {
         color: '#4B5563',
+    },
+    withApp: (app) => {
+        app.use(PrimeVue, {
+            theme: {
+                preset: MythicFoxPreset,
+                options: {
+                    darkModeSelector: '.dark',
+                },
+            },
+        });
+        app.use(ConfirmationService);
+        app.use(ToastService);
     },
 });
 

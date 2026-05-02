@@ -1,7 +1,7 @@
 ---
 id: "30-004"
 title: "Build MfAppLayout root layout (top nav + page container slots)"
-status: pending
+status: complete
 phase: "30-components"
 size: M
 depends_on: ["30-002", "30-003"]
@@ -17,16 +17,16 @@ Every admin page mounts inside the same shell: top nav + page container with con
 
 ## Acceptance criteria
 
-- [ ] `resources/js/layouts/MfAppLayout.vue` exists and exports a default Vue component that:
+- [x] `resources/js/layouts/MfAppLayout.vue` exists and exports a default Vue component that:
   - Renders `<MfTopNav />` (placeholder OK if the real component lands in `30-005`; this layout depends on the slot, not the implementation).
   - Renders `<MfPageContainer>` (max-width wrapper) with the default slot, wrapping page content.
   - Provides a `<MfToast />` mount point and `<MfConfirmDialog />` mount point near the root so `useToast()` / `useConfirm()` work app-wide. Placeholders OK; real components in `30-012`.
-- [ ] The layout sets the `<html>`-level dark-mode behavior from `30-003`; do not duplicate the mechanism.
-- [ ] `MfPageContainer.vue` lives at `resources/js/components/MfPageContainer.vue` and provides the standard page padding (e.g. `px-4 sm:px-6 lg:px-8 py-6`) and max-width (e.g. `max-w-7xl mx-auto`). Specific values: pick from existing starter conventions or Tailwind defaults — record the choice in the commit message so future tweaks have one place to look.
-- [ ] At least one existing Inertia page (e.g. `pages/Dashboard.vue`) is migrated to use `MfAppLayout` via Inertia's persistent layout pattern (`defineOptions({ layout: MfAppLayout })` or `<script setup>` `defineLayout` equivalent).
-- [ ] Pest browser test: `visit('/dashboard')` (authenticated) asserts the top-nav slot is rendered and the main content region has the `MfPageContainer` class hooks (`max-w-7xl` or whatever the chosen scoped class is).
-- [ ] The old sidebar-based `AppLayout.vue` and its sub-components are NOT yet removed — leave for now to avoid breaking other pages mid-phase. A follow-up task (or the per-page migration tasks in phase 50/60) handles cleanup.
-- [ ] `composer test` passes.
+- [x] The layout sets the `<html>`-level dark-mode behavior from `30-003`; do not duplicate the mechanism.
+- [x] `MfPageContainer.vue` lives at `resources/js/components/MfPageContainer.vue` and provides the standard page padding (e.g. `px-4 sm:px-6 lg:px-8 py-6`) and max-width (e.g. `max-w-7xl mx-auto`). Specific values: pick from existing starter conventions or Tailwind defaults — record the choice in the commit message so future tweaks have one place to look.
+- [x] At least one existing Inertia page (e.g. `pages/Dashboard.vue`) is migrated to use `MfAppLayout` via Inertia's persistent layout pattern (`defineOptions({ layout: MfAppLayout })` or `<script setup>` `defineLayout` equivalent).
+- [x] Pest browser test: `visit('/dashboard')` (authenticated) asserts the top-nav slot is rendered and the main content region has the `MfPageContainer` class hooks (`max-w-7xl` or whatever the chosen scoped class is).
+- [x] The old sidebar-based `AppLayout.vue` and its sub-components are NOT yet removed — leave for now to avoid breaking other pages mid-phase. A follow-up task (or the per-page migration tasks in phase 50/60) handles cleanup.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
