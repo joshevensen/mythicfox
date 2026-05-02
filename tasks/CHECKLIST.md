@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 9 / 67 tasks complete**
+**Total: 10 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -17,12 +17,12 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **00-005** `S` — [Install Browsershot and smalot/pdfparser composer packages](00-foundation/00-005-install-build-dependencies.md)
 - [x] **00-006** `M` — [Confirm Pest baseline and add GitHub Actions CI](00-foundation/00-006-baseline-tests-and-ci.md)
 
-## Phase 10 — Catalog (3 / 10)
+## Phase 10 — Catalog (4 / 10)
 
 - [x] **10-001** `S` — [Create Product model and migration with default pricing rules](10-catalog/10-001-product-model.md)
 - [x] **10-002** `S` — [Create Set model and migration with nullable per-set pricing overrides](10-catalog/10-002-set-model.md)
 - [x] **10-003** `M` — [Create Card model and migration keyed on tcgplayer_id](10-catalog/10-003-card-model.md)
-- [ ] **10-004** `S` — [Create Inventory model and migration with calculated/override/last-exported price columns](10-catalog/10-004-inventory-model.md)
+- [x] **10-004** `S` — [Create Inventory model and migration with calculated/override/last-exported price columns](10-catalog/10-004-inventory-model.md)
 - [ ] **10-005** `L` — [Implement PricingCustomExport CSV importer (catalog seed + market-price refresh)](10-catalog/10-005-pricing-custom-export-importer.md)
 - [ ] **10-006** `L` — [Implement MyPricing CSV importer with bootstrap and reconciliation modes](10-catalog/10-006-mypricing-importer.md)
 - [ ] **10-007** `M` — [Implement dual-input pricing algorithm service](10-catalog/10-007-pricing-algorithm.md)

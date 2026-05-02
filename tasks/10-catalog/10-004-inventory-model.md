@@ -1,7 +1,7 @@
 ---
 id: "10-004"
 title: "Create Inventory model and migration with calculated/override/last-exported price columns"
-status: pending
+status: complete
 phase: "10-catalog"
 size: S
 depends_on: ["10-003"]
@@ -17,14 +17,14 @@ Add `inventory` — the seller's stock count and pricing-state-per-SKU. One row 
 
 ## Acceptance criteria
 
-- [ ] Migration `create_inventory_table` matches `docs/catalog-schema.md#inventory`: `id`, `card_id` (FK → cards, **unique** — one inventory row per card), `quantity` (integer, non-negative — enforce via DB check or app-side validation), `calculated_price` (integer cents, nullable), `override_price` (integer cents, nullable), `last_exported_price` (integer cents, nullable), timestamps.
-- [ ] Unique index on `card_id`.
-- [ ] `App\Models\Inventory` (or `InventoryItem` — pick one and use consistently) Eloquent model with `$fillable`, integer casts for all cents fields and `quantity`.
-- [ ] `belongsTo(Card::class)` relation; reciprocal `Card::inventory()` `hasOne` relation.
-- [ ] Model exposes an **`effective_price`** accessor (`Attribute` or `getEffectivePriceAttribute`) returning `COALESCE(override_price, calculated_price)` (nullable integer cents). This is referenced by the exporter (`10-009`) and the inventory page; centralize it now.
-- [ ] `InventoryFactory` produces a row attached to a card with a positive default quantity and null pricing fields (matching the bootstrap-import behavior described in the doc).
-- [ ] Pest tests cover: factory creates a row, `card_id` uniqueness is enforced, `quantity` cannot be negative, `effective_price` returns `override_price` when set, `calculated_price` when override is null, and `null` when both are null.
-- [ ] `composer test` passes.
+- [x] Migration `create_inventory_table` matches `docs/catalog-schema.md#inventory`: `id`, `card_id` (FK → cards, **unique** — one inventory row per card), `quantity` (integer, non-negative — enforce via DB check or app-side validation), `calculated_price` (integer cents, nullable), `override_price` (integer cents, nullable), `last_exported_price` (integer cents, nullable), timestamps.
+- [x] Unique index on `card_id`.
+- [x] `App\Models\Inventory` (or `InventoryItem` — pick one and use consistently) Eloquent model with `$fillable`, integer casts for all cents fields and `quantity`.
+- [x] `belongsTo(Card::class)` relation; reciprocal `Card::inventory()` `hasOne` relation.
+- [x] Model exposes an **`effective_price`** accessor (`Attribute` or `getEffectivePriceAttribute`) returning `COALESCE(override_price, calculated_price)` (nullable integer cents). This is referenced by the exporter (`10-009`) and the inventory page; centralize it now.
+- [x] `InventoryFactory` produces a row attached to a card with a positive default quantity and null pricing fields (matching the bootstrap-import behavior described in the doc).
+- [x] Pest tests cover: factory creates a row, `card_id` uniqueness is enforced, `quantity` cannot be negative, `effective_price` returns `override_price` when set, `calculated_price` when override is null, and `null` when both are null.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
