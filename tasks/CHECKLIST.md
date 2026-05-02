@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 21 / 67 tasks complete**
+**Total: 22 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -30,14 +30,14 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **10-009** `M` — [Implement MyPricing CSV exporter (round-trip back to TCGPlayer)](10-catalog/10-009-mypricing-exporter.md)
 - [x] **10-010** `S` — [Add catalog domain seeders and shared factory states for downstream phases](10-catalog/10-010-catalog-seeders-and-factories.md)
 
-## Phase 20 — Orders (5 / 12)
+## Phase 20 — Orders (6 / 12)
 
 - [x] **20-001** `M` — [Create `files` table, model, and storage path helper](20-orders/20-001-files-table-and-model.md)
 - [x] **20-002** `M` — [Create `orders` table and Eloquent model](20-orders/20-002-orders-table-and-model.md)
 - [x] **20-003** `M` — [Create `order_items` table and Eloquent model](20-orders/20-003-order-items-table-and-model.md)
 - [x] **20-004** `M` — [Implement OrderList CSV parser](20-orders/20-004-orderlist-csv-parser.md)
 - [x] **20-005** `M` — [Implement ShippingExport CSV parser](20-orders/20-005-shipping-export-csv-parser.md)
-- [ ] **20-006** `M` — [Implement PullSheet CSV parser (with `Order Quantity` split)](20-orders/20-006-pullsheet-csv-parser.md)
+- [x] **20-006** `M` — [Implement PullSheet CSV parser (with `Order Quantity` split)](20-orders/20-006-pullsheet-csv-parser.md)
 - [ ] **20-007** `L` — [Implement PackingSlips PDF parser (smalot/pdfparser)](20-orders/20-007-packing-slip-pdf-parser.md)
 - [ ] **20-008** `L` — [Four-source merge + immutable-snapshot order import](20-orders/20-008-four-source-merge-and-import.md)
 - [ ] **20-009** `M` — [Inventory decrement service for new order line items](20-orders/20-009-inventory-decrement-on-import.md)
