@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 30 / 67 tasks complete**
+**Total: 31 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -45,11 +45,11 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **20-011** `M` — [Re-import and replay handling (idempotency hardening)](20-orders/20-011-reimport-replay-handling.md)
 - [x] **20-012** `S` — [Factories and seeders for the orders domain](20-orders/20-012-factories-and-seeders.md)
 
-## Phase 30 — Components (2 / 13)
+## Phase 30 — Components (3 / 13)
 
 - [x] **30-001** `S` — [Wire brand color tokens into Tailwind theme (light + dark)](30-components/30-001-tailwind-theme-brand-tokens.md)
 - [x] **30-002** `M` — [Install PrimeVue + PrimeIcons and register Mythic Fox Aura preset](30-components/30-002-primevue-install-and-preset.md)
-- [ ] **30-003** `S` — [Make dark mode the default with persistence across sessions](30-components/30-003-dark-mode-default-and-persistence.md)
+- [x] **30-003** `S` — [Make dark mode the default with persistence across sessions](30-components/30-003-dark-mode-default-and-persistence.md)
 - [ ] **30-004** `M` — [Build MfAppLayout root layout (top nav + page container slots)](30-components/30-004-app-shell-layout.md)
 - [ ] **30-005** `M` — [Build MfTopNav (sticky top navigation with mobile hamburger drawer)](30-components/30-005-mftopnav.md)
 - [ ] **30-006** `S` — [Build MfPageHeader (title + breadcrumbs + action button slot)](30-components/30-006-mfpageheader.md)
