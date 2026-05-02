@@ -6,6 +6,7 @@ import 'primeicons/primeicons.css';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import MfAppLayout from '@/layouts/MfAppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 import { MythicFoxPreset } from '@/lib/primevue-preset';
@@ -22,6 +23,8 @@ createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
+            case name === 'Dashboard':
+                return MfAppLayout;
             default:
                 return AppLayout;
         }
