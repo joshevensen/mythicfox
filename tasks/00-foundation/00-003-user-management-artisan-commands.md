@@ -1,7 +1,7 @@
 ---
 id: "00-003"
 title: "Add `user:create` and `user:reset-password` Artisan commands"
-status: pending
+status: complete
 phase: "00-foundation"
 size: S
 depends_on: ["00-002"]
@@ -16,17 +16,17 @@ With registration and password reset disabled, the only paths to create or recov
 
 ## Acceptance criteria
 
-- [ ] `php artisan user:create {email} {name}` exists. It prompts for a password (hidden input), confirms it, hashes with bcrypt, and creates the user. Refuses if a user with that email already exists. Refuses if more than zero users already exist (single-user invariant).
-- [ ] `php artisan user:reset-password {email}` exists. It prompts for a new password (hidden input), confirms it, updates the user's `password` column. Refuses if the user doesn't exist.
-- [ ] Both commands are registered in `app/Console/Commands/` (or wherever the project's existing command registration lives — check `bootstrap/app.php` and `routes/console.php`).
-- [ ] Pest feature test for each command:
+- [x] `php artisan user:create {email} {name}` exists. It prompts for a password (hidden input), confirms it, hashes with bcrypt, and creates the user. Refuses if a user with that email already exists. Refuses if more than zero users already exist (single-user invariant).
+- [x] `php artisan user:reset-password {email}` exists. It prompts for a new password (hidden input), confirms it, updates the user's `password` column. Refuses if the user doesn't exist.
+- [x] Both commands are registered in `app/Console/Commands/` (or wherever the project's existing command registration lives — check `bootstrap/app.php` and `routes/console.php`).
+- [x] Pest feature test for each command:
   - `user:create` happy path.
   - `user:create` rejects duplicate email.
   - `user:create` rejects when a user already exists.
   - `user:reset-password` happy path verifies new hash matches via `Hash::check`.
   - `user:reset-password` rejects unknown email.
-- [ ] Tests use `RefreshDatabase` and the `mythicfox_test` Postgres database from `00-001`.
-- [ ] `composer test` passes.
+- [x] Tests use `RefreshDatabase` and the `mythicfox_test` Postgres database from `00-001`.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
