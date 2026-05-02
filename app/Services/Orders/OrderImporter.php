@@ -21,9 +21,12 @@ use Throwable;
 
 class OrderImporter
 {
-    public function __construct(
-        private readonly ?InventoryDecrementer $decrementer = null,
-    ) {}
+    private readonly InventoryDecrementer $decrementer;
+
+    public function __construct(?InventoryDecrementer $decrementer = null)
+    {
+        $this->decrementer = $decrementer ?? new InventoryDecrementer;
+    }
 
     public function import(OrderImportInput $input): OrderImportResult
     {
@@ -136,9 +139,9 @@ class OrderImporter
                     $result,
                 );
 
-                if ($newItems !== [] && $this->decrementer !== null) {
+                if ($newItems !== []) {
                     $decrement = $this->decrementer->decrement($order, collect($newItems));
-                    $result->lineItemsUnmatchedToInventory += $decrement->unmatched;
+                    $result->lineItemsUnmatchedToInventory += $decrement->totalUnmatched();
                 }
             }
         });

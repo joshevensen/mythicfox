@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 24 / 67 tasks complete**
+**Total: 25 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -30,7 +30,7 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **10-009** `M` — [Implement MyPricing CSV exporter (round-trip back to TCGPlayer)](10-catalog/10-009-mypricing-exporter.md)
 - [x] **10-010** `S` — [Add catalog domain seeders and shared factory states for downstream phases](10-catalog/10-010-catalog-seeders-and-factories.md)
 
-## Phase 20 — Orders (8 / 12)
+## Phase 20 — Orders (9 / 12)
 
 - [x] **20-001** `M` — [Create `files` table, model, and storage path helper](20-orders/20-001-files-table-and-model.md)
 - [x] **20-002** `M` — [Create `orders` table and Eloquent model](20-orders/20-002-orders-table-and-model.md)
@@ -40,7 +40,7 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **20-006** `M` — [Implement PullSheet CSV parser (with `Order Quantity` split)](20-orders/20-006-pullsheet-csv-parser.md)
 - [x] **20-007** `L` — [Implement PackingSlips PDF parser (smalot/pdfparser)](20-orders/20-007-packing-slip-pdf-parser.md)
 - [x] **20-008** `L` — [Four-source merge + immutable-snapshot order import](20-orders/20-008-four-source-merge-and-import.md)
-- [ ] **20-009** `M` — [Inventory decrement service for new order line items](20-orders/20-009-inventory-decrement-on-import.md)
+- [x] **20-009** `M` — [Inventory decrement service for new order line items](20-orders/20-009-inventory-decrement-on-import.md)
 - [ ] **20-010** `S` — [Validate `tcgplayer_order_number` against `TCGPLAYER_SELLER_ID`](20-orders/20-010-seller-id-validation.md)
 - [ ] **20-011** `M` — [Re-import and replay handling (idempotency hardening)](20-orders/20-011-reimport-replay-handling.md)
 - [ ] **20-012** `S` — [Factories and seeders for the orders domain](20-orders/20-012-factories-and-seeders.md)

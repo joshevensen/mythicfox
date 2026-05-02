@@ -9,4 +9,9 @@ class InventoryDecrementResult
         public int $unmatched = 0,
         public int $unmatchedNoInventory = 0,
     ) {}
+
+    public function totalUnmatched(): int
+    {
+        return $this->unmatched + $this->unmatchedNoInventory;
+    }
 }
