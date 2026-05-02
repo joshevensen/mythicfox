@@ -1,7 +1,7 @@
 ---
 id: "10-010"
 title: "Add catalog domain seeders and shared factory states for downstream phases"
-status: pending
+status: complete
 phase: "10-catalog"
 size: S
 depends_on: ["10-001", "10-002", "10-003", "10-004"]
@@ -19,19 +19,19 @@ Provide realistic catalog seed data and well-named factory states so phase 20 (o
 
 ## Acceptance criteria
 
-- [ ] `database/seeders/CatalogSeeder.php` (or similar) seeds the three production products with their canonical TCGPlayer "Product Line" names verbatim: `Magic`, `Lorcana TCG`, `Flesh & Blood TCG`. Uses default pricing-rule values from `docs/catalog-schema.md#default-product-values`.
-- [ ] Seeder is **idempotent** — re-running does not duplicate rows. Use `firstOrCreate` keyed on `name`.
-- [ ] Seeder is registered in `DatabaseSeeder` and runs cleanly under `php artisan db:seed --class=CatalogSeeder`.
-- [ ] `ProductFactory`, `SetFactory`, `CardFactory`, `InventoryFactory` (from earlier tasks) are augmented with named states:
+- [x] `database/seeders/CatalogSeeder.php` (or similar) seeds the three production products with their canonical TCGPlayer "Product Line" names verbatim: `Magic`, `Lorcana TCG`, `Flesh & Blood TCG`. Uses default pricing-rule values from `docs/catalog-schema.md#default-product-values`.
+- [x] Seeder is **idempotent** — re-running does not duplicate rows. Use `firstOrCreate` keyed on `name`.
+- [x] Seeder is registered in `DatabaseSeeder` and runs cleanly under `php artisan db:seed --class=CatalogSeeder`.
+- [x] `ProductFactory`, `SetFactory`, `CardFactory`, `InventoryFactory` (from earlier tasks) are augmented with named states:
   - `ProductFactory::magic()`, `::lorcana()`, `::fleshAndBlood()` — return rows matching the canonical names.
   - `SetFactory::forProduct(Product $p)` — convenience for nested factories.
   - `CardFactory::condition(string $condition)` — accepts any of the 11 strings from `docs/catalog-schema.md#condition-vocabulary`. Default state picks `Near Mint`.
   - `CardFactory::nearMint()`, `::nearMintFoil()` — common shortcuts.
   - `CardFactory::withMarketAndLow(int $marketCents, ?int $lowCents)` — for pricing-algorithm tests.
   - `InventoryFactory::withOverride(int $cents)`, `::withCalculated(int $cents)`, `::lastExported(int $cents)` — for export-flow tests.
-- [ ] A second seeder `DemoCatalogSeeder` (only run via `--class=DemoCatalogSeeder`, NOT from the default `DatabaseSeeder`) creates a small but realistic demo dataset: 2 sets per product, ~20 cards per set across multiple conditions, ~10 inventory rows per product. Useful for screenshotting / local dev / manual UI exploration in later phases.
-- [ ] Pest test asserts: running `CatalogSeeder` twice yields exactly three products with the canonical names; the demo seeder produces the expected row counts and all FKs resolve.
-- [ ] `composer test` passes.
+- [x] A second seeder `DemoCatalogSeeder` (only run via `--class=DemoCatalogSeeder`, NOT from the default `DatabaseSeeder`) creates a small but realistic demo dataset: 2 sets per product, ~20 cards per set across multiple conditions, ~10 inventory rows per product. Useful for screenshotting / local dev / manual UI exploration in later phases.
+- [x] Pest test asserts: running `CatalogSeeder` twice yields exactly three products with the canonical names; the demo seeder produces the expected row counts and all FKs resolve.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

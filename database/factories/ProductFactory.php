@@ -24,4 +24,19 @@ class ProductFactory extends Factory
             'priced_at' => null,
         ];
     }
+
+    public function magic(): static
+    {
+        return $this->state(fn () => ['name' => 'Magic']);
+    }
+
+    public function lorcana(): static
+    {
+        return $this->state(fn () => ['name' => 'Lorcana TCG']);
+    }
+
+    public function fleshAndBlood(): static
+    {
+        return $this->state(fn () => ['name' => 'Flesh & Blood TCG']);
+    }
 }

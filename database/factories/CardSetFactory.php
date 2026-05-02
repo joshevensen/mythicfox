@@ -27,4 +27,9 @@ class CardSetFactory extends Factory
             'high_offset' => null,
         ];
     }
+
+    public function forProduct(Product $product): static
+    {
+        return $this->state(fn () => ['product_id' => $product->id]);
+    }
 }

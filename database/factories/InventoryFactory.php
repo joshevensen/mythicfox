@@ -26,4 +26,19 @@ class InventoryFactory extends Factory
             'last_exported_price' => null,
         ];
     }
+
+    public function withOverride(int $cents): static
+    {
+        return $this->state(fn () => ['override_price' => $cents]);
+    }
+
+    public function withCalculated(int $cents): static
+    {
+        return $this->state(fn () => ['calculated_price' => $cents]);
+    }
+
+    public function lastExported(int $cents): static
+    {
+        return $this->state(fn () => ['last_exported_price' => $cents]);
+    }
 }
