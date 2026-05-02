@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 34 / 67 tasks complete**
+**Total: 35 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -45,7 +45,7 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **20-011** `M` — [Re-import and replay handling (idempotency hardening)](20-orders/20-011-reimport-replay-handling.md)
 - [x] **20-012** `S` — [Factories and seeders for the orders domain](20-orders/20-012-factories-and-seeders.md)
 
-## Phase 30 — Components (6 / 13)
+## Phase 30 — Components (7 / 13)
 
 - [x] **30-001** `S` — [Wire brand color tokens into Tailwind theme (light + dark)](30-components/30-001-tailwind-theme-brand-tokens.md)
 - [x] **30-002** `M` — [Install PrimeVue + PrimeIcons and register Mythic Fox Aura preset](30-components/30-002-primevue-install-and-preset.md)
@@ -53,7 +53,7 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **30-004** `M` — [Build MfAppLayout root layout (top nav + page container slots)](30-components/30-004-app-shell-layout.md)
 - [x] **30-005** `M` — [Build MfTopNav (sticky top navigation with mobile hamburger drawer)](30-components/30-005-mftopnav.md)
 - [x] **30-006** `S` — [Build MfPageHeader (title + breadcrumbs + action button slot)](30-components/30-006-mfpageheader.md)
-- [ ] **30-007** `L` — [Build MfTable (lazy DataTable wrapper with URL state, mobile-row slot)](30-components/30-007-mftable.md)
+- [x] **30-007** `L` — [Build MfTable (lazy DataTable wrapper with URL state, mobile-row slot)](30-components/30-007-mftable.md)
 - [ ] **30-008** `M` — [Build MfFilterPanel + MfFilterChip + MfSearchInput](30-components/30-008-mffilterpanel.md)
 - [ ] **30-009** `M` — [Build MfFormField + MfMoneyInput + MfQtyInput + MfDatePicker](30-components/30-009-mfformfield-and-inputs.md)
 - [ ] **30-010** `M` — [Build MfStatusPill + MfMoney + MfDate + MfMonospaceId + MfCardIdentity](30-components/30-010-mfstatuspill-and-display.md)
