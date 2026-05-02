@@ -3,15 +3,25 @@ import { router } from '@inertiajs/vue3';
 import Checkbox from 'primevue/checkbox';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
-import type {DataTablePageEvent, DataTableSortEvent} from 'primevue/datatable';
+import type {
+    DataTablePageEvent,
+    DataTableSortEvent,
+} from 'primevue/datatable';
 import Paginator from 'primevue/paginator';
-import type {PageState} from 'primevue/paginator';
+import type { PageState } from 'primevue/paginator';
 import Skeleton from 'primevue/skeleton';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import MfEmptyState from '@/components/MfEmptyState.vue';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
-import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/components/MfTable.types';
-import type { ColumnDef, RowAction, SortState } from '@/components/MfTable.types';
+import {
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZE_OPTIONS,
+} from '@/components/MfTable.types';
+import type {
+    ColumnDef,
+    RowAction,
+    SortState,
+} from '@/components/MfTable.types';
 
 type Props = {
     endpoint: string;
@@ -257,7 +267,11 @@ const sortOrder = computed(() =>
 
 <template>
     <div class="flex flex-col gap-4">
-        <MfErrorBanner v-if="fetchError" :message="fetchError" :on-retry="reload" />
+        <MfErrorBanner
+            v-if="fetchError"
+            :message="fetchError"
+            :on-retry="reload"
+        />
 
         <div v-if="$slots.filters">
             <slot name="filters" />
@@ -325,7 +339,9 @@ const sortOrder = computed(() =>
         <!-- Desktop table (and mobile fallback when no mobile-row slot) -->
         <div
             :class="[
-                $slots['mobile-row'] ? 'hidden md:block' : 'block overflow-x-auto',
+                $slots['mobile-row']
+                    ? 'hidden md:block'
+                    : 'block overflow-x-auto',
             ]"
         >
             <DataTable
@@ -364,7 +380,11 @@ const sortOrder = computed(() =>
                         />
                     </template>
                     <template #body="{ data }">
-                        <Skeleton v-if="loading" width="1.25rem" height="1.25rem" />
+                        <Skeleton
+                            v-if="loading"
+                            width="1.25rem"
+                            height="1.25rem"
+                        />
                         <Checkbox
                             v-else
                             :model-value="isRowSelected(data)"
@@ -380,7 +400,11 @@ const sortOrder = computed(() =>
                     body-style="width: 3rem"
                 >
                     <template #body="{ data }">
-                        <Skeleton v-if="loading" width="1.25rem" height="1.25rem" />
+                        <Skeleton
+                            v-if="loading"
+                            width="1.25rem"
+                            height="1.25rem"
+                        />
                         <button
                             v-else
                             type="button"
@@ -406,19 +430,37 @@ const sortOrder = computed(() =>
                     :field="col.key"
                     :header="col.label"
                     :sortable="col.sortable"
-                    :body-style="col.align ? `text-align: ${col.align}` : undefined"
-                    :header-style="col.align ? `text-align: ${col.align}` : undefined"
+                    :body-style="
+                        col.align ? `text-align: ${col.align}` : undefined
+                    "
+                    :header-style="
+                        col.align ? `text-align: ${col.align}` : undefined
+                    "
                 >
                     <template #body="{ data }">
                         <Skeleton v-if="loading" height="1rem" />
-                        <template v-else-if="col.slot && $slots[`cell-${col.slot}`]">
-                            <slot :name="`cell-${col.slot}`" :row="data" :value="data[col.key]" />
+                        <template
+                            v-else-if="col.slot && $slots[`cell-${col.slot}`]"
+                        >
+                            <slot
+                                :name="`cell-${col.slot}`"
+                                :row="data"
+                                :value="data[col.key]"
+                            />
                         </template>
                         <template v-else-if="$slots[`cell-${col.key}`]">
-                            <slot :name="`cell-${col.key}`" :row="data" :value="data[col.key]" />
+                            <slot
+                                :name="`cell-${col.key}`"
+                                :row="data"
+                                :value="data[col.key]"
+                            />
                         </template>
                         <span v-else>
-                            {{ col.formatter ? col.formatter(data[col.key], data) : data[col.key] }}
+                            {{
+                                col.formatter
+                                    ? col.formatter(data[col.key], data)
+                                    : data[col.key]
+                            }}
                         </span>
                     </template>
                 </Column>
@@ -432,12 +474,16 @@ const sortOrder = computed(() =>
             </DataTable>
         </div>
 
-        <div class="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div
+            class="flex flex-col items-center gap-3 sm:flex-row sm:justify-between"
+        >
             <span class="text-sm text-muted-foreground">
                 Showing {{ showingFrom }}–{{ showingTo }} of {{ total }}
             </span>
             <div class="flex items-center gap-3">
-                <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                <label
+                    class="flex items-center gap-2 text-sm text-muted-foreground"
+                >
                     Per page
                     <select
                         v-model.number="perPage"
@@ -447,7 +493,11 @@ const sortOrder = computed(() =>
                             reload();
                         "
                     >
-                        <option v-for="size in PAGE_SIZE_OPTIONS" :key="size" :value="size">
+                        <option
+                            v-for="size in PAGE_SIZE_OPTIONS"
+                            :key="size"
+                            :value="size"
+                        >
                             {{ size }}
                         </option>
                     </select>

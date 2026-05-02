@@ -18,7 +18,10 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: string | [string | null, string | null] | null): void;
+    (
+        e: 'update:modelValue',
+        value: string | [string | null, string | null] | null,
+    ): void;
 }>();
 
 const toDate = (iso: string | null): Date | null => {
@@ -49,7 +52,9 @@ const toIso = (date: Date | null | undefined): string | null => {
 
 const internal = computed<Date | (Date | null)[] | null>(() => {
     if (props.range) {
-        const value = (props.modelValue as [string | null, string | null] | null) ?? [null, null];
+        const value = (props.modelValue as
+            | [string | null, string | null]
+            | null) ?? [null, null];
 
         return [toDate(value[0]), toDate(value[1])];
     }

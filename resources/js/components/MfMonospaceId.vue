@@ -5,5 +5,5 @@ defineProps<{
 </script>
 
 <template>
-    <span class="whitespace-nowrap font-mono text-sm">{{ value }}</span>
+    <span class="font-mono text-sm whitespace-nowrap">{{ value }}</span>
 </template>

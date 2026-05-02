@@ -14,17 +14,18 @@ const props = defineProps<Props>();
 
 const page = usePage<{ errors: Record<string, string> }>();
 
-const errorMessage = computed<string | undefined>(() => page.props.errors?.[props.name]);
+const errorMessage = computed<string | undefined>(
+    () => page.props.errors?.[props.name],
+);
 </script>
 
 <template>
     <div class="flex flex-col gap-1.5">
-        <label
-            :for="name"
-            class="text-sm font-medium text-foreground"
-        >
+        <label :for="name" class="text-sm font-medium text-foreground">
             {{ label }}
-            <span v-if="required" aria-hidden="true" class="text-red-500">*</span>
+            <span v-if="required" aria-hidden="true" class="text-red-500"
+                >*</span
+            >
         </label>
         <slot :error="errorMessage" />
         <p
@@ -34,10 +35,7 @@ const errorMessage = computed<string | undefined>(() => page.props.errors?.[prop
         >
             {{ errorMessage }}
         </p>
-        <p
-            v-else-if="help"
-            class="text-sm text-muted-foreground"
-        >
+        <p v-else-if="help" class="text-sm text-muted-foreground">
             {{ help }}
         </p>
     </div>

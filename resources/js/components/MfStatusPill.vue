@@ -18,14 +18,16 @@ const variant = computed<PillVariant>(() => {
     if (props.status === 'Completed - Paid') {
         if (props.trackingNumber) {
             return {
-                classes: 'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900',
+                classes:
+                    'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900',
                 icon: 'pi-check',
                 label: 'Shipped',
             };
         }
 
         return {
-            classes: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-slate-900',
+            classes:
+                'bg-amber-500 text-white dark:bg-amber-400 dark:text-slate-900',
             icon: 'pi-clock',
             label: 'Awaiting shipment',
         };
@@ -33,14 +35,16 @@ const variant = computed<PillVariant>(() => {
 
     if (props.status === 'Canceled') {
         return {
-            classes: 'bg-red-500 text-white dark:bg-red-400 dark:text-slate-900',
+            classes:
+                'bg-red-500 text-white dark:bg-red-400 dark:text-slate-900',
             icon: 'pi-times',
             label: 'Canceled',
         };
     }
 
     return {
-        classes: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+        classes:
+            'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         icon: null,
         label: props.status,
     };

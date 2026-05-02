@@ -43,7 +43,11 @@ const allowedExtensions = computed<string[]>(() =>
 const setProgress = (pct: number): void => {
     progress.value = Math.max(0, Math.min(100, Math.round(pct)));
 
-    if (state.value !== 'uploading' && progress.value > 0 && progress.value < 100) {
+    if (
+        state.value !== 'uploading' &&
+        progress.value > 0 &&
+        progress.value < 100
+    ) {
         state.value = 'uploading';
     }
 
@@ -171,7 +175,10 @@ const containerClasses = computed(() => {
     ];
 
     if (props.disabled) {
-        return [...base, 'cursor-not-allowed border-border bg-muted/30 opacity-60'];
+        return [
+            ...base,
+            'cursor-not-allowed border-border bg-muted/30 opacity-60',
+        ];
     }
 
     if (state.value === 'error') {
@@ -186,7 +193,10 @@ const containerClasses = computed(() => {
         return [...base, 'border-mf-orange bg-mf-orange/10'];
     }
 
-    return [...base, 'border-border hover:border-mf-orange/60 hover:bg-muted/40'];
+    return [
+        ...base,
+        'border-border hover:border-mf-orange/60 hover:bg-muted/40',
+    ];
 });
 </script>
 
@@ -215,26 +225,35 @@ const containerClasses = computed(() => {
 
         <template v-if="state === 'idle'">
             <i class="pi pi-cloud-upload text-3xl text-muted-foreground" />
-            <p class="text-sm text-foreground">Drop files here or click to browse</p>
+            <p class="text-sm text-foreground">
+                Drop files here or click to browse
+            </p>
             <p class="text-xs text-muted-foreground">
-                Accepts {{ accept }} · up to {{ Math.round(maxSize / 1024 / 1024) }}MB
+                Accepts {{ accept }} · up to
+                {{ Math.round(maxSize / 1024 / 1024) }}MB
             </p>
         </template>
 
         <template v-else-if="state === 'uploading'">
             <i class="pi pi-spin pi-spinner text-2xl text-mf-orange" />
-            <p class="text-sm text-foreground">Uploading {{ acceptedNames.join(', ') }}</p>
+            <p class="text-sm text-foreground">
+                Uploading {{ acceptedNames.join(', ') }}
+            </p>
             <ProgressBar :value="progress" class="w-full" />
         </template>
 
         <template v-else-if="state === 'success'">
             <i class="pi pi-check-circle text-2xl text-emerald-500" />
-            <p class="text-sm font-medium text-foreground">Uploaded {{ acceptedNames.join(', ') }}</p>
+            <p class="text-sm font-medium text-foreground">
+                Uploaded {{ acceptedNames.join(', ') }}
+            </p>
         </template>
 
         <template v-else-if="state === 'error'">
             <i class="pi pi-exclamation-triangle text-2xl text-red-500" />
-            <p class="text-sm font-medium text-red-600 dark:text-red-300">{{ errorMessage }}</p>
+            <p class="text-sm font-medium text-red-600 dark:text-red-300">
+                {{ errorMessage }}
+            </p>
         </template>
     </div>
 </template>

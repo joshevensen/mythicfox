@@ -18,7 +18,10 @@ const formatted = computed(() => formatCents(props.cents));
 
 <template>
     <span
-        :class="['tabular-nums', align === 'right' ? 'text-right' : 'text-left']"
+        :class="[
+            'tabular-nums',
+            align === 'right' ? 'text-right' : 'text-left',
+        ]"
     >
         {{ formatted }}
     </span>

@@ -64,15 +64,21 @@ const identity = computed<Identity>(() => {
 <template>
     <div v-if="compact" class="flex items-baseline gap-1">
         <span class="font-medium text-foreground">{{ identity.name }}</span>
-        <span v-if="identity.number" class="text-muted-foreground">#{{ identity.number }}</span>
+        <span v-if="identity.number" class="text-muted-foreground"
+            >#{{ identity.number }}</span
+        >
     </div>
     <div v-else class="flex flex-col">
         <div class="flex flex-wrap items-baseline gap-1.5 text-sm">
             <span class="font-medium text-foreground">{{ identity.name }}</span>
             <span v-if="identity.number" class="text-slate-400">·</span>
-            <span v-if="identity.number" class="text-muted-foreground">#{{ identity.number }}</span>
+            <span v-if="identity.number" class="text-muted-foreground"
+                >#{{ identity.number }}</span
+            >
             <span v-if="identity.set" class="text-slate-400">·</span>
-            <span v-if="identity.set" class="text-muted-foreground">{{ identity.set }}</span>
+            <span v-if="identity.set" class="text-muted-foreground">{{
+                identity.set
+            }}</span>
         </div>
         <div
             v-if="identity.condition || identity.rarity"

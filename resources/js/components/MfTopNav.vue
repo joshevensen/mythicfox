@@ -127,7 +127,9 @@ const handleLogout = () => {
             class="w-72!"
         >
             <template #header>
-                <div class="flex items-center gap-2 font-semibold text-mf-orange">
+                <div
+                    class="flex items-center gap-2 font-semibold text-mf-orange"
+                >
                     <i class="pi pi-shield text-xl" />
                     <span>Mythic Fox</span>
                 </div>

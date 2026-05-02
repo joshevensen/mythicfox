@@ -26,7 +26,10 @@ const open = defineModel<boolean>('open', { default: false });
 const page = usePage();
 
 const initialUrl = (): URL => {
-    const href = typeof window === 'undefined' ? 'http://localhost/' : window.location.href;
+    const href =
+        typeof window === 'undefined'
+            ? 'http://localhost/'
+            : window.location.href;
 
     return new URL(href);
 };
@@ -62,7 +65,9 @@ const readValueForFilter = (def: FilterDef): FilterValue => {
 };
 
 const values = ref<Record<string, FilterValue>>(
-    Object.fromEntries(props.filters.map((f) => [f.key, readValueForFilter(f)])),
+    Object.fromEntries(
+        props.filters.map((f) => [f.key, readValueForFilter(f)]),
+    ),
 );
 
 watch(
@@ -127,11 +132,19 @@ const setFilter = (def: FilterDef, value: FilterValue) => {
 
                 const range = (value as { min?: string; max?: string }) ?? {};
 
-                if (range.min !== undefined && range.min !== null && range.min !== '') {
+                if (
+                    range.min !== undefined &&
+                    range.min !== null &&
+                    range.min !== ''
+                ) {
                     params.set(`${def.key}_min`, String(range.min));
                 }
 
-                if (range.max !== undefined && range.max !== null && range.max !== '') {
+                if (
+                    range.max !== undefined &&
+                    range.max !== null &&
+                    range.max !== ''
+                ) {
                     params.set(`${def.key}_max`, String(range.max));
                 }
 
@@ -224,12 +237,32 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     for (const def of props.filters) {
         const value = values.value[def.key];
 
-        if (def.kind === 'text' && typeof value === 'string' && value.length > 0) {
-            list.push({ key: def.key, label: def.label, display: value, raw: value });
-        } else if (def.kind === 'enum' && Array.isArray(value) && value.length > 0) {
-            const labels = value.map((v) => def.options?.find((o) => o.value === v)?.label ?? v);
+        if (
+            def.kind === 'text' &&
+            typeof value === 'string' &&
+            value.length > 0
+        ) {
+            list.push({
+                key: def.key,
+                label: def.label,
+                display: value,
+                raw: value,
+            });
+        } else if (
+            def.kind === 'enum' &&
+            Array.isArray(value) &&
+            value.length > 0
+        ) {
+            const labels = value.map(
+                (v) => def.options?.find((o) => o.value === v)?.label ?? v,
+            );
 
-            list.push({ key: def.key, label: def.label, display: labels.join(', '), raw: value });
+            list.push({
+                key: def.key,
+                label: def.label,
+                display: labels.join(', '),
+                raw: value,
+            });
         } else if (def.kind === 'range') {
             const range = value as { min?: string; max?: string } | null;
 
@@ -253,7 +286,12 @@ const activeFilters = computed<ActiveFilter[]>(() => {
                 });
             }
         } else if (def.kind === 'boolean' && value === true) {
-            list.push({ key: def.key, label: def.label, display: 'Yes', raw: true });
+            list.push({
+                key: def.key,
+                label: def.label,
+                display: 'Yes',
+                raw: true,
+            });
         }
     }
 
@@ -270,10 +308,16 @@ const dateOf = (key: string) =>
     (values.value[key] as { from?: string; to?: string }) ?? {};
 
 const setRangeMin = (def: FilterDef, raw: number | null): void => {
-    setFilter(def, { ...rangeOf(def.key), min: raw === null ? undefined : String(raw) });
+    setFilter(def, {
+        ...rangeOf(def.key),
+        min: raw === null ? undefined : String(raw),
+    });
 };
 const setRangeMax = (def: FilterDef, raw: number | null): void => {
-    setFilter(def, { ...rangeOf(def.key), max: raw === null ? undefined : String(raw) });
+    setFilter(def, {
+        ...rangeOf(def.key),
+        max: raw === null ? undefined : String(raw),
+    });
 };
 const setDateFrom = (def: FilterDef, raw: string): void => {
     setFilter(def, { ...dateOf(def.key), from: raw || undefined });
@@ -304,8 +348,14 @@ const setDateTo = (def: FilterDef, raw: string): void => {
 
         <Panel toggleable header="Filters" class="hidden md:block">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div v-for="def in FILTER_PANEL_CONTENT" :key="def.key" class="flex flex-col gap-1.5">
-                    <label class="text-xs font-medium text-muted-foreground">{{ def.label }}</label>
+                <div
+                    v-for="def in FILTER_PANEL_CONTENT"
+                    :key="def.key"
+                    class="flex flex-col gap-1.5"
+                >
+                    <label class="text-xs font-medium text-muted-foreground">{{
+                        def.label
+                    }}</label>
                     <MfSearchInput
                         v-if="def.kind === 'text'"
                         :model-value="(values[def.key] as string) ?? ''"
@@ -323,34 +373,64 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                         class="w-full"
                         @update:model-value="(v: string[]) => setFilter(def, v)"
                     />
-                    <div v-else-if="def.kind === 'range'" class="flex items-center gap-2">
+                    <div
+                        v-else-if="def.kind === 'range'"
+                        class="flex items-center gap-2"
+                    >
                         <InputNumber
-                            :model-value="rangeOf(def.key).min !== undefined ? Number(rangeOf(def.key).min) : null"
+                            :model-value="
+                                rangeOf(def.key).min !== undefined
+                                    ? Number(rangeOf(def.key).min)
+                                    : null
+                            "
                             placeholder="Min"
                             class="w-full"
-                            @update:model-value="(v: number | null) => setRangeMin(def, v)"
+                            @update:model-value="
+                                (v: number | null) => setRangeMin(def, v)
+                            "
                         />
                         <span class="text-muted-foreground">–</span>
                         <InputNumber
-                            :model-value="rangeOf(def.key).max !== undefined ? Number(rangeOf(def.key).max) : null"
+                            :model-value="
+                                rangeOf(def.key).max !== undefined
+                                    ? Number(rangeOf(def.key).max)
+                                    : null
+                            "
                             placeholder="Max"
                             class="w-full"
-                            @update:model-value="(v: number | null) => setRangeMax(def, v)"
+                            @update:model-value="
+                                (v: number | null) => setRangeMax(def, v)
+                            "
                         />
                     </div>
-                    <div v-else-if="def.kind === 'date'" class="flex items-center gap-2">
+                    <div
+                        v-else-if="def.kind === 'date'"
+                        class="flex items-center gap-2"
+                    >
                         <input
                             type="date"
                             :value="dateOf(def.key).from ?? ''"
                             class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                            @input="(e) => setDateFrom(def, (e.target as HTMLInputElement).value)"
+                            @input="
+                                (e) =>
+                                    setDateFrom(
+                                        def,
+                                        (e.target as HTMLInputElement).value,
+                                    )
+                            "
                         />
                         <span class="text-muted-foreground">→</span>
                         <input
                             type="date"
                             :value="dateOf(def.key).to ?? ''"
                             class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                            @input="(e) => setDateTo(def, (e.target as HTMLInputElement).value)"
+                            @input="
+                                (e) =>
+                                    setDateTo(
+                                        def,
+                                        (e.target as HTMLInputElement).value,
+                                    )
+                            "
                         />
                     </div>
                     <ToggleSwitch
@@ -367,8 +447,14 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                 <span class="font-semibold">Filters</span>
             </template>
             <div class="flex flex-col gap-4">
-                <div v-for="def in FILTER_PANEL_CONTENT" :key="`m-${def.key}`" class="flex flex-col gap-1.5">
-                    <label class="text-xs font-medium text-muted-foreground">{{ def.label }}</label>
+                <div
+                    v-for="def in FILTER_PANEL_CONTENT"
+                    :key="`m-${def.key}`"
+                    class="flex flex-col gap-1.5"
+                >
+                    <label class="text-xs font-medium text-muted-foreground">{{
+                        def.label
+                    }}</label>
                     <MfSearchInput
                         v-if="def.kind === 'text'"
                         :model-value="(values[def.key] as string) ?? ''"

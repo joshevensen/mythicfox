@@ -13,14 +13,19 @@ defineProps<{
 </script>
 
 <template>
-    <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header
+        class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
         <div class="flex flex-col gap-1">
             <nav
                 v-if="breadcrumbs && breadcrumbs.length > 0"
                 aria-label="Breadcrumb"
                 class="flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
             >
-                <template v-for="(crumb, index) in breadcrumbs" :key="`${crumb.label}-${index}`">
+                <template
+                    v-for="(crumb, index) in breadcrumbs"
+                    :key="`${crumb.label}-${index}`"
+                >
                     <i
                         v-if="index > 0"
                         class="pi pi-chevron-right text-xs text-slate-400"
@@ -35,7 +40,9 @@ defineProps<{
                     <span v-else aria-current="page">{{ crumb.label }}</span>
                 </template>
             </nav>
-            <h1 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            <h1
+                class="text-2xl font-semibold text-slate-900 dark:text-slate-100"
+            >
                 {{ title }}
             </h1>
         </div>

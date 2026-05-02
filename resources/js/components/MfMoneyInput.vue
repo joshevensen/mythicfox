@@ -41,8 +41,12 @@ const onChange = (next: number | null | undefined): void => {
     emit('update:modelValue', Math.round(next * 100));
 };
 
-const dollarMin = computed(() => (props.min === undefined ? undefined : props.min / 100));
-const dollarMax = computed(() => (props.max === undefined ? undefined : props.max / 100));
+const dollarMin = computed(() =>
+    props.min === undefined ? undefined : props.min / 100,
+);
+const dollarMax = computed(() =>
+    props.max === undefined ? undefined : props.max / 100,
+);
 </script>
 
 <template>
