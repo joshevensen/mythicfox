@@ -1,7 +1,7 @@
 ---
 id: "20-007"
 title: "Implement PackingSlips PDF parser (smalot/pdfparser)"
-status: pending
+status: complete
 phase: "20-orders"
 size: L
 depends_on: ["20-003"]
@@ -17,26 +17,26 @@ references:
 
 ## Acceptance criteria
 
-- [ ] `App\Services\Orders\Parsers\PackingSlipPdfParser` exposes `parse(string $absolutePath): Collection<PackingSlipLine>`.
-- [ ] Uses `Smalot\PdfParser\Parser` (already installed by `00-005`).
-- [ ] For each page in the PDF, the parser:
+- [x] `App\Services\Orders\Parsers\PackingSlipPdfParser` exposes `parse(string $absolutePath): Collection<PackingSlipLine>`.
+- [x] Uses `Smalot\PdfParser\Parser` (already installed by `00-005`).
+- [x] For each page in the PDF, the parser:
   - Extracts the order number from a header line matching `Order Number: (...)` (regex). The captured value is uppercased.
   - Extracts each line-item row, capturing: integer `quantity`, the description string, decimal `Price`, decimal `Total Price`.
   - Parses the description with `<ProductLine> - <Set> - <ProductName> - #<Number> - <Rarity> - <Condition>` (segments separated by ` - `, with the `#` prefix on the number). Returns the six fields individually.
-- [ ] Each `PackingSlipLine` exposes:
+- [x] Each `PackingSlipLine` exposes:
   - `tcgplayer_order_number` — uppercased
   - `quantity` — integer
   - `product_line`, `set_name`, `product_name`, `number`, `rarity`, `condition` — strings (number stripped of the leading `#`)
   - `unit_price` — integer cents (parse decimal × 100, round)
   - `total_price` — integer cents
-- [ ] When a page can't be parsed (no `Order Number:` header found, or the line table can't be located), the parser does not throw — it logs a warning via Laravel's logger with the page index and continues. The expectation set in `docs/order-schema.md#things-to-consider` is that the PDF is "the most fragile piece" and we want partial yields, not a hard failure.
-- [ ] When no line items match for a recognized order header, the order header alone is emitted as a metadata-only entry (or skipped — pick one and document in the parser's docblock). The merge step (`20-008`) handles missing PDF lines gracefully either way.
-- [ ] Pest unit tests:
+- [x] When a page can't be parsed (no `Order Number:` header found, or the line table can't be located), the parser does not throw — it logs a warning via Laravel's logger with the page index and continues. The expectation set in `docs/order-schema.md#things-to-consider` is that the PDF is "the most fragile piece" and we want partial yields, not a hard failure.
+- [x] When no line items match for a recognized order header, the order header alone is emitted as a metadata-only entry (or skipped — pick one and document in the parser's docblock). The merge step (`20-008`) handles missing PDF lines gracefully either way.
+- [x] Pest unit tests:
   - Snapshot test against a small fixture PDF placed under `tests/Fixtures/orders/PackingSlips.pdf`. If `docs/assets/PackingSlips.pdf` exists and is small enough, copy a 1–2 page sample. Otherwise, generate a fixture from a hand-built sample.
   - At least one test asserts a multi-page PDF yields one `PackingSlipLine` per (page, line-item).
   - One test asserts a malformed page logs a warning but does not abort the parse of subsequent pages.
   - One test asserts price-to-cents conversion is exact.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
