@@ -1,7 +1,7 @@
 ---
 id: "00-006"
 title: "Confirm Pest baseline and add GitHub Actions CI"
-status: pending
+status: complete
 phase: "00-foundation"
 size: M
 depends_on: ["00-001", "00-002", "00-003", "00-004", "00-005"]
@@ -15,8 +15,8 @@ Every later task asserts "`composer test` passes" — but that command needs to 
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/ci.yml` exists and runs on `push` and `pull_request` to any branch.
-- [ ] The workflow:
+- [x] `.github/workflows/ci.yml` exists and runs on `push` and `pull_request` to any branch.
+- [x] The workflow:
   - Checks out the code.
   - Installs PHP 8.3 with required extensions (mbstring, intl, pdo_pgsql, redis).
   - Spins up a PostgreSQL service container and creates a `mythicfox_test` database.
@@ -24,10 +24,10 @@ Every later task asserts "`composer test` passes" — but that command needs to 
   - Runs `npm ci`.
   - Copies `.env.example` to `.env`, runs `php artisan key:generate`, `php artisan migrate --force`.
   - Runs `composer ci:check` (which already chains lint, format, types, and tests per the existing `composer.json` script).
-- [ ] Workflow passes on a fresh branch with no other changes.
-- [ ] A failing test makes the workflow fail (verify by intentionally breaking a test on a throwaway branch, confirming red, then reverting — the verify step doesn't need to be committed; document the result in the commit message).
-- [ ] `README.md` has a one-line CI status badge near the top (optional but recommended).
-- [ ] `composer test` passes locally.
+- [x] Workflow passes on a fresh branch with no other changes.
+- [x] A failing test makes the workflow fail (verify by intentionally breaking a test on a throwaway branch, confirming red, then reverting — the verify step doesn't need to be committed; document the result in the commit message).
+- [x] `README.md` has a one-line CI status badge near the top (optional but recommended).
+- [x] `composer test` passes locally.
 
 ## Implementation notes
 

@@ -1,7 +1,7 @@
 ---
 id: "00-005"
 title: "Install Browsershot and smalot/pdfparser composer packages"
-status: pending
+status: complete
 phase: "00-foundation"
 size: S
 depends_on: []
@@ -17,13 +17,13 @@ Two server-side libraries are needed by later phases: Browsershot for headless-C
 
 ## Acceptance criteria
 
-- [ ] `composer require spatie/browsershot` succeeds and the package appears in `composer.json` `require` (not `require-dev`).
-- [ ] `composer require smalot/pdfparser` succeeds and appears in `composer.json` `require`.
-- [ ] A trivial Pest unit test exists for each:
+- [x] `composer require spatie/browsershot` succeeds and the package appears in `composer.json` `require` (not `require-dev`).
+- [x] `composer require smalot/pdfparser` succeeds and appears in `composer.json` `require`.
+- [x] A trivial Pest unit test exists for each:
   - `BrowsershotInstalledTest` — instantiates `Spatie\Browsershot\Browsershot::url('https://example.com')` and asserts no exception (does NOT actually render — just confirms the class autoloads).
   - `PdfParserInstalledTest` — instantiates `Smalot\PdfParser\Parser` and asserts no exception.
-- [ ] Both tests are tagged `@group dependencies` (or pest equivalent) so they can be skipped in CI environments where Chrome isn't installed if needed later.
-- [ ] `composer test` passes.
+- [x] Both tests are tagged `@group dependencies` (or pest equivalent) so they can be skipped in CI environments where Chrome isn't installed if needed later.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

@@ -1,7 +1,7 @@
 ---
 id: "00-004"
 title: "Add app config keys and `.env.example` entries for TCGPlayer, DO Spaces, and brand"
-status: pending
+status: complete
 phase: "00-foundation"
 size: S
 depends_on: []
@@ -18,7 +18,7 @@ Centralize all environment-specific values that later tasks will need to read: T
 
 ## Acceptance criteria
 
-- [ ] `.env.example` contains, with empty placeholder values:
+- [x] `.env.example` contains, with empty placeholder values:
   - `TCGPLAYER_SELLER_ID=` (e.g. `623394e9`)
   - `TCGPLAYER_SELLER_SLUG=` (e.g. `Mythic-Fox-Games`)
   - `DO_SPACES_KEY=`
@@ -28,13 +28,13 @@ Centralize all environment-specific values that later tasks will need to read: T
   - `DO_SPACES_ENDPOINT=` (e.g. `https://nyc3.digitaloceanspaces.com`)
   - `BRAND_NAME="Mythic Fox Games"`
   - `BRAND_CONTACT_EMAIL=josh@mythicfoxgames.com`
-- [ ] `config/services.php` exposes a `tcgplayer` block with `seller_id`, `seller_slug`, and a derived `storefront_url` (`https://www.tcgplayer.com/sellers/{slug}/{id}`).
-- [ ] `config/services.php` exposes a `do_spaces` block (or a new `config/storage.php` — pick one and document the choice in the commit) reading the five `DO_SPACES_*` env vars.
-- [ ] `config/filesystems.php` adds a `spaces` disk configured as an `s3` driver pointed at the DO Spaces config above, with `'visibility' => 'private'` and `'use_path_style_endpoint' => false`.
-- [ ] `config/app.php` (or a new `config/brand.php`) exposes `name` and `contact_email` from the `BRAND_*` env vars.
-- [ ] All keys also appear in the developer's `.env` with placeholder/dev-safe values so the app boots locally.
-- [ ] `php artisan config:clear && php artisan tinker` can resolve `config('services.tcgplayer.seller_id')` without error.
-- [ ] `composer test` passes.
+- [x] `config/services.php` exposes a `tcgplayer` block with `seller_id`, `seller_slug`, and a derived `storefront_url` (`https://www.tcgplayer.com/sellers/{slug}/{id}`).
+- [x] `config/services.php` exposes a `do_spaces` block (or a new `config/storage.php` — pick one and document the choice in the commit) reading the five `DO_SPACES_*` env vars.
+- [x] `config/filesystems.php` adds a `spaces` disk configured as an `s3` driver pointed at the DO Spaces config above, with `'visibility' => 'private'` and `'use_path_style_endpoint' => false`.
+- [x] `config/app.php` (or a new `config/brand.php`) exposes `name` and `contact_email` from the `BRAND_*` env vars.
+- [x] All keys also appear in the developer's `.env` with placeholder/dev-safe values so the app boots locally.
+- [x] `php artisan config:clear && php artisan tinker` can resolve `config('services.tcgplayer.seller_id')` without error.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
