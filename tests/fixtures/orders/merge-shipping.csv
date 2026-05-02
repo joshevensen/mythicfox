@@ -1,0 +1,3 @@
+Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier
+"623394E9-23CAFE-565FC","Thomas","Birch","34 Horton Heights Drive","","Newfield","NY","14867","US","2025-11-14","0.07","Standard (7-10 days)","1","6.90","1.99","",""
+"623394E9-ZIP4-EXTRA","Stranger","Doe","999 Foreign St","","Nowhere","CA","99999","US","2025-12-01","0.05","Standard (7-10 days)","1","5.00","1.99","",""

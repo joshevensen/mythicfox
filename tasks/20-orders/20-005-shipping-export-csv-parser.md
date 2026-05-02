@@ -1,7 +1,7 @@
 ---
 id: "20-005"
 title: "Implement ShippingExport CSV parser"
-status: pending
+status: complete
 phase: "20-orders"
 size: M
 depends_on: ["20-002"]
@@ -18,9 +18,9 @@ references:
 
 ## Acceptance criteria
 
-- [ ] `App\Services\Orders\Parsers\ShippingExportParser` exposes `parse(string $absolutePath): Collection<ShippingExportRow>`.
-- [ ] Quote-aware parser; columns mapped by header name (17 columns per `docs/order-schema.md#source-files`).
-- [ ] Each parsed row exposes:
+- [x] `App\Services\Orders\Parsers\ShippingExportParser` exposes `parse(string $absolutePath): Collection<ShippingExportRow>`.
+- [x] Quote-aware parser; columns mapped by header name (17 columns per `docs/order-schema.md#source-files`).
+- [x] Each parsed row exposes:
   - `tcgplayer_order_number` — uppercased from `Order #`
   - `buyer_firstname` — from `FirstName`
   - `buyer_lastname` — from `LastName`
@@ -31,14 +31,14 @@ references:
   - `product_weight` — float (decimal pounds) from `Product Weight`
   - `tracking_number` — from `Tracking #` (null if empty)
   - `carrier` — from `Carrier` (null if empty)
-- [ ] On malformed input the parser raises `App\Exceptions\OrderImport\InvalidShippingExportException` with the offending row number and column.
-- [ ] Pest unit tests cover:
+- [x] On malformed input the parser raises `App\Exceptions\OrderImport\InvalidShippingExportException` with the offending row number and column.
+- [x] Pest unit tests cover:
   - A canonical ShippingExport.csv (use `docs/assets/ShippingExport.csv` snippet if present, else hand-crafted).
   - Empty `Tracking #` and `Carrier` produce null, not empty string.
   - Postal codes with `zip+4` (`75569-3016`) preserved verbatim.
   - 2-letter state preserved.
   - Missing-header and missing-required-column cases raise the domain exception.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

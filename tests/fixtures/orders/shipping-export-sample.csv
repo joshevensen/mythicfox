@@ -1,0 +1,4 @@
+Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier
+"623394E9-23CAFE-565FC","Thomas","Birch","34 Horton Heights Drive","","Newfield","NY","14867","US","2025-11-14","0.07","Standard (7-10 days)","1","6.90","1.99","",""
+"623394E9-805EEF-0F0CC","NICHOLAS","STARR","31 Gates Road","Unit B","Worcester","MA","01603","US","2025-11-20","0.07","Standard (7-10 days)","1","1.50","1.99","9405511899223344556677","USPS"
+"623394E9-ZIP4-PLUS","Jane","Doe","123 Main St","","Texarkana","TX","75569-3016","US","2025-11-25","0.50","Standard (7-10 days)","2","12.34","1.99","",""

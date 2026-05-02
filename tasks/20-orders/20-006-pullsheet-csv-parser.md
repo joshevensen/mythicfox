@@ -1,7 +1,7 @@
 ---
 id: "20-006"
 title: "Implement PullSheet CSV parser (with `Order Quantity` split)"
-status: pending
+status: complete
 phase: "20-orders"
 size: M
 depends_on: ["20-003"]
@@ -17,10 +17,10 @@ references:
 
 ## Acceptance criteria
 
-- [ ] `App\Services\Orders\Parsers\PullSheetParser` exposes `parse(string $absolutePath): Collection<PullSheetLineItem>`.
-- [ ] Quote-aware parser; columns mapped by header name (11 columns).
-- [ ] The `Order Quantity` cell (e.g. `623394E9-23CAFE-565FC:2 | 623394E9-X-Y:1`) is split on the literal separator `' | '` (space, pipe, space). Each segment is then split on `:` into order-number and integer quantity. The parser emits one `PullSheetLineItem` per pair.
-- [ ] Each `PullSheetLineItem` exposes:
+- [x] `App\Services\Orders\Parsers\PullSheetParser` exposes `parse(string $absolutePath): Collection<PullSheetLineItem>`.
+- [x] Quote-aware parser; columns mapped by header name (11 columns).
+- [x] The `Order Quantity` cell (e.g. `623394E9-23CAFE-565FC:2 | 623394E9-X-Y:1`) is split on the literal separator `' | '` (space, pipe, space). Each segment is then split on `:` into order-number and integer quantity. The parser emits one `PullSheetLineItem` per pair.
+- [x] Each `PullSheetLineItem` exposes:
   - `tcgplayer_order_number` — uppercased
   - `quantity` — integer
   - `product_line` — from `Product Line`
@@ -30,15 +30,15 @@ references:
   - `rarity` — from `Rarity`
   - `condition` — from `Condition` (full compound condition string verbatim)
   - `tcgplayer_sku_id` — integer from `SkuId` (or `Sku Id` — verify header)
-- [ ] Invalid `Order Quantity` syntax (no `:`, non-integer qty, etc.) raises `App\Exceptions\OrderImport\InvalidPullSheetException` carrying the row number and the bad cell value.
-- [ ] Pest unit tests cover:
+- [x] Invalid `Order Quantity` syntax (no `:`, non-integer qty, etc.) raises `App\Exceptions\OrderImport\InvalidPullSheetException` carrying the row number and the bad cell value.
+- [x] Pest unit tests cover:
   - A canonical PullSheet.csv with at least one row whose `Order Quantity` contains 2+ orders, asserting both line items emit.
   - Single-order `Order Quantity` (no `|`) parses correctly.
   - Whitespace tolerance: parser accepts `A:1|B:2` and `A:1 | B:2` equivalently.
   - Compound condition strings (e.g. `Near Mint Foil`, `Lightly Played - RF`) preserved verbatim — see `catalog-schema.md#condition-vocabulary`.
   - `tcgplayer_sku_id` is integer (not string); empty values null.
   - Malformed `Order Quantity` raises the domain exception.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
