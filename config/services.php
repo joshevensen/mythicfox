@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'tcgplayer' => [
+        'seller_id' => env('TCGPLAYER_SELLER_ID'),
+        'seller_slug' => env('TCGPLAYER_SELLER_SLUG'),
+        'storefront_url' => env('TCGPLAYER_SELLER_ID') && env('TCGPLAYER_SELLER_SLUG')
+            ? sprintf('https://www.tcgplayer.com/sellers/%s/%s', env('TCGPLAYER_SELLER_SLUG'), env('TCGPLAYER_SELLER_ID'))
+            : null,
+    ],
+
+    'do_spaces' => [
+        'key' => env('DO_SPACES_KEY'),
+        'secret' => env('DO_SPACES_SECRET'),
+        'region' => env('DO_SPACES_REGION'),
+        'bucket' => env('DO_SPACES_BUCKET'),
+        'endpoint' => env('DO_SPACES_ENDPOINT'),
+    ],
+
 ];
