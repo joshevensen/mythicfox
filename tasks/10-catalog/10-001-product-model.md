@@ -1,7 +1,7 @@
 ---
 id: "10-001"
 title: "Create Product model and migration with default pricing rules"
-status: pending
+status: complete
 phase: "10-catalog"
 size: S
 depends_on: ["phase:00-foundation"]
@@ -17,14 +17,14 @@ Stand up the `products` table — the top of the catalog hierarchy. A product is
 
 ## Acceptance criteria
 
-- [ ] Migration `create_products_table` matches the schema in `docs/catalog-schema.md#products` exactly: `id`, `name` (string, unique), `base_price` (integer cents, default 25), `high_price` (integer cents, default 1000), `market_offset` (integer cents, default 0), `high_offset` (integer cents, default 15), `priced_at` (timestamp nullable), timestamps.
-- [ ] `name` has a unique index — products are upserted on `name`.
-- [ ] `App\Models\Product` Eloquent model exists with `$fillable` covering every writable column.
-- [ ] All four pricing-rule fields and `priced_at` are cast to appropriate types (integer for cents, datetime for `priced_at`).
-- [ ] Model exposes a `cards` relation (placeholder `hasManyThrough` via `sets` is fine — wire fully in `10-003`) and a `sets` relation (`hasMany`) — even though `sets` doesn't exist yet, define the relation method; it'll resolve once `10-002` lands.
-- [ ] `database/factories/ProductFactory.php` produces a valid product with the default pricing values from the doc.
-- [ ] Pest unit test covers: factory creates a row, default pricing values match the doc, `name` uniqueness is enforced.
-- [ ] `composer test` passes.
+- [x] Migration `create_products_table` matches the schema in `docs/catalog-schema.md#products` exactly: `id`, `name` (string, unique), `base_price` (integer cents, default 25), `high_price` (integer cents, default 1000), `market_offset` (integer cents, default 0), `high_offset` (integer cents, default 15), `priced_at` (timestamp nullable), timestamps.
+- [x] `name` has a unique index — products are upserted on `name`.
+- [x] `App\Models\Product` Eloquent model exists with `$fillable` covering every writable column.
+- [x] All four pricing-rule fields and `priced_at` are cast to appropriate types (integer for cents, datetime for `priced_at`).
+- [x] Model exposes a `cards` relation (placeholder `hasManyThrough` via `sets` is fine — wire fully in `10-003`) and a `sets` relation (`hasMany`) — even though `sets` doesn't exist yet, define the relation method; it'll resolve once `10-002` lands.
+- [x] `database/factories/ProductFactory.php` produces a valid product with the default pricing values from the doc.
+- [x] Pest unit test covers: factory creates a row, default pricing values match the doc, `name` uniqueness is enforced.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
