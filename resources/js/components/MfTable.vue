@@ -257,7 +257,7 @@ const sortOrder = computed(() =>
 
 <template>
     <div class="flex flex-col gap-4">
-        <MfErrorBanner v-if="fetchError" :message="fetchError" @retry="reload" />
+        <MfErrorBanner v-if="fetchError" :message="fetchError" :on-retry="reload" />
 
         <div v-if="$slots.filters">
             <slot name="filters" />

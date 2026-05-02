@@ -3,5 +3,5 @@ import Toast from 'primevue/toast';
 </script>
 
 <template>
-    <Toast position="bottom-right" />
+    <Toast position="top-right" />
 </template>

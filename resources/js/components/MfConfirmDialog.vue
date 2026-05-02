@@ -3,5 +3,10 @@ import ConfirmDialog from 'primevue/confirmdialog';
 </script>
 
 <template>
-    <ConfirmDialog />
+    <ConfirmDialog
+        :pt="{
+            root: { class: 'mf-confirm-dialog' },
+            footer: { class: 'flex justify-between gap-2' },
+        }"
+    />
 </template>

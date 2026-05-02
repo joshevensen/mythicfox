@@ -1,7 +1,7 @@
 ---
 id: "30-012"
 title: "Build MfConfirmDialog + MfToast + MfErrorBanner feedback components"
-status: pending
+status: complete
 phase: "30-components"
 size: M
 depends_on: ["30-002", "30-004"]
@@ -17,8 +17,8 @@ Three transient/feedback surfaces: confirmation dialogs (used before destructive
 
 ## Acceptance criteria
 
-- [ ] `resources/js/components/MfConfirmDialog.vue` exists. Mounts the PrimeVue `<ConfirmDialog />` once at the layout root (already placeholder-mounted in `30-004`). Apply Mythic Fox-specific defaults: cancel button on the left, action button on the right, action button uses PrimeVue's `severity="danger"` styling when `destructive: true`.
-- [ ] `resources/js/composables/useMfConfirm.ts` exists. Exports `useMfConfirm()` which wraps PrimeVue's `useConfirm()` with the API:
+- [x] `resources/js/components/MfConfirmDialog.vue` exists. Mounts the PrimeVue `<ConfirmDialog />` once at the layout root (already placeholder-mounted in `30-004`). Apply Mythic Fox-specific defaults: cancel button on the left, action button on the right, action button uses PrimeVue's `severity="danger"` styling when `destructive: true`.
+- [x] `resources/js/composables/useMfConfirm.ts` exists. Exports `useMfConfirm()` which wraps PrimeVue's `useConfirm()` with the API:
   ```ts
   confirm({
     title: string,
@@ -29,24 +29,24 @@ Three transient/feedback surfaces: confirmation dialogs (used before destructive
     onCancel?: () => void,
   })
   ```
-- [ ] The confirm composable refuses (TypeScript-level or runtime warning) verbs `'OK'`, `'Yes'`, `'Confirm'` — they violate the convention; force callers to be specific.
-- [ ] `resources/js/components/MfToast.vue` exists. Mounts the PrimeVue `<Toast />` once at the layout root with `position="top-right"`.
-- [ ] `resources/js/composables/useMfToast.ts` exists. Wraps PrimeVue's `useToast()` with shorthands:
+- [x] The confirm composable refuses (TypeScript-level or runtime warning) verbs `'OK'`, `'Yes'`, `'Confirm'` — they violate the convention; force callers to be specific.
+- [x] `resources/js/components/MfToast.vue` exists. Mounts the PrimeVue `<Toast />` once at the layout root with `position="top-right"`.
+- [x] `resources/js/composables/useMfToast.ts` exists. Wraps PrimeVue's `useToast()` with shorthands:
   - `.success(msg: string, title?: string)` — green styling, auto-dismiss 4s.
   - `.error(msg: string, title?: string)` — red styling, no auto-dismiss (stays until user dismisses) per `docs/ux/ux-patterns.md#toasts`.
   - `.info(msg: string, title?: string)` — neutral styling, auto-dismiss 4s.
-- [ ] `resources/js/components/MfErrorBanner.vue` exists with props:
+- [x] `resources/js/components/MfErrorBanner.vue` exists with props:
   - `title?: string`
   - `message: string` (required)
   - `onRetry?: () => void` — when present, renders a "Retry" button.
   - When no `onRetry` is provided, render a "Dismiss" button instead that emits `@dismiss` for the parent to handle.
-- [ ] Banner styling: red border-left, slightly tinted red background, error icon (`pi pi-exclamation-triangle`). Dark-mode safe.
-- [ ] Both `MfToast` and `MfConfirmDialog` are mounted in `MfAppLayout` (replace the placeholder slots from `30-004` with real components).
-- [ ] Demo route OR Vue Test Utils tests:
+- [x] Banner styling: red border-left, slightly tinted red background, error icon (`pi pi-exclamation-triangle`). Dark-mode safe.
+- [x] Both `MfToast` and `MfConfirmDialog` are mounted in `MfAppLayout` (replace the placeholder slots from `30-004` with real components).
+- [x] Demo route OR Vue Test Utils tests:
   - `useMfConfirm({ verb: 'OK', ... })` warns or throws (project preference; either is acceptable).
   - `useMfToast().success('Saved')` triggers a top-right toast with auto-dismiss timing.
   - `MfErrorBanner` with `onRetry` shows a Retry button; without it, shows Dismiss and emits the event.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
