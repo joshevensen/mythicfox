@@ -1,7 +1,7 @@
 ---
 id: "10-005"
 title: "Implement PricingCustomExport CSV importer (catalog seed + market-price refresh)"
-status: pending
+status: complete
 phase: "10-catalog"
 size: L
 depends_on: ["10-001", "10-002", "10-003"]
@@ -18,20 +18,20 @@ Build the importer for `PricingCustomExport.csv` — TCGPlayer's full filtered c
 
 ## Acceptance criteria
 
-- [ ] A service class (e.g. `App\Services\Catalog\PricingCustomExportImporter`) accepts a file path (or stream) and returns a result object summarizing rows processed, products touched, sets created, cards inserted/updated.
-- [ ] The service performs the upserts in the order defined by `docs/catalog-schema.md#pricingcustomexport-import`:
+- [x] A service class (e.g. `App\Services\Catalog\PricingCustomExportImporter`) accepts a file path (or stream) and returns a result object summarizing rows processed, products touched, sets created, cards inserted/updated.
+- [x] The service performs the upserts in the order defined by `docs/catalog-schema.md#pricingcustomexport-import`:
   1. Persist the uploaded file via the `files` table (path: `imports/pricing/YYYY/MM/{ulid}-{slug}.csv` per `docs/saas-design.md#path-convention`).
   2. Upsert `products` by `name` — do NOT touch pricing-rule fields on update.
   3. Upsert `sets` by `(product_id, name)` — do NOT touch override fields on update.
   4. Upsert `cards` by `tcgplayer_id` — on insert populate identity + market/low; on update **only refresh `market_price` and `low_price`**, never identity.
   5. After all rows, set `products.priced_at = now()` for every product touched in this run.
-- [ ] Decimal `TCG Market Price` / `TCG Low Price` columns are parsed to integer cents. Empty cells become null. Missing-but-valid prices (e.g. blank `TCG Low Price`) do not abort the row.
-- [ ] Columns explicitly listed as "Not stored" / "Ignored" in the doc's column map are dropped silently (notably `Total Quantity`, `TCG Marketplace Price`, `TCG Direct Low`, `TCG Low Price With Shipping`, `Title`, `Add to Quantity`, `Photo URL`).
-- [ ] Importer streams the CSV (don't load 100k+ rows into memory). Batch upserts in chunks of ~500.
-- [ ] Wraps each chunk in a transaction; failures roll back the chunk and continue with a logged error per the operator's tolerance — or aborts the whole run with a clear summary. Pick one and document the choice in the implementation notes section of this task's commit message.
-- [ ] Pest feature test uses a small fixture CSV (5–10 rows, multiple products + sets + conditions) at `tests/fixtures/catalog/pricing-custom-export-sample.csv` and asserts: products / sets / cards are created with correct values; re-running the importer with the same file produces zero logical changes (same row counts, prices match); a second run with one row's `TCG Market Price` changed updates only that card's `market_price`; `products.priced_at` is bumped on every run.
-- [ ] An Artisan command `catalog:import-pricing-custom-export {path}` wraps the service for ad-hoc local use.
-- [ ] `composer test` passes.
+- [x] Decimal `TCG Market Price` / `TCG Low Price` columns are parsed to integer cents. Empty cells become null. Missing-but-valid prices (e.g. blank `TCG Low Price`) do not abort the row.
+- [x] Columns explicitly listed as "Not stored" / "Ignored" in the doc's column map are dropped silently (notably `Total Quantity`, `TCG Marketplace Price`, `TCG Direct Low`, `TCG Low Price With Shipping`, `Title`, `Add to Quantity`, `Photo URL`).
+- [x] Importer streams the CSV (don't load 100k+ rows into memory). Batch upserts in chunks of ~500.
+- [x] Wraps each chunk in a transaction; failures roll back the chunk and continue with a logged error per the operator's tolerance — or aborts the whole run with a clear summary. Pick one and document the choice in the implementation notes section of this task's commit message.
+- [x] Pest feature test uses a small fixture CSV (5–10 rows, multiple products + sets + conditions) at `tests/fixtures/catalog/pricing-custom-export-sample.csv` and asserts: products / sets / cards are created with correct values; re-running the importer with the same file produces zero logical changes (same row counts, prices match); a second run with one row's `TCG Market Price` changed updates only that card's `market_price`; `products.priced_at` is bumped on every run.
+- [x] An Artisan command `catalog:import-pricing-custom-export {path}` wraps the service for ad-hoc local use.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

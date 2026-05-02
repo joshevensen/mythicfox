@@ -1,7 +1,7 @@
 ---
 id: "10-002"
 title: "Create Set model and migration with nullable per-set pricing overrides"
-status: pending
+status: complete
 phase: "10-catalog"
 size: S
 depends_on: ["10-001"]
@@ -16,13 +16,13 @@ Add the `sets` table — a TCGPlayer "Set Name" inside a product. Sets carry the
 
 ## Acceptance criteria
 
-- [ ] Migration `create_sets_table` matches `docs/catalog-schema.md#sets`: `id`, `product_id` (FK → products, cascade or restrict per Laravel default — restrict), `name` (string), `base_price` / `high_price` / `market_offset` / `high_offset` (all integer cents, **nullable**), timestamps.
-- [ ] Composite unique index on `(product_id, name)`.
-- [ ] `App\Models\Set` (or `CardSet` if `Set` collides with PHP reserved naming — pick one and document the choice in the migration comment) Eloquent model exists with `$fillable`, integer casts for the four cents fields.
-- [ ] `belongsTo(Product::class)` relation defined; `Product::sets()` resolves cleanly.
-- [ ] `SetFactory` produces a row tied to a product, with all four override fields null by default and an optional state for setting them.
-- [ ] Pest tests cover: factory creates a row attached to a product, the unique constraint on `(product_id, name)` is enforced, all four override fields default to null.
-- [ ] `composer test` passes.
+- [x] Migration `create_sets_table` matches `docs/catalog-schema.md#sets`: `id`, `product_id` (FK → products, cascade or restrict per Laravel default — restrict), `name` (string), `base_price` / `high_price` / `market_offset` / `high_offset` (all integer cents, **nullable**), timestamps.
+- [x] Composite unique index on `(product_id, name)`.
+- [x] `App\Models\Set` (or `CardSet` if `Set` collides with PHP reserved naming — pick one and document the choice in the migration comment) Eloquent model exists with `$fillable`, integer casts for the four cents fields.
+- [x] `belongsTo(Product::class)` relation defined; `Product::sets()` resolves cleanly.
+- [x] `SetFactory` produces a row tied to a product, with all four override fields null by default and an optional state for setting them.
+- [x] Pest tests cover: factory creates a row attached to a product, the unique constraint on `(product_id, name)` is enforced, all four override fields default to null.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

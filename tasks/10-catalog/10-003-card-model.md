@@ -1,7 +1,7 @@
 ---
 id: "10-003"
 title: "Create Card model and migration keyed on tcgplayer_id"
-status: pending
+status: complete
 phase: "10-catalog"
 size: M
 depends_on: ["10-002"]
@@ -17,15 +17,15 @@ Stand up `cards` — the per-SKU table where **each row is one (product, conditi
 
 ## Acceptance criteria
 
-- [ ] Migration `create_cards_table` matches `docs/catalog-schema.md#cards`: `id`, `set_id` (FK → sets), `tcgplayer_id` (integer, **unique**), `product_name` (string), `number` (string), `rarity` (string), `condition` (string — verbatim TCGPlayer compound string), `market_price` (integer cents, nullable), `low_price` (integer cents, nullable), timestamps.
-- [ ] `tcgplayer_id` has a unique index — it's the upsert key.
-- [ ] Add a covering index on `(set_id, product_name, number)` per the "Things to consider" note in the doc — the catalog page's heaviest aggregation hits this combination.
-- [ ] `App\Models\Card` Eloquent model with `$fillable`, integer casts for `tcgplayer_id`, `market_price`, `low_price`.
-- [ ] `belongsTo(CardSet::class)` (or whatever name `10-002` chose) relation defined; reciprocal `Set::cards()` `hasMany` relation defined.
-- [ ] `condition` is stored verbatim — no enum, no normalization. Don't add a check constraint; the 11 strings in the doc are observed, not exhaustive (TCGPlayer may emit new ones for new games).
-- [ ] `CardFactory` produces a row attached to a set, with realistic default values (e.g. random NM condition, random rarity, sensible cents prices).
-- [ ] Pest tests cover: factory creates a row, `tcgplayer_id` uniqueness is enforced, both `market_price` and `low_price` accept null, condition strings round-trip verbatim (case + spaces preserved).
-- [ ] `composer test` passes.
+- [x] Migration `create_cards_table` matches `docs/catalog-schema.md#cards`: `id`, `set_id` (FK → sets), `tcgplayer_id` (integer, **unique**), `product_name` (string), `number` (string), `rarity` (string), `condition` (string — verbatim TCGPlayer compound string), `market_price` (integer cents, nullable), `low_price` (integer cents, nullable), timestamps.
+- [x] `tcgplayer_id` has a unique index — it's the upsert key.
+- [x] Add a covering index on `(set_id, product_name, number)` per the "Things to consider" note in the doc — the catalog page's heaviest aggregation hits this combination.
+- [x] `App\Models\Card` Eloquent model with `$fillable`, integer casts for `tcgplayer_id`, `market_price`, `low_price`.
+- [x] `belongsTo(CardSet::class)` (or whatever name `10-002` chose) relation defined; reciprocal `Set::cards()` `hasMany` relation defined.
+- [x] `condition` is stored verbatim — no enum, no normalization. Don't add a check constraint; the 11 strings in the doc are observed, not exhaustive (TCGPlayer may emit new ones for new games).
+- [x] `CardFactory` produces a row attached to a set, with realistic default values (e.g. random NM condition, random rarity, sensible cents prices).
+- [x] Pest tests cover: factory creates a row, `tcgplayer_id` uniqueness is enforced, both `market_price` and `low_price` accept null, condition strings round-trip verbatim (case + spaces preserved).
+- [x] `composer test` passes.
 
 ## Implementation notes
 
