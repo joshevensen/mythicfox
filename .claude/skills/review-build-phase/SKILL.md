@@ -38,7 +38,72 @@ gh pr checkout <num>
 
 This puts the working tree on the PR head. Note: this may switch from `main` if you weren't already on the build branch.
 
-### 4. Run the test suite against PR head
+### 4. Triage open review-thread comments
+
+PRs from `/build-next-phase` often pick up automated reviews (Copilot, etc.) and human review comments. Walk each unresolved thread before grading the build — fixes change the code under review, so doing this first avoids re-verifying after.
+
+Fetch unresolved review threads via GraphQL (REST doesn't expose `isResolved` or thread IDs):
+
+```
+gh api graphql -F owner=<owner> -F repo=<repo> -F number=<num> -f query='
+  query($owner:String!, $repo:String!, $number:Int!) {
+    repository(owner:$owner, name:$repo) {
+      pullRequest(number:$number) {
+        reviewThreads(first:100) {
+          nodes {
+            id
+            isResolved
+            isOutdated
+            comments(first:50) {
+              nodes { id databaseId body path line author { login } }
+            }
+          }
+        }
+      }
+    }
+  }
+'
+```
+
+Skip threads where `isResolved: true`. For each remaining thread, decide:
+
+- **fix** — suggestion is correct or an obvious improvement. Apply the edit.
+- **won't fix** — suggestion is wrong, conflicts with the spec, or duplicates a check CI already enforces (Pint, Prettier, ESLint, vue-tsc). State the reason.
+- **defer** — valid but out of scope for this phase (e.g. a refactor that belongs in a later task). Reference where it should land.
+
+In all three cases:
+
+1. If `fix`: edit the code. Don't stage or commit yet — batch all fixes at the end of the step.
+2. Reply on the thread with what you decided and why. Use the **first** comment's `databaseId` as the reply target:
+
+   ```
+   gh api -X POST repos/<owner>/<repo>/pulls/<num>/comments/<first_comment.databaseId>/replies \
+     -f body="<reply>"
+   ```
+
+3. Resolve the thread:
+
+   ```
+   gh api graphql -F id=<thread.id> -f query='
+     mutation($id:ID!) { resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } } }
+   '
+   ```
+
+After all threads handled, if any code changed:
+
+- Run `composer test` to confirm nothing regressed.
+- Commit with a focused message (e.g. `review: address Copilot feedback on MfTable types`). Group commits by concern; don't bundle unrelated fixes.
+- Push to the PR branch.
+
+Also pull PR-level (issue) comments via `gh pr view <num> --comments` for awareness, but don't auto-resolve those — they're conversational, not threaded. Note any actionable items in the final report.
+
+#### Decision discipline
+
+- **Don't fix lazily.** A vague "consider extracting this" is not a fix unless it's clearly right. Push back with a reason if you disagree — silent compliance pollutes history.
+- **Don't auto-fix style nits CI already enforces.** Pint, Prettier, ESLint, vue-tsc — if those would catch it, the comment is redundant; say so and resolve.
+- **Don't resolve threads you didn't actually address.** If a comment needs human judgment you can't make confidently, leave it open and surface in the final report under a `### Open review threads` heading.
+
+### 5. Run the test suite against PR head
 
 ```
 composer test
@@ -46,7 +111,7 @@ composer test
 
 If it fails, capture the output. **Do not abort the review** — collect this as one finding and continue. The full report tells the user everything that's wrong, not just the first thing.
 
-### 5. Wait for CI
+### 6. Wait for CI
 
 ```
 gh pr checks <num> --watch
@@ -54,7 +119,7 @@ gh pr checks <num> --watch
 
 If CI is still running, wait. If CI fails, capture which checks failed; this becomes a finding.
 
-### 6. Walk each task commit
+### 7. Walk each task commit
 
 List the PR's commits:
 
@@ -74,9 +139,9 @@ For each commit whose message matches `^task\((\d{2}-\d{3})\): `:
 5. **Cross-check `AGENTS.md`** for project-specific conventions (Wayfinder routes, no hardcoded URLs, single-user assumptions, etc.). Flag violations.
 6. **Cross-check the system-level guidance:** no needless abstractions, no comments explaining what code does, no error handling for impossible cases, no `// removed` comments. Flag violations.
 
-For commits that don't match the `task(<id>):` pattern (merges, doc-only, fixups), note them but don't grade against criteria — just check for scope concerns.
+For commits that don't match the `task(<id>):` pattern (merges, doc-only, fixups, `review:` commits from step 4), note them but don't grade against criteria — just check for scope concerns.
 
-### 7. Compose the review
+### 8. Compose the review
 
 Aggregate findings into a structured markdown body:
 
@@ -87,6 +152,14 @@ Aggregate findings into a structured markdown body:
 - composer test: <pass|fail>
 - CI: <pass|fail|n/a>
 - Mergeable: <yes|no>
+
+### Review-thread triage
+
+- Threads addressed: <N>
+  - Fixed: <N>
+  - Won't fix: <N> (with reasons)
+  - Deferred: <N> (with target task/phase)
+- Threads left open: <N> (only when human judgment was needed)
 
 ### Per-task verification
 
@@ -110,11 +183,11 @@ Aggregate findings into a structured markdown body:
 
 The **recommendation** rule:
 
-- **`merge`** — every acceptance criterion verified, `composer test` green, CI green, no convention violations, no scope creep. Equivalent to a clean approval.
+- **`merge`** — every acceptance criterion verified, `composer test` green, CI green, no convention violations, no scope creep, every review thread either resolved or explicitly left open with a justified reason. Equivalent to a clean approval.
 - **`request-changes`** — any acceptance criterion fails, tests fail, or critical convention violation.
-- **`comment`** — the in-between: nits, minor scope creep, suggestions. Don't block merge but surface for awareness.
+- **`comment`** — the in-between: nits, minor scope creep, suggestions, or threads left open for human judgment. Don't block merge but surface for awareness.
 
-### 8. Post the review on the PR
+### 9. Post the review on the PR
 
 Use `gh pr review`:
 
@@ -124,7 +197,7 @@ Use `gh pr review`:
 
 Per-line comments (e.g. "this acceptance criterion isn't actually met by line 42") can be inline review comments via `gh api repos/:owner/:repo/pulls/<num>/reviews` if the finding ties to a specific file/line; otherwise consolidate them into the body.
 
-### 9. If recommendation is `merge`: complete the merge + cleanup
+### 10. If recommendation is `merge`: complete the merge + cleanup
 
 Only proceed past this point if the recommendation is `merge` AND `composer test` passed AND CI is green AND `mergeable: MERGEABLE`. Any other state: stop after posting the review.
 
@@ -146,7 +219,7 @@ Use `-d` (safe delete) not `-D` — if Git refuses because the branch is unmerge
 
 If `git branch -d` fails because the branch is "not fully merged" but the PR shows merged, the local branch is just behind because we used a merge commit, not fast-forward. Use `git branch -D build/<phase>` in that specific case — but **only** after re-confirming the PR is merged via `gh pr view <num> --json state` returning `MERGED`.
 
-### 10. Report back to the user
+### 11. Report back to the user
 
 Print a summary:
 
@@ -166,6 +239,8 @@ If the recommendation was NOT `merge`, the summary explains why and points the u
 - **Never delete an unmerged local branch with `-D`** unless the PR's state is verified `MERGED` first.
 - **Never push to `main`** directly. All merging happens through `gh pr merge`.
 - **One review per invocation.** If the user wants to re-review after pushing fixes, they re-invoke the skill.
+- **Never resolve a thread you didn't address.** Resolving means "this is settled" — leaving a fix-or-not decision unmade and resolving the thread is worse than leaving it open.
+- **Never bundle review-comment fixes into `task(<id>):` commits.** Use `review:` (or `chore:`) commits so the per-task history stays clean for `git bisect`.
 
 ## Failure recovery
 
@@ -178,6 +253,18 @@ If the recommendation was NOT `merge`, the summary explains why and points the u
 User: /review-build-phase
 Agent: Reviewing PR #12 (Build phase: 00-foundation, branch build/00-foundation).
 
+  Triaging 4 unresolved review threads...
+    ✅ #1 (Copilot, app/Console/Commands/CreateUser.php:42) — fixed: trimmed
+       email before validation. Replied + resolved.
+    💬 #2 (Copilot, config/fortify.php:18) — won't fix: comment is wrong about
+       Fortify defaults; the spec explicitly disables registration. Replied
+       with the doc reference + resolved.
+    ⏭️ #3 (Copilot, app/Models/User.php:30) — defer: extracting the cast
+       belongs in the 10-catalog refactor, not this phase. Replied + resolved.
+    🤔 #4 (human, README.md:5) — left open: needs your judgment on the
+       wording. Surfaced in final report.
+  Pushed 1 review commit.
+
   Running composer test... PASS
   Waiting for CI... PASS
   Verifying 6 tasks...
@@ -188,8 +275,9 @@ Agent: Reviewing PR #12 (Build phase: 00-foundation, branch build/00-foundation)
     ✅ 00-005 (3/3 criteria met)
     ✅ 00-006 (5/5 criteria met)
 
-  Recommendation: request-changes (one missing test)
+  Recommendation: request-changes (one missing test, plus thread #4 awaiting
+  your input)
 
   Review posted: https://github.com/.../pull/12#pullrequestreview-...
-  Not merging. Fix the missing test and re-invoke.
+  Not merging. Fix the missing test, weigh in on thread #4, and re-invoke.
 ```
