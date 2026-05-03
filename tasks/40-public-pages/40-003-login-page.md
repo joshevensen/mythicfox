@@ -1,7 +1,7 @@
 ---
 id: "40-003"
 title: "Login page at `/login` — email + password"
-status: pending
+status: complete
 phase: "40-public-pages"
 size: M
 depends_on: ["40-001", "phase:00-foundation", "phase:30-components"]
@@ -19,24 +19,24 @@ The single auth surface. Centered card with the Mythic Fox logo, "Sign in" title
 
 ## Acceptance criteria
 
-- [ ] Route `GET /login` renders an Inertia page using `PublicLayout` from `40-001`. Page title is `"Sign in — Mythic Fox Games"`.
-- [ ] The page renders: Mythic Fox logo, "Sign in" heading, an email input (`type="email"`, `autocomplete="email"`, autofocused on mount), a password input (`type="password"`, `autocomplete="current-password"`), and a full-width primary submit button labeled "Sign in".
-- [ ] Email and password inputs are wrapped in `MfFormField` from phase 30 so inline errors render correctly with Inertia's `errors` prop.
-- [ ] No "Forgot password?" link, no "Register" link, no Remember-me checkbox, no 2FA challenge route — page contains exactly the elements above plus the layout chrome.
-- [ ] Submit POSTs to Fortify's login endpoint with `email` and `password` only (no `remember` field). On success, redirect lands on `/dashboard`.
-- [ ] Failure handling per `login.md §Interactions`:
+- [x] Route `GET /login` renders an Inertia page using `PublicLayout` from `40-001`. Page title is `"Sign in — Mythic Fox Games"`.
+- [x] The page renders: Mythic Fox logo, "Sign in" heading, an email input (`type="email"`, `autocomplete="email"`, autofocused on mount), a password input (`type="password"`, `autocomplete="current-password"`), and a full-width primary submit button labeled "Sign in".
+- [x] Email and password inputs are wrapped in `MfFormField` from phase 30 so inline errors render correctly with Inertia's `errors` prop.
+- [x] No "Forgot password?" link, no "Register" link, no Remember-me checkbox, no 2FA challenge route — page contains exactly the elements above plus the layout chrome.
+- [x] Submit POSTs to Fortify's login endpoint with `email` and `password` only (no `remember` field). On success, redirect lands on `/dashboard`.
+- [x] Failure handling per `login.md §Interactions`:
   - Invalid credentials → inline error above the form: `"Email or password incorrect."` (generic — never distinguish "no such email" from "wrong password"). Password field cleared, email retained.
   - Rate-limited (Fortify default 5/min) → inline error with countdown; submit disabled until countdown expires.
   - Server error → inline error: `"Something went wrong. Try again."`
-- [ ] Submitting state: submit button shows a spinner, both inputs are disabled.
-- [ ] Already-authenticated visitor hitting `GET /login` is redirected to `/dashboard` server-side via middleware (do NOT rely on a client guard alone).
-- [ ] Pest feature test `tests/Feature/Public/LoginTest.php` covers:
+- [x] Submitting state: submit button shows a spinner, both inputs are disabled.
+- [x] Already-authenticated visitor hitting `GET /login` is redirected to `/dashboard` server-side via middleware (do NOT rely on a client guard alone).
+- [x] Pest feature test `tests/Feature/Public/LoginTest.php` covers:
   - Anonymous request to `/login` returns 200 and renders the expected fields.
   - Authenticated request to `/login` redirects to `/dashboard`.
   - Valid credentials log in and redirect to `/dashboard`.
   - Invalid credentials return a generic error message and do not log in.
   - The page does NOT contain the strings "Forgot", "Register", "Remember", or "Two-factor" / "2FA".
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

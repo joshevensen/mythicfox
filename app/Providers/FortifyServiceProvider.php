@@ -24,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
 
-        Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
+        Fortify::loginView(fn (Request $request) => Inertia::render('public/Login', [
             'status' => $request->session()->get('status'),
         ]));
 

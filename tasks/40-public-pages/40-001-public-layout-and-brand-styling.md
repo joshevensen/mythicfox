@@ -1,7 +1,7 @@
 ---
 id: "40-001"
 title: "Public layout shell + brand styling for public-facing pages"
-status: pending
+status: complete
 phase: "40-public-pages"
 size: M
 depends_on: ["phase:00-foundation", "phase:30-components"]
@@ -19,13 +19,13 @@ The public-facing surfaces (homepage and login) share a brand shell distinct fro
 
 ## Acceptance criteria
 
-- [ ] An Inertia layout component `resources/js/layouts/PublicLayout.vue` exists and renders: a default slot for page content, the shared footer (delivered by `40-004`, stub it for now if that task hasn't shipped — see notes), and applies the brand-color CSS custom properties from `ux-patterns.md` (`--mf-orange`, `--mf-teal`, `--mf-brown` swap on `.dark`).
-- [ ] The layout sets the `<title>` and `<meta name="description">` via Inertia's `Head` component, with per-page override props (`title`, `description`).
-- [ ] The favicon link tags listed in `public-homepage.md §SEO` (favicon-32, favicon-16, favicon.ico, apple-touch-icon, manifest, theme-color `#EA5A1F`) render in the document head on every page using this layout. Wire from `resources/views/app.blade.php` if that's the simplest spot, otherwise via `@inertiaHead`.
-- [ ] Dark mode is the default per `saas-design.md` — the `.dark` class is applied to `<html>` on initial render of public pages without flicker. (The vue-starter-kit appearance toggle already handles admin; ensure the public layout respects it.)
-- [ ] PrimeVue is configured with the `MythicFoxPreset` from `ux-patterns.md §Brand colors` so that `bg-mf-orange`, `text-mf-teal`, `border-mf-brown` tailwind aliases work and PrimeVue components inherit the orange primary.
-- [ ] A Pest feature test (`tests/Feature/Public/PublicLayoutTest.php`) hits a stub route that renders the layout and asserts: response 200, `<title>` contains the passed title, the favicon link tags are present, `.dark` class on `<html>`.
-- [ ] `composer test` passes.
+- [x] An Inertia layout component `resources/js/layouts/PublicLayout.vue` exists and renders: a default slot for page content, the shared footer (delivered by `40-004`, stub it for now if that task hasn't shipped — see notes), and applies the brand-color CSS custom properties from `ux-patterns.md` (`--mf-orange`, `--mf-teal`, `--mf-brown` swap on `.dark`).
+- [x] The layout sets the `<title>` and `<meta name="description">` via Inertia's `Head` component, with per-page override props (`title`, `description`).
+- [x] The favicon link tags listed in `public-homepage.md §SEO` (favicon-32, favicon-16, favicon.ico, apple-touch-icon, manifest, theme-color `#EA5A1F`) render in the document head on every page using this layout. Wire from `resources/views/app.blade.php` if that's the simplest spot, otherwise via `@inertiaHead`.
+- [x] Dark mode is the default per `saas-design.md` — the `.dark` class is applied to `<html>` on initial render of public pages without flicker. (The vue-starter-kit appearance toggle already handles admin; ensure the public layout respects it.)
+- [x] PrimeVue is configured with the `MythicFoxPreset` from `ux-patterns.md §Brand colors` so that `bg-mf-orange`, `text-mf-teal`, `border-mf-brown` tailwind aliases work and PrimeVue components inherit the orange primary.
+- [x] A Pest feature test (`tests/Feature/Public/PublicLayoutTest.php`) hits a stub route that renders the layout and asserts: response 200, `<title>` contains the passed title, the favicon link tags are present, `.dark` class on `<html>`.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

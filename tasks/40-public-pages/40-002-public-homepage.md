@@ -1,7 +1,7 @@
 ---
 id: "40-002"
 title: "Public homepage at `/` — hero, about, what-you-get, what-buyers-say"
-status: pending
+status: complete
 phase: "40-public-pages"
 size: L
 depends_on: ["40-001", "phase:30-components", "phase:70-jobs"]
@@ -22,26 +22,26 @@ Build the unauthenticated landing page at `/`. Hero with logo + tagline + "Shop 
 
 ## Acceptance criteria
 
-- [ ] Route `GET /` registered (public, no auth middleware) renders an Inertia page that uses `PublicLayout` from `40-001`.
-- [ ] Page title is `"Mythic Fox Games — Buy & Sell Trading Card Games"` and the meta description matches `public-homepage.md §SEO`.
-- [ ] Hero renders: Mythic Fox logo, the tagline `"We buy & sell trading card games."`, and a primary CTA button "Shop on TCGPlayer →" linking to `config('services.tcgplayer.storefront_url')` with `target="_blank" rel="noopener"`. The URL is shared via Inertia props (e.g. `tcgplayerStorefrontUrl`), not hardcoded in markup.
-- [ ] About section renders the paragraph from `public-homepage.md §About` verbatim.
-- [ ] "What you get" section renders the four feature blocks (Pack-fresh inventory / Honest condition / Protective packaging / Fast shipping) each with a PrimeIcon. Layout: 1 col on phone, 2×2 on tablet, 1×4 on desktop.
-- [ ] "What buyers say" section reads `seller_stats` (singleton):
+- [x] Route `GET /` registered (public, no auth middleware) renders an Inertia page that uses `PublicLayout` from `40-001`.
+- [x] Page title is `"Mythic Fox Games — Buy & Sell Trading Card Games"` and the meta description matches `public-homepage.md §SEO`.
+- [x] Hero renders: Mythic Fox logo, the tagline `"We buy & sell trading card games."`, and a primary CTA button "Shop on TCGPlayer →" linking to `config('services.tcgplayer.storefront_url')` with `target="_blank" rel="noopener"`. The URL is shared via Inertia props (e.g. `tcgplayerStorefrontUrl`), not hardcoded in markup.
+- [x] About section renders the paragraph from `public-homepage.md §About` verbatim.
+- [x] "What you get" section renders the four feature blocks (Pack-fresh inventory / Honest condition / Protective packaging / Fast shipping) each with a PrimeIcon. Layout: 1 col on phone, 2×2 on tablet, 1×4 on desktop.
+- [x] "What buyers say" section reads `seller_stats` (singleton):
   - Section is **hidden** when `seller_stats.scraped_at IS NULL` OR `scraped_at < now() - 14 days`.
   - When visible, shows `⭐ {rating} from {review_count} reviews on TCGPlayer` using `pi pi-star-fill` / `pi pi-star` for the glyphs (rating value + count from the row).
   - When `feedback` is non-empty, renders up to 3 quote cards (text, reviewer name, date). When empty, just rating + count.
   - The whole section is NOT a clickable link.
-- [ ] JSON-LD `Organization` structured-data block emitted in the page head with name, url, logo.
-- [ ] `seller_stats` data is supplied by an Inertia controller (e.g. `PublicHomepageController@__invoke`) that queries the singleton and applies the staleness rule server-side — the Vue component receives either `null` or a populated `sellerStats` prop and just renders accordingly.
-- [ ] Pest feature test `tests/Feature/Public/HomepageTest.php` covers:
+- [x] JSON-LD `Organization` structured-data block emitted in the page head with name, url, logo.
+- [x] `seller_stats` data is supplied by an Inertia controller (e.g. `PublicHomepageController@__invoke`) that queries the singleton and applies the staleness rule server-side — the Vue component receives either `null` or a populated `sellerStats` prop and just renders accordingly.
+- [x] Pest feature test `tests/Feature/Public/HomepageTest.php` covers:
   - Anonymous request returns 200.
   - Page renders with the expected title in HTML.
   - Stat section is hidden when no `seller_stats` row exists.
   - Stat section is hidden when `scraped_at` is older than 14 days.
   - Stat section renders rating + review count when fresh (set up via factory).
   - Storefront URL from config appears in the hero CTA's href.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
