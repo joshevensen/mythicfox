@@ -15,9 +15,7 @@ defineProps<Props>();
         <title>{{ title }}</title>
         <meta v-if="description" name="description" :content="description" />
     </Head>
-    <div
-        class="flex min-h-screen flex-col bg-background text-foreground"
-    >
+    <div class="flex min-h-screen flex-col bg-background text-foreground">
         <main class="flex-1">
             <slot />
         </main>

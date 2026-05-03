@@ -53,8 +53,12 @@ const features = [
 ];
 
 const ratingStars = computed(() => {
-    if (!props.sellerStats) return [];
+    if (!props.sellerStats) {
+        return [];
+    }
+
     const filled = Math.round(props.sellerStats.rating);
+
     return Array.from({ length: 5 }, (_, i) =>
         i < filled ? 'pi pi-star-fill' : 'pi pi-star',
     );
@@ -73,20 +77,27 @@ const organizationJsonLd = computed(() =>
 
 <template>
     <Head>
-        <component :is="'script'" type="application/ld+json" v-html="organizationJsonLd" />
+        <!-- Vue's template parser refuses a literal <script> tag, so we emit it via the dynamic-component trick. -->
+        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
+        <component
+            :is="'script'"
+            type="application/ld+json"
+            v-html="organizationJsonLd"
+        />
+        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
     <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:py-14">
         <!-- HERO -->
-        <section class="flex flex-col items-center gap-6 py-8 text-center sm:py-14">
+        <section
+            class="flex flex-col items-center gap-6 py-8 text-center sm:py-14"
+        >
             <img
                 src="/mythicfox.png"
                 alt="Mythic Fox Games"
                 class="h-24 w-24 sm:h-32 sm:w-32"
             />
-            <h1
-                class="text-3xl font-semibold text-mf-brown sm:text-4xl"
-            >
+            <h1 class="text-3xl font-semibold text-mf-brown sm:text-4xl">
                 We buy &amp; sell trading card games.
             </h1>
             <a
@@ -95,7 +106,7 @@ const organizationJsonLd = computed(() =>
                 target="_blank"
                 rel="noopener"
                 data-test="hero-shop-cta"
-                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-mf-orange px-6 py-3 text-base font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-mf-orange px-6 py-3 text-base font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
             >
                 Shop on TCGPlayer →
             </a>
@@ -120,9 +131,7 @@ const organizationJsonLd = computed(() =>
             <h2 class="mb-8 text-center text-2xl font-semibold text-mf-brown">
                 What you get
             </h2>
-            <div
-                class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
-            >
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div
                     v-for="feature in features"
                     :key="feature.title"

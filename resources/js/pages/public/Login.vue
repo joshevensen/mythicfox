@@ -71,7 +71,7 @@ const banner = computed<Banner | null>(() => {
                         autofocus
                         required
                         :disabled="processing"
-                        class="h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                        class="h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                 </MfFormField>
 
@@ -83,7 +83,7 @@ const banner = computed<Banner | null>(() => {
                         autocomplete="current-password"
                         required
                         :disabled="processing"
-                        class="h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                        class="h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                 </MfFormField>
 
@@ -91,7 +91,7 @@ const banner = computed<Banner | null>(() => {
                     type="submit"
                     :disabled="processing"
                     data-test="login-submit"
-                    class="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-mf-orange px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-mf-orange px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <i v-if="processing" class="pi pi-spinner animate-spin" />
                     Sign in
