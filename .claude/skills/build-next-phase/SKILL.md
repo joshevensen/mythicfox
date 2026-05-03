@@ -33,7 +33,7 @@ Before creating the branch:
 
 - `git status` must be clean. If there are uncommitted changes, stop and tell the user.
 - Current branch must be `main` (or whatever `git symbolic-ref refs/remotes/origin/HEAD` resolves to). Switch to `main` and `git pull` first.
-- Confirm `composer test` passes on `main` before starting. If it fails, stop — we don't want to inherit a broken baseline.
+- Confirm `composer ci:check` passes on `main` before starting. If it fails, stop — we don't want to inherit a broken baseline. (`ci:check` is the same gate CI runs: ESLint, Prettier, vue-tsc, Pint, and Pest. Plain `composer test` only covers Pint + Pest, so frontend lint/format/type errors will slip through to CI.)
 
 ### 4. Create the phase branch
 
@@ -52,7 +52,7 @@ For **each task**:
 1. **Read the task file.** Read every doc referenced in its `references:` list. Don't skip — the implementing context lives in the docs.
 2. **Set `status: in_progress`** in the task file frontmatter. Don't commit this on its own.
 3. **Implement** to make every line in `acceptance_criteria` true. Use the existing patterns in the codebase, the project's `AGENTS.md`, and the doc references. Don't introduce abstractions the task doesn't ask for.
-4. **Run `composer test`.** If it fails, fix and re-run. Do not move on with failing tests.
+4. **Run `composer ci:check`.** Mirrors what GitHub Actions runs — ESLint, Prettier, vue-tsc, Pint, Pest. If anything fails, fix and re-run. Do not move on with a failing check. (For tasks that only touch PHP and don't touch any `resources/js/**` files, `composer test` is acceptable as a faster signal — but the next end-of-phase `ci:check` must still pass.)
 5. **Update the task file:**
    - Flip `status: in_progress` → `status: complete`.
    - Tick every `acceptance_criteria` checkbox `[ ]` → `[x]`.
@@ -76,7 +76,7 @@ For **each task**:
 
 After the last task commits successfully:
 
-1. Run `composer test` one more time as a final sanity check.
+1. Run `composer ci:check` one more time as a final sanity check. **Do not push if it fails** — fix the issues, commit the fix as `fix: …`, and re-run. Pushing a red branch wastes a CI cycle and forces a follow-up commit anyway.
 2. `git push -u origin build/<phase>`.
 3. Open a PR with `gh pr create`. Title: `Build phase: <phase>`. Body uses this template:
 
@@ -94,7 +94,7 @@ After the last task commits successfully:
    ## Test plan
 
    - [ ] CI green
-   - [ ] Pull, run `composer install && npm ci`, verify `composer test` passes locally
+   - [ ] Pull, run `composer install && npm ci && npm run build`, verify `composer ci:check` passes locally
    - [ ] <any task-specific manual verification — e.g. run a CSV import, hit the new route in a browser>
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -111,6 +111,7 @@ Do not proceed to the next phase. Each phase invocation is independent. The user
 - **One task per commit.** Never bundle two tasks into one commit, even small ones.
 - **Never `--amend`** a previous commit. If a task is wrong, make a new commit with `task(<id>): fix ...` on the same branch.
 - **Never skip tests.** No `--no-verify`, no commenting out failing assertions.
+- **`composer ci:check` is the gate, not `composer test`.** `composer test` only runs Pint + Pest. CI runs ESLint, Prettier, vue-tsc, Pint, Pest — all gated by `composer ci:check`. Any phase that touches `resources/js/**` must pass `composer ci:check` before push, or CI will go red on lint/format/types issues that locally looked fine.
 - **Never push to `main`.** All work happens on `build/<phase>` and ships via PR.
 - **Stop and surface anything blocked.** If a task can't be completed (needs operator-manual provisioning, spec gap, external dependency unavailable), set `status: blocked`, write a brief note in the task file under a new `## Blocker` section, commit that, and move to the next non-dependent task. Don't skip silently.
 - **Phase 80 tasks are operator-manual.** Do not attempt to provision DigitalOcean droplets, create Spaces buckets, or configure Forge from inside this skill. Mark them `blocked` with a note for the operator.
