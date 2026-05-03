@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicHomepageController;
 use Illuminate\Http\Response;
@@ -44,11 +45,12 @@ TXT;
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    // Phase-50/60 placeholders. Real implementations land in 50-006 (add-cards) and phase 60
-    // (orders, catalog, inventory). Registered now so Wayfinder generates typed helpers
-    // for the dashboard quick-action tiles.
-    Route::inertia('add-cards', 'placeholders/ComingSoon', ['title' => 'Add Cards'])
-        ->name('add-cards');
+    Route::get('add-cards', [AddCardsController::class, 'show'])->name('add-cards');
+    Route::post('add-cards', [AddCardsController::class, 'store'])->name('add-cards.store');
+
+    // Phase-60 placeholders. Real implementations land in phase 60 (orders, catalog,
+    // inventory). Registered now so Wayfinder generates typed helpers for the
+    // dashboard quick-action tiles and top-nav links.
     Route::inertia('orders', 'placeholders/ComingSoon', ['title' => 'Orders'])
         ->name('orders');
     Route::inertia('catalog', 'placeholders/ComingSoon', ['title' => 'Catalog'])

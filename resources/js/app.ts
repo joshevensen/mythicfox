@@ -28,6 +28,7 @@ createInertiaApp({
                 return [AppLayout, SettingsLayout];
             case name === 'Dashboard':
             case name === 'Settings':
+            case name === 'AddCards':
             case name.startsWith('placeholders/'):
                 return AdminLayout;
             default:
