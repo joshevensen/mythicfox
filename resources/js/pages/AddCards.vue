@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import Select from 'primevue/select';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { store as storeAction } from '@/actions/App/Http/Controllers/AddCardsController';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
 import MfPageHeader from '@/components/MfPageHeader.vue';
@@ -28,6 +28,20 @@ const props = defineProps<{
 }>();
 
 const { success, info } = useMfToast();
+
+// Disable pull-to-refresh while this page is mounted. The fixed-bottom Save
+// bar isn't the scrolling element, so the contain hint has to live on the
+// document root to take effect.
+let previousOverscroll = '';
+onMounted(() => {
+    previousOverscroll = document.documentElement.style.overscrollBehaviorY;
+    document.documentElement.style.overscrollBehaviorY = 'contain';
+    document.body.style.overscrollBehaviorY = 'contain';
+});
+onUnmounted(() => {
+    document.documentElement.style.overscrollBehaviorY = previousOverscroll;
+    document.body.style.overscrollBehaviorY = '';
+});
 
 const productId = ref<number | null>(props.scope.product_id);
 const setId = ref<number | null>(props.scope.set_id);
@@ -349,7 +363,6 @@ const saveLabel = computed(() =>
 
     <div
         class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur"
-        style="overscroll-behavior: contain"
     >
         <button
             type="button"
