@@ -12,7 +12,7 @@ import type {
     FilterDef,
     FilterValue,
 } from '@/components/MfFilter.types';
-import MfFilterChip from '@/components/MfFilterChip.vue';
+import MfFilterChips from '@/components/MfFilterChips.vue';
 import MfSearchInput from '@/components/MfSearchInput.vue';
 
 type Props = {
@@ -362,22 +362,13 @@ const setDateTo = (def: FilterDef, raw: string): void => {
 
 <template>
     <div data-mf-component="filter-panel">
-        <div v-if="hasActive" class="mb-3 flex flex-wrap items-center gap-2">
-            <MfFilterChip
-                v-for="chip in activeFilters"
-                :key="chip.key"
-                :label="chip.label"
-                :value="chip.display"
-                @remove="removeFilter(chip.key)"
-            />
-            <button
-                type="button"
-                class="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
-                @click="clearAll"
-            >
-                Clear all
-            </button>
-        </div>
+        <MfFilterChips
+            v-if="hasActive"
+            class="mb-3"
+            :filters="activeFilters"
+            @remove="removeFilter"
+            @clear-all="clearAll"
+        />
 
         <Panel toggleable header="Filters" class="hidden md:block">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

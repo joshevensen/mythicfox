@@ -15,6 +15,7 @@ import OrdersImportModal from '@/components/orders/OrdersImportModal.vue';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
 import { useOrdersImportModal } from '@/composables/useOrdersImportModal';
+import { useTableState } from '@/composables/useTableState';
 import { index as ordersIndex } from '@/routes/orders';
 import packingSlipRoutes from '@/routes/orders/packing-slip';
 
@@ -115,26 +116,18 @@ const columns: ColumnDef<OrderRow>[] = [
     },
 ];
 
-const FILTER_KEYS = ['status', 'order_date_from', 'order_date_to'];
-
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
-
-const hasActiveFilters = computed(() =>
-    FILTER_KEYS.some((key) => currentUrl().searchParams.has(key)),
-);
+const tableState = useTableState({
+    endpoint: ordersIndex().url,
+    filterKeys: ['status', 'order_date_from', 'order_date_to'],
+    defaultSort: { field: 'order_date', dir: 'desc' },
+    inertiaOnly: ['orders'],
+});
+const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
 
 const panelDrawerOpen = ref(false);
 
 const showFiltersDrawer = (): void => {
     panelDrawerOpen.value = true;
-};
-
-const clearAllFilters = (): void => {
-    router.get(
-        ordersIndex().url,
-        {},
-        { preserveState: true, preserveScroll: true },
-    );
 };
 
 const onImportClick = (): void => {
@@ -298,15 +291,18 @@ onUnmounted(stopPolling);
     </MfPageHeader>
 
     <MfTable
-        :endpoint="ordersIndex().url"
         :columns="columns"
         :rows="orders.data"
         :total="orders.meta.total"
+        :page="tableState.page.value"
+        :per-page="tableState.perPage.value"
+        :sort="tableState.sort.value"
         row-key="tcgplayer_order_number"
-        :default-sort="{ column: 'order_date', dir: 'desc' }"
-        :inertia-only="['orders']"
         :selectable="true"
         :skeleton-rows="5"
+        @update:page="tableState.setPage"
+        @update:per-page="tableState.setPerPage"
+        @update:sort="tableState.setSort"
     >
         <template #filters>
             <MfFilterPanel

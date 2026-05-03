@@ -12,6 +12,7 @@ import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import { useCatalogUploadModal } from '@/composables/useCatalogUploadModal';
 import { useMfToast } from '@/composables/useMfToast';
+import { useTableState } from '@/composables/useTableState';
 import RowExpand from '@/pages/Catalog/RowExpand.vue';
 import { index as catalogIndex } from '@/routes/catalog';
 
@@ -77,16 +78,16 @@ const page = usePage();
 const { info, success } = useMfToast();
 const uploadModal = useCatalogUploadModal();
 
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
-
-const FILTER_KEYS = ['product', 'sets', 'in_stock'];
-
-const hasActiveFilters = computed(() =>
-    FILTER_KEYS.some((key) => currentUrl().searchParams.has(key)),
-);
+const tableState = useTableState({
+    endpoint: catalogIndex().url,
+    filterKeys: ['product', 'sets', 'in_stock'],
+    defaultSort: { field: 'product_name', dir: 'asc' },
+    inertiaOnly: ['cards', 'variants', 'meta'],
+});
+const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
 
 const selectedProductId = computed(
-    () => currentUrl().searchParams.get('product') ?? '',
+    () => tableState.filters.value.product ?? '',
 );
 
 const setOptions = computed<FilterOption[]>(() => {
@@ -211,14 +212,6 @@ const panelDrawerOpen = ref(false);
 
 const showFiltersDrawer = (): void => {
     panelDrawerOpen.value = true;
-};
-
-const clearAllFilters = (): void => {
-    router.get(
-        catalogIndex().url,
-        {},
-        { preserveState: true, preserveScroll: true },
-    );
 };
 
 const onUploadClick = (): void => {
@@ -388,15 +381,18 @@ const stalenessLabel = (entry: StaleEntry): string => {
     <CatalogUploadModal />
 
     <MfTable
-        :endpoint="catalogIndex().url"
         :columns="columns"
         :rows="cards.data"
         :total="cards.meta.total"
+        :page="tableState.page.value"
+        :per-page="tableState.perPage.value"
+        :sort="tableState.sort.value"
         row-key="key"
-        :default-sort="{ column: 'product_name', dir: 'asc' }"
-        :inertia-only="['cards', 'variants', 'meta']"
         :expandable="true"
         :skeleton-rows="5"
+        @update:page="tableState.setPage"
+        @update:per-page="tableState.setPerPage"
+        @update:sort="tableState.setSort"
     >
         <template #filters>
             <MfFilterPanel

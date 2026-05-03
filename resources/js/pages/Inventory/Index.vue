@@ -14,6 +14,7 @@ import MfTable from '@/components/MfTable.vue';
 import { useInlineCellSave } from '@/composables/useInlineCellSave';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
+import { useTableState } from '@/composables/useTableState';
 import {
     destroy as destroyInventory,
     index as inventoryIndex,
@@ -72,10 +73,17 @@ const page = usePage();
 const { confirm } = useMfConfirm();
 const { success, error: toastError } = useMfToast();
 
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
+const tableState = useTableState({
+    endpoint: inventoryIndex().url,
+    filterKeys: ['product', 'sets', 'conditions', 'has_override', 'in_stock'],
+    defaultSort: { field: 'product_name', dir: 'asc' },
+    inertiaOnly: ['rows', 'meta'],
+    filtersComplete: (raw) =>
+        Boolean(raw.product) && Boolean(raw.sets) && Boolean(raw.conditions),
+});
 
 const selectedProductId = computed(
-    () => currentUrl().searchParams.get('product') ?? '',
+    () => tableState.filters.value.product ?? '',
 );
 
 const setOptions = computed<FilterOption[]>(() => {
@@ -573,22 +581,8 @@ const onBulkMarkOutOfStock = (
 // --- override-count indicator ----------------------------------------------
 
 const onOverrideCountClick = (): void => {
-    const url = currentUrl();
-    const params = url.searchParams;
-    const isOn = params.get('has_override') === '1';
-
-    if (isOn) {
-        params.delete('has_override');
-    } else {
-        params.set('has_override', '1');
-    }
-
-    params.delete('page');
-
-    router.get(url.pathname, Object.fromEntries(params.entries()), {
-        preserveState: true,
-        preserveScroll: true,
-    });
+    const isOn = tableState.filters.value.has_override === '1';
+    tableState.setFilter('has_override', !isOn);
 };
 
 // --- staleness indicator ---------------------------------------------------
@@ -719,15 +713,18 @@ if (initialUrl.searchParams.get('export') === '1') {
 
     <MfTable
         v-else
-        :endpoint="inventoryIndex().url"
         :columns="columns"
         :rows="visibleRows"
         :total="rows.meta.total"
+        :page="tableState.page.value"
+        :per-page="tableState.perPage.value"
+        :sort="tableState.sort.value"
         row-key="id"
-        :default-sort="{ column: 'product_name', dir: 'asc' }"
-        :inertia-only="['rows', 'meta']"
         :selectable="true"
         :skeleton-rows="5"
+        @update:page="tableState.setPage"
+        @update:per-page="tableState.setPerPage"
+        @update:sort="tableState.setSort"
     >
         <template #filters>
             <MfFilterPanel

@@ -1,28 +1,27 @@
 <?php
 
-test('MfTable accepts the documented props for endpoint, columns, and rows', function () {
+test('MfTable accepts controlled-mode props from the page composable', function () {
     $source = file_get_contents(resource_path('js/components/MfTable.vue'));
 
     expect($source)
-        ->toContain('endpoint: string')
         ->toContain('columns: ColumnDef<TRow>[]')
         ->toContain('rows: TRow[]')
         ->toContain('total: number')
+        ->toContain('page: number')
+        ->toContain('perPage: number')
+        ->toContain('sort: SortState')
         ->toContain('selectable?: boolean')
         ->toContain('expandable?: boolean')
         ->toContain('rowAction?: RowAction');
 });
 
-test('MfTable serializes lazy state into the documented query string', function () {
+test('MfTable emits state-change events for the page composable to handle', function () {
     $source = file_get_contents(resource_path('js/components/MfTable.vue'));
 
     expect($source)
-        ->toContain('page: page.value')
-        ->toContain('per_page: perPage.value')
-        ->toContain('params.sort = sort.value.column')
-        ->toContain('params.dir = sort.value.dir')
-        ->toContain('preserveState: true')
-        ->toContain('preserveScroll: true');
+        ->toContain("(e: 'update:page', value: number): void")
+        ->toContain("(e: 'update:perPage', value: number): void")
+        ->toContain("(e: 'update:sort', value: SortState): void");
 });
 
 test('MfTable types module exports the expected page-size defaults', function () {
