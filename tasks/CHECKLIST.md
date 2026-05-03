@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 56 / 67 tasks complete**
+**Total: 57 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -88,9 +88,9 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **60-004** `L` — [Catalog browse page — aggregated table with expand-rows + stale-data indicator](61-catalog-pages/60-004-catalog-browse-page.md)
 - [x] **60-005** `M` — [Catalog page — PricingCustomExport upload modal](61-catalog-pages/60-005-catalog-pricingcustomexport-upload.md)
 
-## Phase 62 — Inventory pages (0 / 2)
+## Phase 62 — Inventory pages (1 / 2)
 
-- [ ] **60-006** `L` — [Inventory page — required-filter table with inline qty/override edits + per-row + bulk actions](62-inventory-pages/60-006-inventory-page-table.md)
+- [x] **60-006** `L` — [Inventory page — required-filter table with inline qty/override edits + per-row + bulk actions](62-inventory-pages/60-006-inventory-page-table.md)
 - [ ] **60-007** `L` — [Inventory page — Export Pricing flow (recompute → preview modal → CSV download)](62-inventory-pages/60-007-inventory-export-pricing-modal.md)
 
 ## Phase 63 — Shared table URL state (0 / 1)

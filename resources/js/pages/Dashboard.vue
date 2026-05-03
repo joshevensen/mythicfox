@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MfPageHeader from '@/components/MfPageHeader.vue';
-import { addCards, inventory } from '@/routes';
+import { addCards } from '@/routes';
 import { index as catalogIndex } from '@/routes/catalog';
+import { index as inventoryIndex } from '@/routes/inventory';
 import { index as ordersIndex } from '@/routes/orders';
 
 defineProps<{
@@ -43,7 +44,7 @@ const tiles: Tile[] = [
         label: '💲 Export Pricing',
         icon: 'pi pi-dollar',
         description: 'Recompute and export prices to TCGPlayer',
-        href: inventory({ query: { export: 1 } }).url,
+        href: inventoryIndex({ query: { export: 1 } }).url,
         testId: 'tile-export-pricing',
     },
 ];
