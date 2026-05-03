@@ -1,7 +1,7 @@
 ---
 id: "60-002"
 title: "Orders page — Import modal (four-file dropzone, queues importer)"
-status: pending
+status: complete
 phase: "60-orders-pages"
 size: M
 depends_on:
@@ -21,23 +21,23 @@ Wire the **Import orders** primary button on the Orders page to a PrimeVue Dialo
 
 ## Acceptance criteria
 
-- [ ] Clicking the **Import orders** header button opens a PrimeVue `Dialog` containing four `MfFileDropzone` slots labeled per `docs/ux/orders-table.md#modal-layout`: OrderList (required, `.csv`), ShippingExport (optional, `.csv`), PullSheet (optional, `.csv`), PackingSlips (optional, `.pdf`).
-- [ ] Each slot accepts a single file; selecting a file replaces the slot label with the filename and shows a small × to clear it.
-- [ ] Each optional slot displays the trade-off hint described in `docs/ux/orders-table.md#modal-layout` (e.g. "Without ShippingExport, addresses/tracking are null").
-- [ ] **Import** submit button disabled until OrderList is provided.
-- [ ] Submit posts a multipart request to a controller action (e.g. `POST /orders/import`) that:
+- [x] Clicking the **Import orders** header button opens a PrimeVue `Dialog` containing four `MfFileDropzone` slots labeled per `docs/ux/orders-table.md#modal-layout`: OrderList (required, `.csv`), ShippingExport (optional, `.csv`), PullSheet (optional, `.csv`), PackingSlips (optional, `.pdf`).
+- [x] Each slot accepts a single file; selecting a file replaces the slot label with the filename and shows a small × to clear it.
+- [x] Each optional slot displays the trade-off hint described in `docs/ux/orders-table.md#modal-layout` (e.g. "Without ShippingExport, addresses/tracking are null").
+- [x] **Import** submit button disabled until OrderList is provided.
+- [x] Submit posts a multipart request to a controller action (e.g. `POST /orders/import`) that:
   - Validates file MIME / extension (`.csv` for first three, `.pdf` for the fourth).
   - Persists each provided file via the `files` table using `App\Support\FilePath` per `docs/saas-design.md#path-convention` (purpose `orders`, type `imports`).
   - Dispatches the order import job from phase 20 with the persisted file IDs.
   - Returns an Inertia redirect back to `/orders` flashing a queued message.
-- [ ] On submit success: modal closes, toast displays *"Import queued — processing N orders…"*, the Import button enters the in-flight state ("Importing…" with spinner badge) until the job reports completion.
-- [ ] On job completion (Inertia partial reload or polling — see notes): success toast *"Imported N orders (M new, K updated)."*, table auto-reloads.
-- [ ] On server-side validation failure: `MfErrorBanner` at top of page lists which file(s) failed and why; files that did parse continue to be processed. Failed files are still saved to `files` for inspection (asserted in test).
-- [ ] Dashboard quick-action shortcut works: visiting `/orders?import=1` opens the import modal on mount (per `docs/ux/ux-patterns.md#url-driven-state`).
-- [ ] Pest feature test: authenticated POST to the import endpoint with a fake OrderList CSV stores a `files` row with `type=import` and dispatches the importer job (use `Bus::fake()` and `Storage::fake()`).
-- [ ] Pest feature test: posting without OrderList returns a 422 / validation error (form validation rejects).
-- [ ] Pest feature test: posting with a malformed CSV still creates a `files` row but flashes the partial-failure banner content.
-- [ ] `composer test` passes.
+- [x] On submit success: modal closes, toast displays *"Import queued — processing N orders…"*, the Import button enters the in-flight state ("Importing…" with spinner badge) until the job reports completion.
+- [x] On job completion (Inertia partial reload or polling — see notes): success toast *"Imported N orders (M new, K updated)."*, table auto-reloads.
+- [x] On server-side validation failure: `MfErrorBanner` at top of page lists which file(s) failed and why; files that did parse continue to be processed. Failed files are still saved to `files` for inspection (asserted in test).
+- [x] Dashboard quick-action shortcut works: visiting `/orders?import=1` opens the import modal on mount (per `docs/ux/ux-patterns.md#url-driven-state`).
+- [x] Pest feature test: authenticated POST to the import endpoint with a fake OrderList CSV stores a `files` row with `type=import` and dispatches the importer job (use `Bus::fake()` and `Storage::fake()`).
+- [x] Pest feature test: posting without OrderList returns a 422 / validation error (form validation rejects).
+- [x] Pest feature test: posting with a malformed CSV still creates a `files` row but flashes the partial-failure banner content.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

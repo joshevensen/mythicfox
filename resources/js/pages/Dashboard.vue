@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MfPageHeader from '@/components/MfPageHeader.vue';
-import { addCards, catalog, inventory, orders } from '@/routes';
+import { addCards, catalog, inventory } from '@/routes';
+import { index as ordersIndex } from '@/routes/orders';
 
 defineProps<{
     firstName: string;
@@ -27,7 +28,7 @@ const tiles: Tile[] = [
         label: '⬆ Import Orders',
         icon: 'pi pi-upload',
         description: 'Print packing slips and import a fresh batch',
-        href: orders({ query: { import: 1 } }).url,
+        href: ordersIndex({ query: { import: 1 } }).url,
         testId: 'tile-import-orders',
     },
     {

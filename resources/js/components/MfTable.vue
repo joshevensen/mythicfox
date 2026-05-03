@@ -244,6 +244,7 @@ watch(
 );
 
 const selectionCount = computed(() => selectedKeys.value.size);
+const selectedKeysArray = computed(() => Array.from(selectedKeys.value));
 
 const showingFrom = computed(() =>
     props.total === 0 ? 0 : (page.value - 1) * perPage.value + 1,
@@ -300,6 +301,7 @@ const sortOrder = computed(() =>
             <slot
                 name="bulk-actions"
                 :selected-count="selectionCount"
+                :selected-keys="selectedKeysArray"
                 :select-all-matching="selectAllMatching"
             />
         </div>

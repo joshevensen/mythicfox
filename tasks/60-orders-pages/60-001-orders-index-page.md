@@ -1,7 +1,7 @@
 ---
 id: "60-001"
 title: "Orders index page — table, filters, sort, default 90-day window"
-status: pending
+status: complete
 phase: "60-orders-pages"
 size: L
 depends_on:
@@ -26,24 +26,24 @@ Build the `/orders` Inertia page: a server-paginated, sortable, filterable list 
 
 ## Acceptance criteria
 
-- [ ] Route `GET /orders` registered behind the standard auth middleware, named `orders.index`, rendered via Inertia (`Orders/Index.vue`).
-- [ ] Wayfinder typed route helper for `orders.index` is regenerated.
-- [ ] Controller action returns a Laravel paginator JSON shape compatible with PrimeVue DataTable `lazy` mode (rows + `totalRecords` + page metadata) — see `docs/ux/ux-patterns.md#pagination`.
-- [ ] Page renders an `MfTable` (PrimeVue DataTable, `lazy` mode) with the columns specified in `docs/ux/orders-table.md#table`: selection checkbox, Order #, Date, Buyer, Items, Total, Status pill, actions.
-- [ ] Order # uses `MfMonospaceId`; Total uses `MfMoney`; Date formatted `MMM D, YYYY` via `useDate`; Status renders via `MfStatusPill` per `docs/ux/ux-patterns.md#status--state`.
-- [ ] Default sort: `order_date` desc.
-- [ ] Server-side sort supports the columns marked sortable in the spec (`tcgplayer_order_number`, `order_date`, `buyer_name`, `item_count`, `total_amount`, `tcgplayer_status`).
-- [ ] Filter panel above the table (`MfFilterPanel`) with: Status multi-select (options sourced from `DISTINCT tcgplayer_status` at request time), Date range (`MfDatePicker`, default last 90 days).
-- [ ] Status filter options regenerate per request — a new TCGPlayer status string appears automatically without code changes (verified by feature test).
-- [ ] Active filters render as removable chips above the table; "Clear all filters" button appears when ≥1 filter is active.
-- [ ] Page rows are **not** clickable; only explicit action icons in the actions column trigger navigation/behavior. Action icons themselves are stubbed in this task (rendered, no click handlers — wired in `60-003`).
-- [ ] Mobile (`< 768px`) renders the stacked-card layout from `docs/ux/orders-table.md#mobile-layout` via the `mobile-row` slot. Filter panel becomes a full-screen drawer triggered by a header filter button.
-- [ ] Empty states implemented: "no orders ever" with import CTA (CTA stub for `60-002`), "filters return zero rows" with Clear filters.
-- [ ] Pest feature test: authenticated GET `/orders` returns 200, renders the Inertia page name `Orders/Index`, and seeded orders appear in the JSON response (assert pagination shape).
-- [ ] Pest feature test: filter by `status=Canceled` narrows results to canceled orders only (seed at least one of each status).
-- [ ] Pest feature test: sort by `order_date` asc reorders results (assert first-row order number).
-- [ ] Pest feature test: date-range filter (`from`/`to` query params) excludes orders outside the range.
-- [ ] `composer test` passes.
+- [x] Route `GET /orders` registered behind the standard auth middleware, named `orders.index`, rendered via Inertia (`Orders/Index.vue`).
+- [x] Wayfinder typed route helper for `orders.index` is regenerated.
+- [x] Controller action returns a Laravel paginator JSON shape compatible with PrimeVue DataTable `lazy` mode (rows + `totalRecords` + page metadata) — see `docs/ux/ux-patterns.md#pagination`.
+- [x] Page renders an `MfTable` (PrimeVue DataTable, `lazy` mode) with the columns specified in `docs/ux/orders-table.md#table`: selection checkbox, Order #, Date, Buyer, Items, Total, Status pill, actions.
+- [x] Order # uses `MfMonospaceId`; Total uses `MfMoney`; Date formatted `MMM D, YYYY` via `useDate`; Status renders via `MfStatusPill` per `docs/ux/ux-patterns.md#status--state`.
+- [x] Default sort: `order_date` desc.
+- [x] Server-side sort supports the columns marked sortable in the spec (`tcgplayer_order_number`, `order_date`, `buyer_name`, `item_count`, `total_amount`, `tcgplayer_status`).
+- [x] Filter panel above the table (`MfFilterPanel`) with: Status multi-select (options sourced from `DISTINCT tcgplayer_status` at request time), Date range (`MfDatePicker`, default last 90 days).
+- [x] Status filter options regenerate per request — a new TCGPlayer status string appears automatically without code changes (verified by feature test).
+- [x] Active filters render as removable chips above the table; "Clear all filters" button appears when ≥1 filter is active.
+- [x] Page rows are **not** clickable; only explicit action icons in the actions column trigger navigation/behavior. Action icons themselves are stubbed in this task (rendered, no click handlers — wired in `60-003`).
+- [x] Mobile (`< 768px`) renders the stacked-card layout from `docs/ux/orders-table.md#mobile-layout` via the `mobile-row` slot. Filter panel becomes a full-screen drawer triggered by a header filter button.
+- [x] Empty states implemented: "no orders ever" with import CTA (CTA stub for `60-002`), "filters return zero rows" with Clear filters.
+- [x] Pest feature test: authenticated GET `/orders` returns 200, renders the Inertia page name `Orders/Index`, and seeded orders appear in the JSON response (assert pagination shape).
+- [x] Pest feature test: filter by `status=Canceled` narrows results to canceled orders only (seed at least one of each status).
+- [x] Pest feature test: sort by `order_date` asc reorders results (assert first-row order number).
+- [x] Pest feature test: date-range filter (`from`/`to` query params) excludes orders outside the range.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
