@@ -5,6 +5,7 @@ import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { computed, ref, watch } from 'vue';
+import MfCardIdentity from '@/components/MfCardIdentity.vue';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
 import MfMoney from '@/components/MfMoney.vue';
 import { useMfToast } from '@/composables/useMfToast';
@@ -269,7 +270,13 @@ const deltaClass = (delta: number | null): string => {
         modal
         header="Pricing changes"
         :style="{ width: '80vw', maxWidth: '1100px' }"
-        :pt="{ root: { 'data-test': 'inventory-export-modal' } }"
+        :breakpoints="{ '768px': '100vw' }"
+        :pt="{
+            root: {
+                'data-test': 'inventory-export-modal',
+                class: 'max-md:!m-0 max-md:!h-screen max-md:!max-h-screen max-md:!rounded-none',
+            },
+        }"
         @update:visible="(v: boolean) => (visible = v)"
     >
         <div
@@ -329,17 +336,14 @@ const deltaClass = (delta: number | null): string => {
             >
                 <Column field="product_name" header="Card">
                     <template #body="{ data }">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-medium">
-                                {{ data.product_name }}
-                                <span class="text-muted-foreground">
-                                    · #{{ data.number }} · {{ data.set_name }}
-                                </span>
-                            </span>
-                            <span class="text-xs text-muted-foreground">
-                                {{ data.condition }}
-                            </span>
-                        </div>
+                        <MfCardIdentity
+                            :card="{
+                                name: data.product_name,
+                                number: data.number,
+                                set_name: data.set_name,
+                                condition: data.condition,
+                            }"
+                        />
                     </template>
                 </Column>
                 <Column header="Old" body-style="text-align: right">
