@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\PublicHomepageController;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'public/Home')->name('home');
+Route::get('/', PublicHomepageController::class)->name('home');
 
 Route::get('/sitemap.xml', function () {
     $homepage = route('home');
