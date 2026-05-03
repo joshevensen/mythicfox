@@ -198,7 +198,7 @@ const rawJson = computed(() => JSON.stringify(props.sellerStats.raw, null, 2));
                 <button
                     type="button"
                     :disabled="sellerStats.refreshing || refreshForm.processing"
-                    class="inline-flex items-center justify-center gap-2 rounded-md bg-mf-orange px-4 py-2 text-sm font-medium text-white hover:bg-mf-orange/90 disabled:opacity-50 sm:flex-none"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-mf-orange px-4 py-2 text-sm font-medium text-white hover:bg-mf-orange/90 disabled:opacity-50 sm:w-auto"
                     data-test="refresh-now"
                     @click="onRefresh"
                 >
@@ -207,7 +207,7 @@ const rawJson = computed(() => JSON.stringify(props.sellerStats.raw, null, 2));
                 </button>
                 <button
                     type="button"
-                    class="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted sm:flex-none"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted sm:w-auto"
                     data-test="view-raw-data"
                     @click="rawDialogVisible = true"
                 >
