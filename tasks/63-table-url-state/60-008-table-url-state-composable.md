@@ -2,7 +2,7 @@
 id: "60-008"
 title: "Shared composable for URL-driven table state (pagination, sort, filters, chips)"
 status: pending
-phase: "60-data-pages"
+phase: "63-table-url-state"
 size: M
 depends_on:
   - "60-001"

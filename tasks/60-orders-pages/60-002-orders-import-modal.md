@@ -2,7 +2,7 @@
 id: "60-002"
 title: "Orders page — Import modal (four-file dropzone, queues importer)"
 status: pending
-phase: "60-data-pages"
+phase: "60-orders-pages"
 size: M
 depends_on:
   - "60-001"

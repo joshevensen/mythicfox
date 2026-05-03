@@ -2,7 +2,7 @@
 id: "60-006"
 title: "Inventory page — required-filter table with inline qty/override edits + per-row + bulk actions"
 status: pending
-phase: "60-data-pages"
+phase: "62-inventory-pages"
 size: L
 depends_on:
   - "phase:00-foundation"

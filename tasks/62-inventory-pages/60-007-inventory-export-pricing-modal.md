@@ -2,7 +2,7 @@
 id: "60-007"
 title: "Inventory page — Export Pricing flow (recompute → preview modal → CSV download)"
 status: pending
-phase: "60-data-pages"
+phase: "62-inventory-pages"
 size: L
 depends_on:
   - "60-006"

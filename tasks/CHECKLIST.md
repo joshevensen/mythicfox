@@ -77,16 +77,25 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **50-005** `M` — [Settings — Seller Stats Scraper section (status card + Refresh now)](50-admin-pages/50-005-settings-seller-stats-scraper.md)
 - [x] **50-006** `L` — [Add Cards page at `/add-cards` — scoped bulk-entry workflow](50-admin-pages/50-006-add-cards-page.md)
 
-## Phase 60 — Data pages (0 / 8)
+## Phase 60 — Orders pages (0 / 3)
 
-- [ ] **60-001** `L` — [Orders index page — table, filters, sort, default 90-day window](60-data-pages/60-001-orders-index-page.md)
-- [ ] **60-002** `M` — [Orders page — Import modal (four-file dropzone, queues importer)](60-data-pages/60-002-orders-import-modal.md)
-- [ ] **60-003** `M` — [Orders page — packing-slip + TCGPlayer actions (per-row + bulk)](60-data-pages/60-003-orders-packing-slip-actions.md)
-- [ ] **60-004** `L` — [Catalog browse page — aggregated table with expand-rows + stale-data indicator](60-data-pages/60-004-catalog-browse-page.md)
-- [ ] **60-005** `M` — [Catalog page — PricingCustomExport upload modal](60-data-pages/60-005-catalog-pricingcustomexport-upload.md)
-- [ ] **60-006** `L` — [Inventory page — required-filter table with inline qty/override edits + per-row + bulk actions](60-data-pages/60-006-inventory-page-table.md)
-- [ ] **60-007** `L` — [Inventory page — Export Pricing flow (recompute → preview modal → CSV download)](60-data-pages/60-007-inventory-export-pricing-modal.md)
-- [ ] **60-008** `M` — [Shared composable for URL-driven table state (pagination, sort, filters, chips)](60-data-pages/60-008-table-url-state-composable.md)
+- [ ] **60-001** `L` — [Orders index page — table, filters, sort, default 90-day window](60-orders-pages/60-001-orders-index-page.md)
+- [ ] **60-002** `M` — [Orders page — Import modal (four-file dropzone, queues importer)](60-orders-pages/60-002-orders-import-modal.md)
+- [ ] **60-003** `M` — [Orders page — packing-slip + TCGPlayer actions (per-row + bulk)](60-orders-pages/60-003-orders-packing-slip-actions.md)
+
+## Phase 61 — Catalog pages (0 / 2)
+
+- [ ] **60-004** `L` — [Catalog browse page — aggregated table with expand-rows + stale-data indicator](61-catalog-pages/60-004-catalog-browse-page.md)
+- [ ] **60-005** `M` — [Catalog page — PricingCustomExport upload modal](61-catalog-pages/60-005-catalog-pricingcustomexport-upload.md)
+
+## Phase 62 — Inventory pages (0 / 2)
+
+- [ ] **60-006** `L` — [Inventory page — required-filter table with inline qty/override edits + per-row + bulk actions](62-inventory-pages/60-006-inventory-page-table.md)
+- [ ] **60-007** `L` — [Inventory page — Export Pricing flow (recompute → preview modal → CSV download)](62-inventory-pages/60-007-inventory-export-pricing-modal.md)
+
+## Phase 63 — Shared table URL state (0 / 1)
+
+- [ ] **60-008** `M` — [Shared composable for URL-driven table state (pagination, sort, filters, chips)](63-table-url-state/60-008-table-url-state-composable.md)
 
 ## Phase 70 — Jobs (0 / 5)
 

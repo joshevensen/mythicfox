@@ -2,7 +2,7 @@
 id: "60-004"
 title: "Catalog browse page — aggregated table with expand-rows + stale-data indicator"
 status: pending
-phase: "60-data-pages"
+phase: "61-catalog-pages"
 size: L
 depends_on:
   - "phase:00-foundation"

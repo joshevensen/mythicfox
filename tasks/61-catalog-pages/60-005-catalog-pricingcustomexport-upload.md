@@ -2,7 +2,7 @@
 id: "60-005"
 title: "Catalog page — PricingCustomExport upload modal"
 status: pending
-phase: "60-data-pages"
+phase: "61-catalog-pages"
 size: M
 depends_on:
   - "60-004"

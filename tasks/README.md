@@ -24,7 +24,10 @@ Tasks are grouped by phase. Each phase is a directory; phases are processed roug
 30-components/      Mf* component library
 40-public-pages/    Public homepage, login
 50-admin-pages/     Dashboard, settings, add-cards
-60-data-pages/      Catalog, orders, inventory pages
+60-orders-pages/    Orders index, import modal, packing-slip actions
+61-catalog-pages/   Catalog browse, PricingCustomExport upload
+62-inventory-pages/ Inventory table, Export Pricing flow
+63-table-url-state/ Shared useTableState composable refactor
 70-jobs/            Packing-slip PDF, seller-stats scraper, file cleanup
 80-deploy/          CI, Forge config, droplet provisioning
 ```

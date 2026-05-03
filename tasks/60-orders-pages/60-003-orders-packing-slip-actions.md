@@ -2,7 +2,7 @@
 id: "60-003"
 title: "Orders page — packing-slip + TCGPlayer actions (per-row + bulk)"
 status: pending
-phase: "60-data-pages"
+phase: "60-orders-pages"
 size: M
 depends_on:
   - "60-001"

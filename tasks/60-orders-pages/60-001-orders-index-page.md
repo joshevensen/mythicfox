@@ -2,7 +2,7 @@
 id: "60-001"
 title: "Orders index page — table, filters, sort, default 90-day window"
 status: pending
-phase: "60-data-pages"
+phase: "60-orders-pages"
 size: L
 depends_on:
   - "phase:00-foundation"
