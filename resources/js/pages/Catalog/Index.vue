@@ -12,6 +12,7 @@ import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import { useCatalogUploadModal } from '@/composables/useCatalogUploadModal';
 import { useMfToast } from '@/composables/useMfToast';
+import { useTableState } from '@/composables/useTableState';
 import RowExpand from '@/pages/Catalog/RowExpand.vue';
 import { index as catalogIndex } from '@/routes/catalog';
 
@@ -77,16 +78,14 @@ const page = usePage();
 const { info, success } = useMfToast();
 const uploadModal = useCatalogUploadModal();
 
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
-
-const FILTER_KEYS = ['product', 'sets', 'in_stock'];
-
-const hasActiveFilters = computed(() =>
-    FILTER_KEYS.some((key) => currentUrl().searchParams.has(key)),
-);
+const tableState = useTableState({
+    endpoint: catalogIndex().url,
+    filterKeys: ['product', 'sets', 'in_stock'],
+});
+const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
 
 const selectedProductId = computed(
-    () => currentUrl().searchParams.get('product') ?? '',
+    () => tableState.filters.value.product ?? '',
 );
 
 const setOptions = computed<FilterOption[]>(() => {
@@ -211,14 +210,6 @@ const panelDrawerOpen = ref(false);
 
 const showFiltersDrawer = (): void => {
     panelDrawerOpen.value = true;
-};
-
-const clearAllFilters = (): void => {
-    router.get(
-        catalogIndex().url,
-        {},
-        { preserveState: true, preserveScroll: true },
-    );
 };
 
 const onUploadClick = (): void => {

@@ -14,6 +14,7 @@ import MfTable from '@/components/MfTable.vue';
 import { useInlineCellSave } from '@/composables/useInlineCellSave';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
+import { useTableState } from '@/composables/useTableState';
 import {
     destroy as destroyInventory,
     index as inventoryIndex,
@@ -72,10 +73,15 @@ const page = usePage();
 const { confirm } = useMfConfirm();
 const { success, error: toastError } = useMfToast();
 
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
+const tableState = useTableState({
+    endpoint: inventoryIndex().url,
+    filterKeys: ['product', 'sets', 'conditions', 'has_override', 'in_stock'],
+    filtersComplete: (raw) =>
+        Boolean(raw.product) && Boolean(raw.sets) && Boolean(raw.conditions),
+});
 
 const selectedProductId = computed(
-    () => currentUrl().searchParams.get('product') ?? '',
+    () => tableState.filters.value.product ?? '',
 );
 
 const setOptions = computed<FilterOption[]>(() => {
@@ -573,22 +579,8 @@ const onBulkMarkOutOfStock = (
 // --- override-count indicator ----------------------------------------------
 
 const onOverrideCountClick = (): void => {
-    const url = currentUrl();
-    const params = url.searchParams;
-    const isOn = params.get('has_override') === '1';
-
-    if (isOn) {
-        params.delete('has_override');
-    } else {
-        params.set('has_override', '1');
-    }
-
-    params.delete('page');
-
-    router.get(url.pathname, Object.fromEntries(params.entries()), {
-        preserveState: true,
-        preserveScroll: true,
-    });
+    const isOn = tableState.filters.value.has_override === '1';
+    tableState.setFilter('has_override', !isOn);
 };
 
 // --- staleness indicator ---------------------------------------------------
