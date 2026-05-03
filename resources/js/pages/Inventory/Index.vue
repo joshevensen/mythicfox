@@ -2,6 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import { computed, ref, watch } from 'vue';
+import InventoryExportModal from '@/components/inventory/InventoryExportModal.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
 import MfMoney from '@/components/MfMoney.vue';
@@ -617,14 +618,37 @@ const stalenessLabel = (entry: StaleEntry): string => {
     return `${entry.name} prices are ${days} days old`;
 };
 
+const exportModalOpen = ref(false);
+
 const onExportClick = (): void => {
-    // Stub — wired in 60-007.
-    success('Export Pricing flow lands in task 60-007.');
+    exportModalOpen.value = true;
 };
+
+const onExportCompleted = (summary: {
+    rows: number;
+    changed: number;
+}): void => {
+    success(
+        `Pricing CSV downloaded — ${summary.rows} row${summary.rows === 1 ? '' : 's'}, ${summary.changed} changed.`,
+    );
+    router.reload({ only: ['rows', 'meta'] });
+};
+
+// Dashboard quick-action shortcut: ?export=1 opens the export modal on mount.
+const initialUrl = new URL(page.url, 'http://localhost');
+
+if (initialUrl.searchParams.get('export') === '1') {
+    exportModalOpen.value = true;
+}
 </script>
 
 <template>
     <Head title="Inventory" />
+
+    <InventoryExportModal
+        v-model:visible="exportModalOpen"
+        @completed="onExportCompleted"
+    />
 
     <MfPageHeader title="Inventory">
         <button

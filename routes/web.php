@@ -5,6 +5,7 @@ use App\Http\Controllers\Catalog\CatalogController;
 use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Inventory\InventoryExportController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
 use App\Http\Controllers\Orders\PackingSlipController;
@@ -70,6 +71,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('inventory.bulk.clear-overrides');
     Route::post('inventory/bulk/mark-out-of-stock', [InventoryController::class, 'bulkMarkOutOfStock'])
         ->name('inventory.bulk.mark-out-of-stock');
+    Route::post('inventory/export/recompute', [InventoryExportController::class, 'recompute'])
+        ->name('inventory.export.recompute');
+    Route::get('inventory/export/preview', [InventoryExportController::class, 'preview'])
+        ->name('inventory.export.preview');
+    Route::post('inventory/export/download', [InventoryExportController::class, 'download'])
+        ->name('inventory.export.download');
 });
 
 require __DIR__.'/settings.php';
