@@ -1,7 +1,7 @@
 ---
 id: "50-005"
 title: "Settings — Seller Stats Scraper section (status card + Refresh now)"
-status: pending
+status: complete
 phase: "50-admin-pages"
 size: M
 depends_on: ["50-001", "50-003", "phase:30-components", "phase:70-jobs"]
@@ -18,13 +18,13 @@ The third section of the Settings page: a health card for the daily TCGPlayer st
 
 ## Acceptance criteria
 
-- [ ] The `#seller-stats` anchor on `/settings` renders a section with a card titled `"Seller stats scraper"`.
-- [ ] The card displays:
+- [x] The `#seller-stats` anchor on `/settings` renders a section with a card titled `"Seller stats scraper"`.
+- [x] The card displays:
   - **Last successful scrape** — formatted as `MMM D, YYYY h:mma` plus a relative time (e.g. *"6 days ago"*). Source: `seller_stats.scraped_at`.
   - **Last attempt** — same formatting. Source: `seller_stats.last_attempt_at`.
   - **Status** — derived per the table below, with an icon glyph and a label.
   - **Current values** — Rating (`seller_stats.rating`), Reviews (`seller_stats.review_count`), Feedback comments (`count(seller_stats.feedback)` or `0` when null).
-- [ ] Status derivation (server-side):
+- [x] Status derivation (server-side):
 
   | Condition | Status | Card treatment |
   |---|---|---|
@@ -33,17 +33,17 @@ The third section of the Settings page: a health card for the daily TCGPlayer st
   | `scraped_at` is 7–13 days old | "Stale — homepage hides in {N} days" (⚠️) | Amber border |
   | `scraped_at ≥ 14 days` OR (`scraped_at IS NULL` AND scraper has run before, i.e. `last_attempt_at IS NOT NULL`) | "Public section hidden" (🔴) — *"The 'What buyers say' section is no longer rendering on the homepage. Last good scrape: {date}."* | Red border |
 
-- [ ] **Refresh now** button: dispatches `App\Jobs\RefreshSellerStats` (or invokes the `seller-stats:refresh` artisan command's job class). Button is disabled while a job is in flight (use a session/cache flag the controller can check; clear the flag when the job completes). On dispatch, show a "Refreshing…" toast; on completion, show the updated card values. Synchronous dispatch is acceptable for v1 per `settings.md §Things to consider`, but document the choice in the commit message and wrap with a `timeout(60)` guard.
-- [ ] **View raw data** button: opens a PrimeVue Dialog containing the full `seller_stats` row JSON-encoded (pretty-printed). No labels, no formatting — raw `JSON.stringify(row, null, 2)` in a `<pre>` block. Useful for debugging parser output.
-- [ ] No manual edit form for `seller_stats` — values are scraper-only (per `settings.md §Section: Seller Stats Scraper`).
-- [ ] Mobile (`< 768px`): the card stacks naturally; both buttons go full-width below the data; the raw-data dialog becomes a full-screen sheet.
-- [ ] Pest feature test `tests/Feature/Admin/Settings/SellerStatsTest.php` covers:
+- [x] **Refresh now** button: dispatches `App\Jobs\RefreshSellerStats` (or invokes the `seller-stats:refresh` artisan command's job class). Button is disabled while a job is in flight (use a session/cache flag the controller can check; clear the flag when the job completes). On dispatch, show a "Refreshing…" toast; on completion, show the updated card values. Synchronous dispatch is acceptable for v1 per `settings.md §Things to consider`, but document the choice in the commit message and wrap with a `timeout(60)` guard.
+- [x] **View raw data** button: opens a PrimeVue Dialog containing the full `seller_stats` row JSON-encoded (pretty-printed). No labels, no formatting — raw `JSON.stringify(row, null, 2)` in a `<pre>` block. Useful for debugging parser output.
+- [x] No manual edit form for `seller_stats` — values are scraper-only (per `settings.md §Section: Seller Stats Scraper`).
+- [x] Mobile (`< 768px`): the card stacks naturally; both buttons go full-width below the data; the raw-data dialog becomes a full-screen sheet.
+- [x] Pest feature test `tests/Feature/Admin/Settings/SellerStatsTest.php` covers:
   - Unauthenticated visit redirects to `/login`.
   - Authenticated visit returns 200 and renders the card with values from a factory-seeded singleton row.
   - Status derivation: assertions for the four states (Healthy / Failed / Stale / Hidden) by varying `scraped_at`, `last_attempt_at`, and `consecutive_failures`.
   - Refresh-now POST dispatches the `RefreshSellerStats` job (use `Bus::fake()` to assert dispatch).
   - View-raw-data endpoint (or page payload) exposes the singleton row contents.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
