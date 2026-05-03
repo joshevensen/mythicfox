@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Orders;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportOrdersJob;
 use App\Models\Order;
+use App\Services\Orders\OrderQueryFilters;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,15 +26,13 @@ class OrdersController extends Controller
         'tcgplayer_status',
     ];
 
-    private const DEFAULT_WINDOW_DAYS = 90;
-
     public function index(Request $request): Response
     {
         return Inertia::render('Orders/Index', [
             'orders' => $this->loadOrders($request),
             'meta' => [
                 'statuses' => $this->statusOptions(),
-                'default_window_days' => self::DEFAULT_WINDOW_DAYS,
+                'default_window_days' => OrderQueryFilters::DEFAULT_WINDOW_DAYS,
                 'import_in_flight' => Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY),
             ],
         ]);
@@ -50,21 +48,7 @@ class OrdersController extends Controller
 
         [$sortColumn, $sortDir] = $this->resolveSort($request);
 
-        $query = Order::query();
-
-        $statuses = $this->splitCsv($request->query('status'));
-        if ($statuses !== []) {
-            $query->whereIn('tcgplayer_status', $statuses);
-        }
-
-        [$from, $to] = $this->resolveDateRange($request);
-        if ($from !== null) {
-            $query->where('order_date', '>=', $from->toDateString());
-        }
-        if ($to !== null) {
-            $query->where('order_date', '<=', $to->toDateString());
-        }
-
+        $query = OrderQueryFilters::apply(Order::query(), $request);
         $query->orderBy($sortColumn, $sortDir);
 
         $total = (clone $query)->count();
@@ -130,43 +114,5 @@ class OrdersController extends Controller
         }
 
         return [$sort, $dir];
-    }
-
-    /**
-     * @return array{0: ?Carbon, 1: ?Carbon}
-     */
-    private function resolveDateRange(Request $request): array
-    {
-        $rawFrom = $request->query('order_date_from');
-        $rawTo = $request->query('order_date_to');
-
-        // The 90-day default applies only when neither bound is provided. Once
-        // the user touches the range, URL state takes over.
-        if ($rawFrom === null && $rawTo === null) {
-            $to = Carbon::now()->endOfDay();
-            $from = Carbon::now()->subDays(self::DEFAULT_WINDOW_DAYS)->startOfDay();
-
-            return [$from, $to];
-        }
-
-        $from = is_string($rawFrom) && $rawFrom !== '' ? Carbon::parse($rawFrom)->startOfDay() : null;
-        $to = is_string($rawTo) && $rawTo !== '' ? Carbon::parse($rawTo)->endOfDay() : null;
-
-        return [$from, $to];
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function splitCsv(mixed $raw): array
-    {
-        if (! is_string($raw) || $raw === '') {
-            return [];
-        }
-
-        return array_values(array_filter(
-            array_map('trim', explode(',', $raw)),
-            fn (string $v) => $v !== '',
-        ));
     }
 }

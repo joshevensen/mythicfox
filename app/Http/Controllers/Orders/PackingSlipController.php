@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Orders;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\Orders\OrderQueryFilters;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,21 +26,39 @@ class PackingSlipController extends Controller
     public function bulk(Request $request): Response
     {
         $rawIds = (string) $request->query('ids', '');
-        $orderNumbers = array_values(array_filter(
-            array_map('trim', explode(',', $rawIds)),
-            fn (string $v) => $v !== '',
-        ));
+        $selectAll = $request->query('select_all') === '1';
 
-        abort_if($orderNumbers === [], 404, 'No orders requested.');
-        abort_if(count($orderNumbers) > self::BULK_HARD_CAP, 413, 'Too many orders selected.');
+        if ($rawIds !== '') {
+            $orderNumbers = OrderQueryFilters::splitCsv($rawIds);
+            abort_if(count($orderNumbers) > self::BULK_HARD_CAP, 413, 'Too many orders selected.');
 
-        $orders = Order::query()
-            ->whereIn('tcgplayer_order_number', $orderNumbers)
-            ->get()
-            ->keyBy('tcgplayer_order_number');
+            $orders = Order::query()
+                ->whereIn('tcgplayer_order_number', $orderNumbers)
+                ->get()
+                ->keyBy('tcgplayer_order_number');
 
-        foreach ($orderNumbers as $number) {
-            abort_if(! $orders->has($number), 404, "Unknown order [{$number}].");
+            foreach ($orderNumbers as $number) {
+                abort_if(! $orders->has($number), 404, "Unknown order [{$number}].");
+            }
+        } elseif ($selectAll) {
+            // Filter-signature mode: re-run the orders query with the same
+            // status + date filters the table is showing and resolve to the
+            // matching order numbers. The 100-order cap applies to the count
+            // of rows the filter returns.
+            $query = OrderQueryFilters::apply(Order::query(), $request);
+            $matching = (clone $query)->count();
+
+            abort_if($matching === 0, 404, 'No orders match these filters.');
+            abort_if($matching > self::BULK_HARD_CAP, 413, 'Too many orders selected.');
+
+            $orders = $query
+                ->orderBy('order_date', 'desc')
+                ->get()
+                ->keyBy('tcgplayer_order_number');
+
+            $orderNumbers = $orders->keys()->all();
+        } else {
+            abort(404, 'No orders requested.');
         }
 
         $payload = collect($orderNumbers)

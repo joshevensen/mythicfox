@@ -167,22 +167,48 @@ const onTcgplayerRow = (orderNumber: string): void => {
 const { confirm } = useMfConfirm();
 const { error: toastError } = useMfToast();
 
-const triggerBulkPrint = (orderNumbers: string[]): void => {
-    if (orderNumbers.length === 0) {
-        return;
-    }
+const FILTER_SIGNATURE_KEYS = [
+    'status',
+    'order_date_from',
+    'order_date_to',
+] as const;
 
-    const url = packingSlipRoutes.bulk.url({
+const buildIdsUrl = (orderNumbers: string[]): string =>
+    packingSlipRoutes.bulk.url({
         query: { ids: orderNumbers.join(',') },
     });
 
-    openInNewTab(url);
+const buildSelectAllUrl = (): string => {
+    const url = new URL(page.url, 'http://localhost');
+    const query: Record<string, string> = { select_all: '1' };
+
+    for (const key of FILTER_SIGNATURE_KEYS) {
+        const v = url.searchParams.get(key);
+
+        if (v !== null) {
+            query[key] = v;
+        }
+    }
+
+    return packingSlipRoutes.bulk.url({ query });
 };
 
-const onBulkPrint = (selectedKeys: Array<string | number>): void => {
-    const orderNumbers = selectedKeys.map((key) => String(key));
+const onBulkPrint = (
+    selectedKeys: Array<string | number>,
+    selectAllMatching: boolean,
+): void => {
+    const count = selectAllMatching
+        ? props.orders.meta.total
+        : selectedKeys.length;
+    const url = selectAllMatching
+        ? buildSelectAllUrl()
+        : buildIdsUrl(selectedKeys.map((key) => String(key)));
 
-    if (orderNumbers.length > BULK_PRINT_HARD_CAP) {
+    if (count === 0) {
+        return;
+    }
+
+    if (count > BULK_PRINT_HARD_CAP) {
         toastError(
             `Bulk print is capped at ${BULK_PRINT_HARD_CAP} orders. Narrow the selection and try again.`,
         );
@@ -190,18 +216,18 @@ const onBulkPrint = (selectedKeys: Array<string | number>): void => {
         return;
     }
 
-    if (orderNumbers.length >= BULK_PRINT_CONFIRM_THRESHOLD) {
+    if (count >= BULK_PRINT_CONFIRM_THRESHOLD) {
         confirm({
-            title: `Print ${orderNumbers.length} packing slips?`,
+            title: `Print ${count} packing slips?`,
             body: 'Large batches can be hard to recover if printing is interrupted.',
             verb: 'Print',
-            onConfirm: () => triggerBulkPrint(orderNumbers),
+            onConfirm: () => openInNewTab(url),
         });
 
         return;
     }
 
-    triggerBulkPrint(orderNumbers);
+    openInNewTab(url);
 };
 
 const { success } = useMfToast();
@@ -290,14 +316,14 @@ onUnmounted(stopPolling);
             />
         </template>
 
-        <template #bulk-actions="{ selectedKeys }">
+        <template #bulk-actions="{ selectedKeys, selectAllMatching }">
             <Button
                 type="button"
                 icon="pi pi-printer"
                 label="Print packing slips"
                 size="small"
                 data-test="orders-bulk-print"
-                @click="onBulkPrint(selectedKeys)"
+                @click="onBulkPrint(selectedKeys, selectAllMatching)"
             />
         </template>
 

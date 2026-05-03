@@ -2,6 +2,7 @@
 
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -86,7 +87,7 @@ test('bulk action bar wires the bulk-print handler in the Vue source', function 
     $source = file_get_contents(resource_path('js/pages/Orders/Index.vue'));
 
     expect($source)
-        ->toContain('@click="onBulkPrint(selectedKeys)"')
+        ->toContain('onBulkPrint(selectedKeys, selectAllMatching)')
         ->toContain('Print packing slips')
         ->toContain('packingSlipRoutes.bulk.url')
         ->toContain('BULK_PRINT_HARD_CAP')
@@ -109,4 +110,106 @@ test('routes use Wayfinder typed helpers via /orders/{order}/packing-slip and /o
         ->toContain('/orders/ABC123/packing-slip');
     expect(route('orders.packing-slip.bulk', ['ids' => 'ABC,DEF']))
         ->toContain('/orders/print');
+});
+
+test('bulk endpoint with select_all=1 resolves to all orders matching the current filters', function () {
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'KEEP-A',
+        'tcgplayer_status' => 'Completed - Paid',
+        'order_date' => Carbon::now()->subDays(5),
+    ]);
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'KEEP-B',
+        'tcgplayer_status' => 'Completed - Paid',
+        'order_date' => Carbon::now()->subDays(2),
+    ]);
+    Order::factory()->canceled()->create([
+        'tcgplayer_order_number' => 'EXCLUDED',
+        'tcgplayer_status' => 'Canceled',
+        'order_date' => Carbon::now()->subDays(3),
+    ]);
+
+    $this->get(route('orders.packing-slip.bulk', [
+        'select_all' => '1',
+        'status' => 'Completed - Paid',
+    ]))->assertOk()->assertInertia(
+        fn ($page) => $page
+            ->component('Orders/PackingSlip')
+            ->has('orders', 2)
+    );
+});
+
+test('bulk endpoint with select_all=1 honors the date-range filter signature', function () {
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'IN-RANGE',
+        'order_date' => Carbon::parse('2026-04-15'),
+    ]);
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'OUT-OF-RANGE',
+        'order_date' => Carbon::parse('2026-01-01'),
+    ]);
+
+    $this->get(route('orders.packing-slip.bulk', [
+        'select_all' => '1',
+        'order_date_from' => '2026-04-01',
+        'order_date_to' => '2026-04-30',
+    ]))->assertInertia(
+        fn ($page) => $page
+            ->has('orders', 1)
+            ->where('orders.0.tcgplayer_order_number', 'IN-RANGE')
+    );
+});
+
+test('bulk endpoint with select_all=1 applies the same 90-day default as the orders index', function () {
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'WITHIN-WINDOW',
+        'order_date' => Carbon::now()->subDays(10),
+    ]);
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'BEYOND-WINDOW',
+        'order_date' => Carbon::now()->subDays(180),
+    ]);
+
+    $this->get(route('orders.packing-slip.bulk', ['select_all' => '1']))
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('orders', 1)
+                ->where('orders.0.tcgplayer_order_number', 'WITHIN-WINDOW')
+        );
+});
+
+test('bulk endpoint with select_all=1 returns 404 when no orders match the filters', function () {
+    $this->get(route('orders.packing-slip.bulk', [
+        'select_all' => '1',
+        'status' => 'Canceled',
+    ]))->assertNotFound();
+});
+
+test('bulk endpoint with select_all=1 returns 413 when matching count exceeds the 100-order cap', function () {
+    Order::factory()->count(101)->create([
+        'tcgplayer_status' => 'Completed - Paid',
+        'order_date' => Carbon::now()->subDays(2),
+    ]);
+
+    $this->get(route('orders.packing-slip.bulk', [
+        'select_all' => '1',
+        'status' => 'Completed - Paid',
+    ]))->assertStatus(413);
+});
+
+test('bulk endpoint without ids and without select_all returns 404', function () {
+    $this->get(route('orders.packing-slip.bulk'))->assertNotFound();
+});
+
+test('orders index page wires the select-all-matching flag through the bulk-actions slot', function () {
+    $source = file_get_contents(resource_path('js/pages/Orders/Index.vue'));
+
+    expect($source)
+        ->toContain(
+            '#bulk-actions="{ selectedKeys, selectAllMatching }"',
+        )
+        ->toContain('onBulkPrint(selectedKeys, selectAllMatching)')
+        ->toContain('buildSelectAllUrl')
+        ->toContain("select_all: '1'")
+        ->toContain('FILTER_SIGNATURE_KEYS');
 });
