@@ -62,7 +62,7 @@
             "pint --parallel --test"
         ],
         "wayfinder": [
-            "@php artisan wayfinder:generate --with-form"
+            "@php artisan wayfinder:generate --with-form --no-interaction"
         ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",
