@@ -5,7 +5,25 @@ import MfMoney from '@/components/MfMoney.vue';
 import MfPageHeader from '@/components/MfPageHeader.vue';
 import EditProductRulesModal from '@/components/settings/EditProductRulesModal.vue';
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
+import FileHistorySection from '@/components/settings/FileHistorySection.vue';
 import { catalog } from '@/routes';
+
+type FileRow = {
+    id: number;
+    type: 'import' | 'export';
+    purpose: string;
+    original_filename: string;
+    uploaded_at: string | null;
+    expired_at: string | null;
+    is_expired: boolean;
+};
+
+type FilesPayload = {
+    data: FileRow[];
+    meta: { total: number; current_page: number; per_page: number };
+};
+
+type PurposeOption = { value: string; label: string };
 
 type SetRow = {
     id: number;
@@ -30,6 +48,8 @@ type ProductRow = {
 
 defineProps<{
     products: ProductRow[];
+    files: FilesPayload;
+    filePurposes: PurposeOption[];
 }>();
 
 const editingProduct = ref<ProductRow | null>(null);
@@ -206,16 +226,7 @@ const refresh = () => {
         </div>
     </section>
 
-    <section
-        id="file-history"
-        class="mt-12 scroll-mt-20"
-        data-test="file-history-section"
-    >
-        <h2 class="mb-4 text-xl font-semibold text-foreground">File history</h2>
-        <p class="text-sm text-muted-foreground">
-            Import and export audit log appears here.
-        </p>
-    </section>
+    <FileHistorySection :files="files" :purposes="filePurposes" />
 
     <section
         id="seller-stats"

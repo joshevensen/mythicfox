@@ -1,7 +1,7 @@
 ---
 id: "50-004"
 title: "Settings — File History section (paginated audit log)"
-status: pending
+status: complete
 phase: "50-admin-pages"
 size: M
 depends_on: ["50-001", "50-003", "phase:30-components"]
@@ -18,35 +18,35 @@ The second section of the Settings page: a paginated audit log of every CSV/PDF 
 
 ## Acceptance criteria
 
-- [ ] The `#file-history` anchor on `/settings` renders a section with header `"File History"`.
-- [ ] Above the table, an `MfFilterPanel` exposes the filters from `settings.md §Filter panel`:
+- [x] The `#file-history` anchor on `/settings` renders a section with header `"File History"`.
+- [x] Above the table, an `MfFilterPanel` exposes the filters from `settings.md §Filter panel`:
   - **Direction** — multi-select: `import`, `export` (default: all).
   - **Purpose** — multi-select populated from `DISTINCT` second-segment values of `file_path` (default: all).
   - **Date range** — `MfDatePicker` range (default: all time).
   - **Hide expired** — toggle (default off — expired files visible).
-- [ ] An `MfTable` in `lazy` mode renders the audit-log rows with **page size override = 20** (vs the default 50). Columns:
+- [x] An `MfTable` in `lazy` mode renders the audit-log rows with **page size override = 20** (vs the default 50). Columns:
   - **Filename** — `original_filename` — sortable.
   - **Direction** — `type` (`import` / `export`) — sortable.
   - **Purpose** — derived from `file_path` segment 2 — sortable.
   - **Uploaded** — `uploaded_at` formatted `MMM D, YYYY h:mma` — sortable, **default sort desc**.
   - **Status** — derived: green-tinted "Active" if `expired_at IS NULL`, else muted `"Expired {date}"` — sortable.
   - **(action)** — single right-edge icon column, no header.
-- [ ] Per-row action: when `expired_at IS NULL`, render a download icon (`pi pi-download`). Clicking it generates a signed URL via the storage driver (S3-compatible signed URL in prod, direct path in local) and opens the URL in a new tab. Expired rows have empty action space (no icon).
-- [ ] **No bulk actions** on this table.
-- [ ] Pagination, sort, and filters all serialize to the URL query string per `ux-patterns.md §URL-driven state` so refresh and back-button preserve view state.
-- [ ] Mobile (`< 768px`): the table switches to card-row layout via `MfTable`'s `mobile-row` slot per the example in `settings.md §Mobile layout`. Filter panel becomes a full-screen drawer; the "Hide expired" toggle stays inline above the cards.
-- [ ] Empty states:
+- [x] Per-row action: when `expired_at IS NULL`, render a download icon (`pi pi-download`). Clicking it generates a signed URL via the storage driver (S3-compatible signed URL in prod, direct path in local) and opens the URL in a new tab. Expired rows have empty action space (no icon).
+- [x] **No bulk actions** on this table.
+- [x] Pagination, sort, and filters all serialize to the URL query string per `ux-patterns.md §URL-driven state` so refresh and back-button preserve view state.
+- [x] Mobile (`< 768px`): the table switches to card-row layout via `MfTable`'s `mobile-row` slot per the example in `settings.md §Mobile layout`. Filter panel becomes a full-screen drawer; the "Hide expired" toggle stays inline above the cards.
+- [x] Empty states:
   - No files at all: `"No files yet — imports and exports will appear here."`
   - Filtered to zero rows: `"No files match these filters."` + Clear filters button.
-- [ ] Download error toast: `"Couldn't generate download URL — file may be missing from storage."`
-- [ ] Pest feature test `tests/Feature/Admin/Settings/FileHistoryTest.php` covers:
+- [x] Download error toast: `"Couldn't generate download URL — file may be missing from storage."`
+- [x] Pest feature test `tests/Feature/Admin/Settings/FileHistoryTest.php` covers:
   - Unauthenticated visit redirects to `/login`.
   - Authenticated visit lists files seeded by factory, default-sorted by `uploaded_at` desc.
   - Filtering by `direction=export` returns only export rows.
   - The download endpoint returns a signed URL (200 + redirect or JSON body, per the implementation choice) for an active file and 404/410 for an expired file.
   - Empty state renders when no files exist.
   - Filtered-empty state renders with a Clear-filters affordance when filters return zero rows.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
