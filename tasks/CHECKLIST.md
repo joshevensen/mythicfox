@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 55 / 67 tasks complete**
+**Total: 56 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -83,10 +83,10 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **60-002** `M` — [Orders page — Import modal (four-file dropzone, queues importer)](60-orders-pages/60-002-orders-import-modal.md)
 - [x] **60-003** `M` — [Orders page — packing-slip + TCGPlayer actions (per-row + bulk)](60-orders-pages/60-003-orders-packing-slip-actions.md)
 
-## Phase 61 — Catalog pages (1 / 2)
+## Phase 61 — Catalog pages (2 / 2)
 
 - [x] **60-004** `L` — [Catalog browse page — aggregated table with expand-rows + stale-data indicator](61-catalog-pages/60-004-catalog-browse-page.md)
-- [ ] **60-005** `M` — [Catalog page — PricingCustomExport upload modal](61-catalog-pages/60-005-catalog-pricingcustomexport-upload.md)
+- [x] **60-005** `M` — [Catalog page — PricingCustomExport upload modal](61-catalog-pages/60-005-catalog-pricingcustomexport-upload.md)
 
 ## Phase 62 — Inventory pages (0 / 2)
 

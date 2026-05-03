@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import CatalogUploadModal from '@/components/catalog/CatalogUploadModal.vue';
+import MfErrorBanner from '@/components/MfErrorBanner.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
 import MfMonospaceId from '@/components/MfMonospaceId.vue';
 import MfPageHeader from '@/components/MfPageHeader.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
+import { useCatalogUploadModal } from '@/composables/useCatalogUploadModal';
 import { useMfToast } from '@/composables/useMfToast';
 import RowExpand from '@/pages/Catalog/RowExpand.vue';
 import { index as catalogIndex } from '@/routes/catalog';
@@ -45,11 +48,23 @@ type StaleEntry = {
     is_stale: boolean;
 };
 
+type ImportResult = {
+    success: boolean;
+    rows_processed?: number;
+    products_touched?: number;
+    product_label?: string;
+    message?: string;
+    completed_at: string;
+};
+
 type Meta = {
     products: FilterOption[];
     sets_by_product: Record<string, FilterOption[]>;
     products_priced_at: StaleEntry[];
     has_any_cards: boolean;
+    import_in_flight: boolean;
+    import_last_result: ImportResult | null;
+    upload_error: string | null;
 };
 
 const props = defineProps<{
@@ -59,7 +74,8 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const { info } = useMfToast();
+const { info, success } = useMfToast();
+const uploadModal = useCatalogUploadModal();
 
 const currentUrl = (): URL => new URL(page.url, 'http://localhost');
 
@@ -206,9 +222,86 @@ const clearAllFilters = (): void => {
 };
 
 const onUploadClick = (): void => {
-    // Wired in 60-005.
-    info('Upload modal coming in the next task.');
+    uploadModal.open();
 };
+
+const errorBanner = ref<string | null>(props.meta.upload_error);
+
+watch(
+    () => props.meta.upload_error,
+    (next) => {
+        if (next) {
+            errorBanner.value = next;
+        }
+    },
+);
+
+const dismissErrorBanner = (): void => {
+    errorBanner.value = null;
+};
+
+// Polling pattern mirrors Orders/Index.vue (60-002): while the catalog import
+// job is in flight, partial-reload the catalog props every 2s so the table
+// auto-refreshes when the job completes.
+const importPollHandle = ref<number | null>(null);
+const wasInFlight = ref(props.meta.import_in_flight);
+
+const stopPolling = (): void => {
+    if (importPollHandle.value !== null) {
+        window.clearInterval(importPollHandle.value);
+        importPollHandle.value = null;
+    }
+};
+
+const startPolling = (): void => {
+    if (importPollHandle.value !== null) {
+        return;
+    }
+
+    importPollHandle.value = window.setInterval(() => {
+        router.reload({ only: ['cards', 'variants', 'meta'] });
+    }, 2000);
+};
+
+watch(
+    () => props.meta.import_in_flight,
+    (next) => {
+        if (next) {
+            wasInFlight.value = true;
+            startPolling();
+
+            return;
+        }
+
+        stopPolling();
+
+        if (!wasInFlight.value) {
+            return;
+        }
+
+        wasInFlight.value = false;
+
+        const last = props.meta.import_last_result;
+
+        if (last && last.success) {
+            const rows = last.rows_processed ?? 0;
+            const label = last.product_label ?? 'the catalog';
+            success(`Refreshed ${rows} cards across ${label}.`);
+        } else if (last && !last.success) {
+            const message = last.message ?? 'Catalog import failed.';
+            errorBanner.value = message;
+        }
+    },
+    { immediate: true },
+);
+
+onMounted(() => {
+    if (props.meta.import_in_flight) {
+        startPolling();
+    }
+});
+
+onUnmounted(stopPolling);
 
 const dayDiff = (iso: string): number => {
     const then = new Date(iso).getTime();
@@ -269,12 +362,30 @@ const stalenessLabel = (entry: StaleEntry): string => {
         />
         <Button
             type="button"
-            icon="pi pi-upload"
-            label="Upload PricingCustomExport"
+            :icon="
+                meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
+            "
+            :label="
+                meta.import_in_flight
+                    ? 'Importing…'
+                    : 'Upload PricingCustomExport'
+            "
+            :disabled="meta.import_in_flight"
+            class="fixed right-4 bottom-4 z-30 shadow-lg md:static md:right-auto md:bottom-auto md:shadow-none"
             data-test="catalog-upload-button"
             @click="onUploadClick"
         />
     </MfPageHeader>
+
+    <MfErrorBanner
+        v-if="errorBanner"
+        class="mb-4"
+        title="Import failed"
+        :message="errorBanner"
+        @dismiss="dismissErrorBanner"
+    />
+
+    <CatalogUploadModal />
 
     <MfTable
         :endpoint="catalogIndex().url"

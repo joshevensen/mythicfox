@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\Queries\BrowseCardsQuery;
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\Card;
 use App\Models\CardSet;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -55,6 +57,9 @@ class CatalogController extends Controller
                 'sets_by_product' => $setsByProduct,
                 'products_priced_at' => $stale,
                 'has_any_cards' => $this->hasAnyCards(),
+                'import_in_flight' => Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY),
+                'import_last_result' => Cache::get(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY),
+                'upload_error' => $request->session()->get('catalog_upload_error'),
             ],
         ]);
     }

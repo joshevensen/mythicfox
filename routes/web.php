@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
+use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
@@ -59,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('orders.packing-slip.show');
 
     Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
 
     // Phase-60 placeholder. Real implementation lands in phase 62 (inventory).
     // Registered now so Wayfinder generates typed helpers for the
