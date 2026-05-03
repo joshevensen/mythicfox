@@ -4,6 +4,8 @@ use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
 use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Inventory\InventoryExportController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
 use App\Http\Controllers\Orders\PackingSlipController;
@@ -62,11 +64,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
 
-    // Phase-60 placeholder. Real implementation lands in phase 62 (inventory).
-    // Registered now so Wayfinder generates typed helpers for the
-    // dashboard quick-action tiles and top-nav links.
-    Route::inertia('inventory', 'placeholders/ComingSoon', ['title' => 'Inventory'])
-        ->name('inventory');
+    Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::patch('inventory/{inventory}', [InventoryController::class, 'update'])->name('inventory.update');
+    Route::delete('inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
+    Route::post('inventory/bulk/clear-overrides', [InventoryController::class, 'bulkClearOverrides'])
+        ->name('inventory.bulk.clear-overrides');
+    Route::post('inventory/bulk/mark-out-of-stock', [InventoryController::class, 'bulkMarkOutOfStock'])
+        ->name('inventory.bulk.mark-out-of-stock');
+    Route::post('inventory/export/recompute', [InventoryExportController::class, 'recompute'])
+        ->name('inventory.export.recompute');
+    Route::get('inventory/export/preview', [InventoryExportController::class, 'preview'])
+        ->name('inventory.export.preview');
+    Route::post('inventory/export/download', [InventoryExportController::class, 'download'])
+        ->name('inventory.export.download');
 });
 
 require __DIR__.'/settings.php';
