@@ -84,6 +84,27 @@ test('the public Login page surfaces the generic credential-error banner', funct
     expect($source)->toContain('Email or password incorrect.');
 });
 
+test('the public Login page implements the rate-limit countdown and disables submit until it expires', function () {
+    $source = file_get_contents(resource_path('js/pages/public/Login.vue'));
+
+    expect($source)
+        ->toContain('countdown')
+        ->toContain('startCountdown')
+        ->toContain('setInterval')
+        ->toContain('Too many attempts — try again in ')
+        ->toContain('submitBlocked')
+        ->toContain(':disabled="processing || submitBlocked"');
+});
+
+test('the public Login page surfaces a generic server-error banner for non-validation failures', function () {
+    $source = file_get_contents(resource_path('js/pages/public/Login.vue'));
+
+    expect($source)
+        ->toContain('Something went wrong. Try again.')
+        ->toContain("router.on('error'")
+        ->toContain('serverError');
+});
+
 test('Fortify login throttling returns 429 (rate-limit handling stays in place)', function () {
     $user = User::factory()->create();
 
