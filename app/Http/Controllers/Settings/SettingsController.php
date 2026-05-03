@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RefreshSellerStats;
 use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Product;
+use App\Models\SellerStats;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,7 +50,90 @@ class SettingsController extends Controller
             'products' => $products,
             'files' => $this->loadFiles($request),
             'filePurposes' => $this->purposeOptions(),
+            'sellerStats' => $this->loadSellerStats(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function loadSellerStats(): array
+    {
+        $stats = SellerStats::query()->orderBy('id')->first();
+
+        $status = $this->deriveSellerStatsStatus($stats);
+
+        return [
+            'rating' => $stats?->rating !== null ? (float) $stats->rating : null,
+            'review_count' => $stats?->review_count,
+            'feedback' => $stats?->feedback ?? [],
+            'feedback_count' => is_array($stats?->feedback) ? count($stats->feedback) : 0,
+            'scraped_at' => $stats?->scraped_at?->toIso8601String(),
+            'last_attempt_at' => $stats?->last_attempt_at?->toIso8601String(),
+            'last_error' => $stats?->last_error,
+            'consecutive_failures' => (int) ($stats?->consecutive_failures ?? 0),
+            'status' => $status,
+            'raw' => $stats?->toArray() ?? [],
+            'refreshing' => Cache::has(RefreshSellerStats::IN_FLIGHT_CACHE_KEY),
+        ];
+    }
+
+    /**
+     * @return array{key: string, label: string, message: ?string}
+     */
+    private function deriveSellerStatsStatus(?SellerStats $stats): array
+    {
+        $now = Carbon::now();
+        $scrapedAt = $stats?->scraped_at;
+        $lastAttemptAt = $stats?->last_attempt_at;
+        $consecutiveFailures = (int) ($stats?->consecutive_failures ?? 0);
+
+        if ($consecutiveFailures >= 3) {
+            return [
+                'key' => 'failed',
+                'label' => "Failed {$consecutiveFailures} days in a row",
+                'message' => 'Selectors may have changed. Check the storefront page for redesigns.',
+            ];
+        }
+
+        $ageDays = $scrapedAt?->diffInDays($now);
+
+        if (
+            ($scrapedAt !== null && $ageDays >= 14)
+            || ($scrapedAt === null && $lastAttemptAt !== null)
+        ) {
+            $lastGood = $scrapedAt?->toFormattedDateString() ?? 'never';
+
+            return [
+                'key' => 'hidden',
+                'label' => 'Public section hidden',
+                'message' => "The 'What buyers say' section is no longer rendering on the homepage. Last good scrape: {$lastGood}.",
+            ];
+        }
+
+        if ($scrapedAt !== null && $ageDays >= 7) {
+            $hidesIn = max(0, 14 - (int) $ageDays);
+
+            return [
+                'key' => 'stale',
+                'label' => "Stale — homepage hides in {$hidesIn} days",
+                'message' => null,
+            ];
+        }
+
+        if ($consecutiveFailures === 0 && $scrapedAt !== null && $ageDays < 7) {
+            return [
+                'key' => 'healthy',
+                'label' => 'Healthy',
+                'message' => null,
+            ];
+        }
+
+        return [
+            'key' => 'unknown',
+            'label' => 'No data yet',
+            'message' => 'Scraper has not run yet.',
+        ];
     }
 
     /**

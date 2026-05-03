@@ -6,6 +6,7 @@ import MfPageHeader from '@/components/MfPageHeader.vue';
 import EditProductRulesModal from '@/components/settings/EditProductRulesModal.vue';
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
 import FileHistorySection from '@/components/settings/FileHistorySection.vue';
+import SellerStatsSection from '@/components/settings/SellerStatsSection.vue';
 import { catalog } from '@/routes';
 
 type FileRow = {
@@ -24,6 +25,29 @@ type FilesPayload = {
 };
 
 type PurposeOption = { value: string; label: string };
+
+type SellerStatsPayload = {
+    rating: number | null;
+    review_count: number | null;
+    feedback: Array<{
+        text?: string;
+        rating?: number;
+        author?: string;
+        date?: string;
+    }>;
+    feedback_count: number;
+    scraped_at: string | null;
+    last_attempt_at: string | null;
+    last_error: string | null;
+    consecutive_failures: number;
+    status: {
+        key: 'healthy' | 'stale' | 'failed' | 'hidden' | 'unknown';
+        label: string;
+        message: string | null;
+    };
+    raw: Record<string, unknown>;
+    refreshing: boolean;
+};
 
 type SetRow = {
     id: number;
@@ -50,6 +74,7 @@ defineProps<{
     products: ProductRow[];
     files: FilesPayload;
     filePurposes: PurposeOption[];
+    sellerStats: SellerStatsPayload;
 }>();
 
 const editingProduct = ref<ProductRow | null>(null);
@@ -228,18 +253,7 @@ const refresh = () => {
 
     <FileHistorySection :files="files" :purposes="filePurposes" />
 
-    <section
-        id="seller-stats"
-        class="mt-12 scroll-mt-20"
-        data-test="seller-stats-section"
-    >
-        <h2 class="mb-4 text-xl font-semibold text-foreground">
-            Seller stats scraper
-        </h2>
-        <p class="text-sm text-muted-foreground">
-            Scraper health card appears here.
-        </p>
-    </section>
+    <SellerStatsSection :seller-stats="sellerStats" />
 
     <EditProductRulesModal
         v-model:visible="productModalVisible"
