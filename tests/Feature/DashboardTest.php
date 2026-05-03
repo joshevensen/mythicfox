@@ -15,7 +15,7 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
-test('dashboard renders the Dashboard inertia component wrapped by the MfAppLayout shell', function () {
+test('dashboard renders the Dashboard inertia component wrapped by the AdminLayout shell', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -24,7 +24,7 @@ test('dashboard renders the Dashboard inertia component wrapped by the MfAppLayo
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->component('Dashboard'));
 
-    expect(file_get_contents(resource_path('js/layouts/MfAppLayout.vue')))
+    expect(file_get_contents(resource_path('js/layouts/AdminLayout.vue')))
         ->toContain('MfTopNav')
         ->toContain('MfPageContainer')
         ->toContain('MfToast')

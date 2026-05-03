@@ -1,7 +1,7 @@
 ---
 id: "50-001"
 title: "Admin layout / authenticated app shell with MfTopNav"
-status: pending
+status: complete
 phase: "50-admin-pages"
 size: M
 depends_on: ["phase:00-foundation", "phase:30-components"]
@@ -20,18 +20,18 @@ Every admin page (Dashboard, Orders, Catalog, Inventory, Add Cards, Settings, pl
 
 ## Acceptance criteria
 
-- [ ] An Inertia layout component `resources/js/layouts/AdminLayout.vue` exists. It renders `<MfTopNav />` (from phase 30), a default slot for page content wrapped in `<MfPageContainer />`, and a global PrimeVue `<Toast />` region positioned top-right per `ux-patterns.md §Toasts`.
-- [ ] The layout enforces auth: any Inertia route using it requires the authenticated middleware. Unauthenticated visitors are redirected to `/login`.
-- [ ] `MfTopNav` displays the section links Dashboard / Orders / Catalog / Inventory / Settings, the Mythic Fox logo (left, links to `/dashboard`), and a user menu on the right with the logged-in user's name and a "Log out" item that POSTs to Fortify's logout endpoint and lands on `/login`. ("File history" is NOT a top-nav item — it's a Settings section per `ux-patterns.md`.)
-- [ ] Mobile (`< 768px`): the horizontal nav collapses to a hamburger menu on the left; tapping it opens a full-screen drawer with the section list and user menu. Logo stays visible center/top.
-- [ ] Active section is highlighted in the nav based on the current Inertia route.
-- [ ] Toast region uses `mf-orange` for primary success accents and the semantic emerald/amber/red colors from `ux-patterns.md §Brand colors` for state coloring; auto-dismiss after 4 seconds (errors persist until dismissed).
-- [ ] Dark mode is the default per `saas-design.md`; no light-mode flicker on initial render.
-- [ ] Pest feature test `tests/Feature/Admin/AdminLayoutTest.php` covers:
+- [x] An Inertia layout component `resources/js/layouts/AdminLayout.vue` exists. It renders `<MfTopNav />` (from phase 30), a default slot for page content wrapped in `<MfPageContainer />`, and a global PrimeVue `<Toast />` region positioned top-right per `ux-patterns.md §Toasts`.
+- [x] The layout enforces auth: any Inertia route using it requires the authenticated middleware. Unauthenticated visitors are redirected to `/login`.
+- [x] `MfTopNav` displays the section links Dashboard / Orders / Catalog / Inventory / Settings, the Mythic Fox logo (left, links to `/dashboard`), and a user menu on the right with the logged-in user's name and a "Log out" item that POSTs to Fortify's logout endpoint and lands on `/login`. ("File history" is NOT a top-nav item — it's a Settings section per `ux-patterns.md`.)
+- [x] Mobile (`< 768px`): the horizontal nav collapses to a hamburger menu on the left; tapping it opens a full-screen drawer with the section list and user menu. Logo stays visible center/top.
+- [x] Active section is highlighted in the nav based on the current Inertia route.
+- [x] Toast region uses `mf-orange` for primary success accents and the semantic emerald/amber/red colors from `ux-patterns.md §Brand colors` for state coloring; auto-dismiss after 4 seconds (errors persist until dismissed).
+- [x] Dark mode is the default per `saas-design.md`; no light-mode flicker on initial render.
+- [x] Pest feature test `tests/Feature/Admin/AdminLayoutTest.php` covers:
   - Anonymous request to a route using `AdminLayout` (use a stub route or `/dashboard` if `50-002` has shipped) redirects to `/login`.
   - Authenticated request returns 200 and the response payload contains the user's name (proxy for `MfTopNav` rendering).
   - Logout POST destroys the session and redirects to `/login`.
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

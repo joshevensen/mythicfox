@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 45 / 67 tasks complete**
+**Total: 46 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -68,9 +68,9 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **40-003** `M` — [Login page at `/login` — email + password](40-public-pages/40-003-login-page.md)
 - [x] **40-004** `S` — [Public footer + sitemap.xml + robots.txt](40-public-pages/40-004-public-footer-and-shared-chrome.md)
 
-## Phase 50 — Admin pages (0 / 6)
+## Phase 50 — Admin pages (1 / 6)
 
-- [ ] **50-001** `M` — [Admin layout / authenticated app shell with MfTopNav](50-admin-pages/50-001-admin-layout-app-shell.md)
+- [x] **50-001** `M` — [Admin layout / authenticated app shell with MfTopNav](50-admin-pages/50-001-admin-layout-app-shell.md)
 - [ ] **50-002** `M` — [Dashboard page at `/dashboard` — greeting + quick-action tiles](50-admin-pages/50-002-dashboard-page.md)
 - [ ] **50-003** `L` — [Settings — Pricing Rules section (per-product + per-set modals)](50-admin-pages/50-003-settings-pricing-rules.md)
 - [ ] **50-004** `M` — [Settings — File History section (paginated audit log)](50-admin-pages/50-004-settings-file-history.md)

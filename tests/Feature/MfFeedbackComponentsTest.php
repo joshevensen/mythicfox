@@ -51,8 +51,8 @@ test('MfErrorBanner shows Retry when onRetry is provided and Dismiss otherwise',
         ->toContain('border-l-4 border-red-500');
 });
 
-test('MfAppLayout mounts the real MfToast and MfConfirmDialog', function () {
-    $source = file_get_contents(resource_path('js/layouts/MfAppLayout.vue'));
+test('AdminLayout mounts the real MfToast and MfConfirmDialog', function () {
+    $source = file_get_contents(resource_path('js/layouts/AdminLayout.vue'));
 
     expect($source)
         ->toContain('<MfToast />')
