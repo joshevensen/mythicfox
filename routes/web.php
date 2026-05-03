@@ -4,6 +4,7 @@ use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
+use App\Http\Controllers\Orders\PackingSlipController;
 use App\Http\Controllers\PublicHomepageController;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('orders', [OrdersController::class, 'index'])->name('orders.index');
     Route::post('orders/import', [OrdersImportController::class, 'store'])->name('orders.import');
+    Route::get('orders/print', [PackingSlipController::class, 'bulk'])->name('orders.packing-slip.bulk');
+    Route::get('orders/{order:tcgplayer_order_number}/packing-slip', [PackingSlipController::class, 'show'])
+        ->name('orders.packing-slip.show');
 
     // Phase-60 placeholders. Real implementations land in phase 60 (catalog,
     // inventory). Registered now so Wayfinder generates typed helpers for the

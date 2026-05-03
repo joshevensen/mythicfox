@@ -12,9 +12,11 @@ import MfStatusPill from '@/components/MfStatusPill.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import OrdersImportModal from '@/components/orders/OrdersImportModal.vue';
+import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
 import { useOrdersImportModal } from '@/composables/useOrdersImportModal';
 import { index as ordersIndex } from '@/routes/orders';
+import packingSlipRoutes from '@/routes/orders/packing-slip';
 
 type OrderRow = {
     id: number;
@@ -139,6 +141,69 @@ const onImportClick = (): void => {
     importModal.open();
 };
 
+const TCGPLAYER_ORDER_URL_BASE = 'https://sellerportal.tcgplayer.com/orders/';
+
+const BULK_PRINT_HARD_CAP = 100;
+const BULK_PRINT_CONFIRM_THRESHOLD = 25;
+
+const printSlipUrl = (orderNumber: string): string =>
+    packingSlipRoutes.show.url(orderNumber);
+
+const tcgplayerUrl = (orderNumber: string): string =>
+    `${TCGPLAYER_ORDER_URL_BASE}${orderNumber}`;
+
+const openInNewTab = (url: string): void => {
+    window.open(url, '_blank', 'noopener');
+};
+
+const onPrintRow = (orderNumber: string): void => {
+    openInNewTab(printSlipUrl(orderNumber));
+};
+
+const onTcgplayerRow = (orderNumber: string): void => {
+    openInNewTab(tcgplayerUrl(orderNumber));
+};
+
+const { confirm } = useMfConfirm();
+const { error: toastError } = useMfToast();
+
+const triggerBulkPrint = (orderNumbers: string[]): void => {
+    if (orderNumbers.length === 0) {
+        return;
+    }
+
+    const url = packingSlipRoutes.bulk.url({
+        query: { ids: orderNumbers.join(',') },
+    });
+
+    openInNewTab(url);
+};
+
+const onBulkPrint = (selectedKeys: Array<string | number>): void => {
+    const orderNumbers = selectedKeys.map((key) => String(key));
+
+    if (orderNumbers.length > BULK_PRINT_HARD_CAP) {
+        toastError(
+            `Bulk print is capped at ${BULK_PRINT_HARD_CAP} orders. Narrow the selection and try again.`,
+        );
+
+        return;
+    }
+
+    if (orderNumbers.length >= BULK_PRINT_CONFIRM_THRESHOLD) {
+        confirm({
+            title: `Print ${orderNumbers.length} packing slips?`,
+            body: 'Large batches can be hard to recover if printing is interrupted.',
+            verb: 'Print',
+            onConfirm: () => triggerBulkPrint(orderNumbers),
+        });
+
+        return;
+    }
+
+    triggerBulkPrint(orderNumbers);
+};
+
 const { success } = useMfToast();
 const importPollHandle = ref<number | null>(null);
 const wasInFlight = ref(props.meta.import_in_flight);
@@ -211,6 +276,7 @@ onUnmounted(stopPolling);
         :columns="columns"
         :rows="orders.data"
         :total="orders.meta.total"
+        row-key="tcgplayer_order_number"
         :default-sort="{ column: 'order_date', dir: 'desc' }"
         :inertia-only="['orders']"
         :selectable="true"
@@ -224,14 +290,15 @@ onUnmounted(stopPolling);
             />
         </template>
 
-        <template #bulk-actions>
-            <!-- Bulk action button itself is wired in 60-003. The shell stays here. -->
-            <span
-                class="text-xs text-muted-foreground"
-                data-test="orders-bulk-actions-placeholder"
-            >
-                Bulk actions coming
-            </span>
+        <template #bulk-actions="{ selectedKeys }">
+            <Button
+                type="button"
+                icon="pi pi-printer"
+                label="Print packing slips"
+                size="small"
+                data-test="orders-bulk-print"
+                @click="onBulkPrint(selectedKeys)"
+            />
         </template>
 
         <template #cell-tcgplayer_order_number="{ row }">
@@ -258,14 +325,16 @@ onUnmounted(stopPolling);
             />
         </template>
 
-        <template #cell-actions>
-            <!-- Action icons are stubbed here; 60-003 wires the click handlers -->
+        <template #cell-actions="{ row }">
             <div class="flex justify-end gap-1" data-test="orders-row-actions">
                 <button
                     type="button"
                     class="inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                     aria-label="Print packing slip"
-                    data-test="orders-print-stub"
+                    title="Print packing slip"
+                    :data-test="`orders-print-${row.tcgplayer_order_number}`"
+                    :data-href="printSlipUrl(row.tcgplayer_order_number)"
+                    @click="onPrintRow(row.tcgplayer_order_number)"
                 >
                     <i class="pi pi-printer" />
                 </button>
@@ -273,7 +342,10 @@ onUnmounted(stopPolling);
                     type="button"
                     class="inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                     aria-label="Open in TCGPlayer"
-                    data-test="orders-tcgplayer-stub"
+                    title="Open in TCGPlayer"
+                    :data-test="`orders-tcgplayer-${row.tcgplayer_order_number}`"
+                    :data-href="tcgplayerUrl(row.tcgplayer_order_number)"
+                    @click="onTcgplayerRow(row.tcgplayer_order_number)"
                 >
                     <i class="pi pi-external-link" />
                 </button>
@@ -369,7 +441,9 @@ onUnmounted(stopPolling);
                         type="button"
                         class="inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground hover:border-mf-orange hover:text-mf-orange"
                         aria-label="Print packing slip"
-                        :data-test="`orders-card-print-${row.id}`"
+                        :data-test="`orders-card-print-${row.tcgplayer_order_number}`"
+                        :data-href="printSlipUrl(row.tcgplayer_order_number)"
+                        @click="onPrintRow(row.tcgplayer_order_number)"
                     >
                         <i class="pi pi-printer" />
                         <span>Print slip</span>
@@ -378,7 +452,9 @@ onUnmounted(stopPolling);
                         type="button"
                         class="inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground hover:border-mf-orange hover:text-mf-orange"
                         aria-label="Open in TCGPlayer"
-                        :data-test="`orders-card-tcgplayer-${row.id}`"
+                        :data-test="`orders-card-tcgplayer-${row.tcgplayer_order_number}`"
+                        :data-href="tcgplayerUrl(row.tcgplayer_order_number)"
+                        @click="onTcgplayerRow(row.tcgplayer_order_number)"
                     >
                         <i class="pi pi-external-link" />
                         <span>TCGPlayer</span>
