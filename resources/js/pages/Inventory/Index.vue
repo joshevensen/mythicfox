@@ -76,6 +76,8 @@ const { success, error: toastError } = useMfToast();
 const tableState = useTableState({
     endpoint: inventoryIndex().url,
     filterKeys: ['product', 'sets', 'conditions', 'has_override', 'in_stock'],
+    defaultSort: { field: 'product_name', dir: 'asc' },
+    inertiaOnly: ['rows', 'meta'],
     filtersComplete: (raw) =>
         Boolean(raw.product) && Boolean(raw.sets) && Boolean(raw.conditions),
 });
@@ -711,15 +713,18 @@ if (initialUrl.searchParams.get('export') === '1') {
 
     <MfTable
         v-else
-        :endpoint="inventoryIndex().url"
         :columns="columns"
         :rows="visibleRows"
         :total="rows.meta.total"
+        :page="tableState.page.value"
+        :per-page="tableState.perPage.value"
+        :sort="tableState.sort.value"
         row-key="id"
-        :default-sort="{ column: 'product_name', dir: 'asc' }"
-        :inertia-only="['rows', 'meta']"
         :selectable="true"
         :skeleton-rows="5"
+        @update:page="tableState.setPage"
+        @update:per-page="tableState.setPerPage"
+        @update:sort="tableState.setSort"
     >
         <template #filters>
             <MfFilterPanel

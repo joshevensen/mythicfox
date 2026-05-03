@@ -12,7 +12,7 @@ export type ColumnDef<TRow = Record<string, unknown>> = {
 export type SortDir = 'asc' | 'desc';
 
 export type SortState = {
-    column: string;
+    field: string;
     dir: SortDir;
 } | null;
 

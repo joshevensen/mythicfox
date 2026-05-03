@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { computed } from 'vue';
 import { download as downloadAction } from '@/actions/App/Http/Controllers/Settings/FilesController';
@@ -9,6 +9,7 @@ import MfFilterPanel from '@/components/MfFilterPanel.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import { useMfToast } from '@/composables/useMfToast';
+import { useTableState } from '@/composables/useTableState';
 import { settings } from '@/routes';
 
 type FileRow = {
@@ -41,18 +42,22 @@ const props = defineProps<{
 }>();
 
 const { error } = useMfToast();
-const page = usePage();
 
 // `hide_expired` is rendered as a standalone toggle above the table per
 // settings.md §Mobile layout — it stays visible on phones where the rest of
 // the filter panel collapses into a drawer.
-const FILTER_KEYS = [
-    'direction',
-    'purpose',
-    'uploaded_at_from',
-    'uploaded_at_to',
-    'hide_expired',
-];
+const tableState = useTableState({
+    endpoint: settings().url,
+    filterKeys: [
+        'direction',
+        'purpose',
+        'uploaded_at_from',
+        'uploaded_at_to',
+        'hide_expired',
+    ],
+    defaultSort: { field: 'uploaded_at', dir: 'desc' },
+    inertiaOnly: ['files'],
+});
 
 const filters = computed<FilterDef[]>(() => [
     {
@@ -86,30 +91,9 @@ const columns: ColumnDef<FileRow>[] = [
     { key: 'actions', label: '' },
 ];
 
-const currentUrl = (): URL => new URL(page.url, 'http://localhost');
-
-const hasActiveFilters = computed(() =>
-    FILTER_KEYS.some((key) => currentUrl().searchParams.has(key)),
-);
-
 const hideExpired = computed<boolean>({
-    get: () => currentUrl().searchParams.get('hide_expired') === '1',
-    set: (next) => {
-        const url = currentUrl();
-
-        if (next) {
-            url.searchParams.set('hide_expired', '1');
-        } else {
-            url.searchParams.delete('hide_expired');
-        }
-
-        url.searchParams.delete('page');
-        router.get(
-            url.pathname + (url.search || ''),
-            {},
-            { preserveState: true, preserveScroll: true },
-        );
-    },
+    get: () => tableState.filters.value.hide_expired === '1',
+    set: (next) => tableState.setFilter('hide_expired', next),
 });
 
 const onDownload = async (id: number) => {
@@ -156,13 +140,16 @@ const onDownload = async (id: number) => {
         <h2 class="mb-4 text-xl font-semibold text-foreground">File History</h2>
 
         <MfTable
-            :endpoint="settings().url"
             :columns="columns"
             :rows="files.data"
             :total="files.meta.total"
-            :default-sort="{ column: 'uploaded_at', dir: 'desc' }"
-            :inertia-only="['files']"
+            :page="tableState.page.value"
+            :per-page="tableState.perPage.value"
+            :sort="tableState.sort.value"
             :skeleton-rows="5"
+            @update:page="tableState.setPage"
+            @update:per-page="tableState.setPerPage"
+            @update:sort="tableState.setSort"
         >
             <template #filters>
                 <MfFilterPanel :filters="filters" :endpoint="settings().url" />
@@ -219,7 +206,7 @@ const onDownload = async (id: number) => {
 
             <template #empty>
                 <div
-                    v-if="hasActiveFilters"
+                    v-if="tableState.hasActiveFilters.value"
                     class="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground"
                     data-test="file-history-filtered-empty"
                 >

@@ -13,10 +13,7 @@ import Skeleton from 'primevue/skeleton';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import MfEmptyState from '@/components/MfEmptyState.vue';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
-import {
-    DEFAULT_PAGE_SIZE,
-    PAGE_SIZE_OPTIONS,
-} from '@/components/MfTable.types';
+import { PAGE_SIZE_OPTIONS } from '@/components/MfTable.types';
 import type {
     ColumnDef,
     RowAction,
@@ -24,16 +21,16 @@ import type {
 } from '@/components/MfTable.types';
 
 type Props = {
-    endpoint: string;
     columns: ColumnDef<TRow>[];
     rows: TRow[];
     total: number;
+    page: number;
+    perPage: number;
+    sort: SortState;
     rowKey?: string;
-    defaultSort?: { column: string; dir: 'asc' | 'desc' };
     selectable?: boolean;
     expandable?: boolean;
     rowAction?: RowAction;
-    inertiaOnly?: string[];
     skeletonRows?: number;
     errorMessage?: string;
 };
@@ -43,41 +40,15 @@ const props = withDefaults(defineProps<Props>(), {
     selectable: false,
     expandable: false,
     rowAction: 'none',
-    inertiaOnly: () => [],
     skeletonRows: 5,
     errorMessage: undefined,
-    defaultSort: undefined,
 });
 
-const initialUrl = new URL(
-    typeof window === 'undefined'
-        ? `http://localhost${props.endpoint}`
-        : window.location.href,
-);
-
-const readSortFromUrl = (): SortState => {
-    const sortCol = initialUrl.searchParams.get('sort');
-    const dirRaw = initialUrl.searchParams.get('dir');
-
-    if (sortCol && (dirRaw === 'asc' || dirRaw === 'desc')) {
-        return { column: sortCol, dir: dirRaw };
-    }
-
-    if (props.defaultSort) {
-        return { column: props.defaultSort.column, dir: props.defaultSort.dir };
-    }
-
-    return null;
-};
-
-const page = ref<number>(
-    Number(initialUrl.searchParams.get('page') ?? '1') || 1,
-);
-const perPage = ref<number>(
-    Number(initialUrl.searchParams.get('per_page') ?? DEFAULT_PAGE_SIZE) ||
-        DEFAULT_PAGE_SIZE,
-);
-const sort = ref<SortState>(readSortFromUrl());
+const emit = defineEmits<{
+    (e: 'update:page', value: number): void;
+    (e: 'update:perPage', value: number): void;
+    (e: 'update:sort', value: SortState): void;
+}>();
 
 const loading = ref(false);
 const fetchError = ref<string | null>(props.errorMessage ?? null);
@@ -157,57 +128,17 @@ const expandedRowsArray = computed(() =>
     props.rows.filter((row) => expandedKeys.value.has(rowKeyOf(row))),
 );
 
-const buildQuery = (): Record<string, string | number> => {
-    const params: Record<string, string | number> = {
-        page: page.value,
-        per_page: perPage.value,
-    };
-
-    if (sort.value) {
-        params.sort = sort.value.column;
-        params.dir = sort.value.dir;
-    }
-
-    for (const [key, value] of initialUrl.searchParams.entries()) {
-        if (['page', 'per_page', 'sort', 'dir'].includes(key)) {
-            continue;
-        }
-
-        params[key] = value;
-    }
-
-    return params;
-};
-
-const reload = (): void => {
-    router.get(props.endpoint, buildQuery(), {
-        preserveState: true,
-        preserveScroll: true,
-        only: props.inertiaOnly.length > 0 ? props.inertiaOnly : undefined,
-        onStart: () => {
-            loading.value = true;
-            fetchError.value = null;
-        },
-        onFinish: () => {
-            loading.value = false;
-        },
-        onError: () => {
-            fetchError.value = 'Could not load data. Please retry.';
-        },
-    });
-};
-
 const onPage = (event: DataTablePageEvent | PageState): void => {
     const nextPage = (event.page ?? 0) + 1;
-    const nextPerPage = event.rows ?? perPage.value;
+    const nextPerPage = event.rows ?? props.perPage;
 
-    if (nextPage === page.value && nextPerPage === perPage.value) {
-        return;
+    if (nextPerPage !== props.perPage) {
+        emit('update:perPage', nextPerPage);
     }
 
-    page.value = nextPage;
-    perPage.value = nextPerPage;
-    reload();
+    if (nextPage !== props.page) {
+        emit('update:page', nextPage);
+    }
 };
 
 const onSort = (event: DataTableSortEvent): void => {
@@ -215,13 +146,15 @@ const onSort = (event: DataTableSortEvent): void => {
     const order = event.sortOrder ?? 0;
 
     if (!field || order === 0) {
-        sort.value = null;
-    } else {
-        sort.value = { column: field, dir: order === 1 ? 'asc' : 'desc' };
+        emit('update:sort', null);
+
+        return;
     }
 
-    page.value = 1;
-    reload();
+    emit('update:sort', {
+        field,
+        dir: order === 1 ? 'asc' : 'desc',
+    });
 };
 
 const inertiaStartHandler = (): void => {
@@ -254,10 +187,10 @@ const selectionCount = computed(() => selectedKeys.value.size);
 const selectedKeysArray = computed(() => Array.from(selectedKeys.value));
 
 const showingFrom = computed(() =>
-    props.total === 0 ? 0 : (page.value - 1) * perPage.value + 1,
+    props.total === 0 ? 0 : (props.page - 1) * props.perPage + 1,
 );
 const showingTo = computed(() =>
-    Math.min(page.value * perPage.value, props.total),
+    Math.min(props.page * props.perPage, props.total),
 );
 
 const skeletonPlaceholders = computed(() =>
@@ -267,19 +200,15 @@ const skeletonPlaceholders = computed(() =>
     })),
 );
 
-const sortField = computed(() => sort.value?.column ?? null);
+const sortField = computed(() => props.sort?.field ?? null);
 const sortOrder = computed(() =>
-    sort.value ? (sort.value.dir === 'asc' ? 1 : -1) : null,
+    props.sort ? (props.sort.dir === 'asc' ? 1 : -1) : null,
 );
 </script>
 
 <template>
     <div class="flex flex-col gap-4">
-        <MfErrorBanner
-            v-if="fetchError"
-            :message="fetchError"
-            :on-retry="reload"
-        />
+        <MfErrorBanner v-if="fetchError" :message="fetchError" />
 
         <div v-if="$slots.filters">
             <slot name="filters" />
@@ -498,11 +427,16 @@ const sortOrder = computed(() =>
                 >
                     Per page
                     <select
-                        v-model.number="perPage"
+                        :value="perPage"
                         class="rounded-md border border-input bg-background px-2 py-1 text-sm"
                         @change="
-                            page = 1;
-                            reload();
+                            (e) =>
+                                $emit(
+                                    'update:perPage',
+                                    Number(
+                                        (e.target as HTMLSelectElement).value,
+                                    ),
+                                )
                         "
                     >
                         <option

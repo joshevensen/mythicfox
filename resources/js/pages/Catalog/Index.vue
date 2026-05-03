@@ -81,6 +81,8 @@ const uploadModal = useCatalogUploadModal();
 const tableState = useTableState({
     endpoint: catalogIndex().url,
     filterKeys: ['product', 'sets', 'in_stock'],
+    defaultSort: { field: 'product_name', dir: 'asc' },
+    inertiaOnly: ['cards', 'variants', 'meta'],
 });
 const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
 
@@ -379,15 +381,18 @@ const stalenessLabel = (entry: StaleEntry): string => {
     <CatalogUploadModal />
 
     <MfTable
-        :endpoint="catalogIndex().url"
         :columns="columns"
         :rows="cards.data"
         :total="cards.meta.total"
+        :page="tableState.page.value"
+        :per-page="tableState.perPage.value"
+        :sort="tableState.sort.value"
         row-key="key"
-        :default-sort="{ column: 'product_name', dir: 'asc' }"
-        :inertia-only="['cards', 'variants', 'meta']"
         :expandable="true"
         :skeleton-rows="5"
+        @update:page="tableState.setPage"
+        @update:per-page="tableState.setPerPage"
+        @update:sort="tableState.setSort"
     >
         <template #filters>
             <MfFilterPanel
