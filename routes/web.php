@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Orders\OrdersController;
+use App\Http\Controllers\Orders\OrdersImportController;
 use App\Http\Controllers\PublicHomepageController;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('add-cards', [AddCardsController::class, 'store'])->name('add-cards.store');
 
     Route::get('orders', [OrdersController::class, 'index'])->name('orders.index');
+    Route::post('orders/import', [OrdersImportController::class, 'store'])->name('orders.import');
 
     // Phase-60 placeholders. Real implementations land in phase 60 (catalog,
     // inventory). Registered now so Wayfinder generates typed helpers for the

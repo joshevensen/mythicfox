@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Orders;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportOrdersJob;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,6 +35,7 @@ class OrdersController extends Controller
             'meta' => [
                 'statuses' => $this->statusOptions(),
                 'default_window_days' => self::DEFAULT_WINDOW_DAYS,
+                'import_in_flight' => Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY),
             ],
         ]);
     }

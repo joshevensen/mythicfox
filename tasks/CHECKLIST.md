@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 52 / 67 tasks complete**
+**Total: 53 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -77,10 +77,10 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 - [x] **50-005** `M` — [Settings — Seller Stats Scraper section (status card + Refresh now)](50-admin-pages/50-005-settings-seller-stats-scraper.md)
 - [x] **50-006** `L` — [Add Cards page at `/add-cards` — scoped bulk-entry workflow](50-admin-pages/50-006-add-cards-page.md)
 
-## Phase 60 — Orders pages (1 / 3)
+## Phase 60 — Orders pages (2 / 3)
 
 - [x] **60-001** `L` — [Orders index page — table, filters, sort, default 90-day window](60-orders-pages/60-001-orders-index-page.md)
-- [ ] **60-002** `M` — [Orders page — Import modal (four-file dropzone, queues importer)](60-orders-pages/60-002-orders-import-modal.md)
+- [x] **60-002** `M` — [Orders page — Import modal (four-file dropzone, queues importer)](60-orders-pages/60-002-orders-import-modal.md)
 - [ ] **60-003** `M` — [Orders page — packing-slip + TCGPlayer actions (per-row + bulk)](60-orders-pages/60-003-orders-packing-slip-actions.md)
 
 ## Phase 61 — Catalog pages (0 / 2)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import MfDate from '@/components/MfDate.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
@@ -11,6 +11,8 @@ import MfPageHeader from '@/components/MfPageHeader.vue';
 import MfStatusPill from '@/components/MfStatusPill.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
+import OrdersImportModal from '@/components/orders/OrdersImportModal.vue';
+import { useMfToast } from '@/composables/useMfToast';
 import { useOrdersImportModal } from '@/composables/useOrdersImportModal';
 import { index as ordersIndex } from '@/routes/orders';
 
@@ -37,6 +39,7 @@ type OrdersPayload = {
 type Meta = {
     statuses: FilterOption[];
     default_window_days: number;
+    import_in_flight: boolean;
 };
 
 const props = defineProps<{
@@ -135,6 +138,47 @@ const clearAllFilters = (): void => {
 const onImportClick = (): void => {
     importModal.open();
 };
+
+const { success } = useMfToast();
+const importPollHandle = ref<number | null>(null);
+const wasInFlight = ref(props.meta.import_in_flight);
+
+const stopPolling = (): void => {
+    if (importPollHandle.value !== null) {
+        window.clearInterval(importPollHandle.value);
+        importPollHandle.value = null;
+    }
+};
+
+const startPolling = (): void => {
+    if (importPollHandle.value !== null) {
+        return;
+    }
+
+    importPollHandle.value = window.setInterval(() => {
+        router.reload({ only: ['orders', 'meta'] });
+    }, 2000);
+};
+
+watch(
+    () => props.meta.import_in_flight,
+    (next) => {
+        if (next) {
+            wasInFlight.value = true;
+            startPolling();
+        } else {
+            stopPolling();
+
+            if (wasInFlight.value) {
+                wasInFlight.value = false;
+                success(`Imported ${props.orders.meta.total} orders.`);
+            }
+        }
+    },
+    { immediate: true },
+);
+
+onUnmounted(stopPolling);
 </script>
 
 <template>
@@ -152,8 +196,11 @@ const onImportClick = (): void => {
         />
         <Button
             type="button"
-            icon="pi pi-upload"
-            label="Import orders"
+            :icon="
+                meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
+            "
+            :label="meta.import_in_flight ? 'Importing…' : 'Import orders'"
+            :disabled="meta.import_in_flight"
             data-test="orders-import-button"
             @click="onImportClick"
         />
@@ -340,4 +387,6 @@ const onImportClick = (): void => {
             </div>
         </template>
     </MfTable>
+
+    <OrdersImportModal />
 </template>
