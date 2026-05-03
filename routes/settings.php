@@ -16,6 +16,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('settings.sets.pricing-rules.update');
     Route::get('settings/files/{file}/download', [FilesController::class, 'download'])
         ->name('settings.files.download');
+    Route::get('settings/files/{file}/stream', [FilesController::class, 'stream'])
+        ->name('settings.files.stream');
     Route::post('settings/seller-stats/refresh', [SellerStatsController::class, 'refresh'])
         ->name('settings.seller-stats.refresh');
 

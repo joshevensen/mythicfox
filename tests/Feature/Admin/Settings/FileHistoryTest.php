@@ -46,7 +46,7 @@ test('filtering by direction=export returns only export rows', function () {
     );
 });
 
-test('download endpoint returns redirect or stream for an active file', function () {
+test('download endpoint returns JSON with a url for an active file', function () {
     Storage::fake();
     $disk = Storage::disk(config('filesystems.default'));
     $disk->put('imports/orders/2026/04/sample.csv', 'col1,col2');
@@ -56,9 +56,10 @@ test('download endpoint returns redirect or stream for an active file', function
         'expired_at' => null,
     ]);
 
-    $response = $this->get(route('settings.files.download', $file));
+    $response = $this->getJson(route('settings.files.download', $file));
 
-    expect(in_array($response->status(), [200, 302], true))->toBeTrue();
+    $response->assertOk()->assertJsonStructure(['url']);
+    expect($response->json('url'))->toBeString()->not->toBe('');
 });
 
 test('download endpoint returns 410 for an expired file', function () {
@@ -66,7 +67,31 @@ test('download endpoint returns 410 for an expired file', function () {
         'expired_at' => Carbon::now()->subDay(),
     ]);
 
-    $this->get(route('settings.files.download', $file))->assertStatus(410);
+    $this->getJson(route('settings.files.download', $file))->assertStatus(410);
+});
+
+test('download endpoint returns 404 when the storage object is missing', function () {
+    Storage::fake();
+
+    $file = File::factory()->create([
+        'file_path' => 'imports/orders/2026/04/missing.csv',
+        'expired_at' => null,
+    ]);
+
+    $this->getJson(route('settings.files.download', $file))->assertStatus(404);
+});
+
+test('stream endpoint returns the file contents for an active file on local disk', function () {
+    Storage::fake();
+    $disk = Storage::disk(config('filesystems.default'));
+    $disk->put('imports/orders/2026/04/sample.csv', 'col1,col2');
+
+    $file = File::factory()->create([
+        'file_path' => 'imports/orders/2026/04/sample.csv',
+        'expired_at' => null,
+    ]);
+
+    $this->get(route('settings.files.stream', $file))->assertOk();
 });
 
 test('empty state renders when no files exist', function () {

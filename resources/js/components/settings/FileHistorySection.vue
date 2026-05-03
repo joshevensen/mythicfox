@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import ToggleSwitch from 'primevue/toggleswitch';
 import { computed } from 'vue';
 import { download as downloadAction } from '@/actions/App/Http/Controllers/Settings/FilesController';
 import MfDate from '@/components/MfDate.vue';
@@ -7,6 +8,7 @@ import type { FilterDef } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
+import { useMfToast } from '@/composables/useMfToast';
 import { settings } from '@/routes';
 
 type FileRow = {
@@ -38,6 +40,20 @@ const props = defineProps<{
     purposes: PurposeOption[];
 }>();
 
+const { error } = useMfToast();
+const page = usePage();
+
+// `hide_expired` is rendered as a standalone toggle above the table per
+// settings.md §Mobile layout — it stays visible on phones where the rest of
+// the filter panel collapses into a drawer.
+const FILTER_KEYS = [
+    'direction',
+    'purpose',
+    'uploaded_at_from',
+    'uploaded_at_to',
+    'hide_expired',
+];
+
 const filters = computed<FilterDef[]>(() => [
     {
         kind: 'enum',
@@ -59,11 +75,6 @@ const filters = computed<FilterDef[]>(() => [
         key: 'uploaded_at',
         label: 'Date range',
     },
-    {
-        kind: 'boolean',
-        key: 'hide_expired',
-        label: 'Hide expired',
-    },
 ]);
 
 const columns: ColumnDef<FileRow>[] = [
@@ -75,7 +86,65 @@ const columns: ColumnDef<FileRow>[] = [
     { key: 'actions', label: '' },
 ];
 
-const downloadUrl = (id: number) => downloadAction(id).url;
+const currentUrl = (): URL => new URL(page.url, 'http://localhost');
+
+const hasActiveFilters = computed(() =>
+    FILTER_KEYS.some((key) => currentUrl().searchParams.has(key)),
+);
+
+const hideExpired = computed<boolean>({
+    get: () => currentUrl().searchParams.get('hide_expired') === '1',
+    set: (next) => {
+        const url = currentUrl();
+
+        if (next) {
+            url.searchParams.set('hide_expired', '1');
+        } else {
+            url.searchParams.delete('hide_expired');
+        }
+
+        url.searchParams.delete('page');
+        router.get(
+            url.pathname + (url.search || ''),
+            {},
+            { preserveState: true, preserveScroll: true },
+        );
+    },
+});
+
+const onDownload = async (id: number) => {
+    try {
+        const response = await fetch(downloadAction(id).url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) {
+            error(
+                "Couldn't generate download URL — file may be missing from storage.",
+            );
+
+            return;
+        }
+
+        const data = (await response.json()) as { url?: string };
+
+        if (!data.url) {
+            error(
+                "Couldn't generate download URL — file may be missing from storage.",
+            );
+
+            return;
+        }
+
+        window.open(data.url, '_blank', 'noopener');
+    } catch {
+        error(
+            "Couldn't generate download URL — file may be missing from storage.",
+        );
+    }
+};
 </script>
 
 <template>
@@ -84,7 +153,7 @@ const downloadUrl = (id: number) => downloadAction(id).url;
         class="mt-12 scroll-mt-20"
         data-test="file-history-section"
     >
-        <h2 class="mb-4 text-xl font-semibold text-foreground">File history</h2>
+        <h2 class="mb-4 text-xl font-semibold text-foreground">File History</h2>
 
         <MfTable
             :endpoint="settings().url"
@@ -97,6 +166,13 @@ const downloadUrl = (id: number) => downloadAction(id).url;
         >
             <template #filters>
                 <MfFilterPanel :filters="filters" :endpoint="settings().url" />
+                <label
+                    class="mt-3 inline-flex items-center gap-2 text-sm text-foreground"
+                    data-test="hide-expired-toggle"
+                >
+                    <ToggleSwitch v-model="hideExpired" />
+                    Hide expired
+                </label>
             </template>
 
             <template #cell-uploaded_at="{ row }">
@@ -129,21 +205,35 @@ const downloadUrl = (id: number) => downloadAction(id).url;
             </template>
 
             <template #cell-actions="{ row }">
-                <a
+                <button
                     v-if="!row.is_expired"
-                    :href="downloadUrl(row.id)"
-                    target="_blank"
-                    rel="noopener"
+                    type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                     :data-test="`file-download-${row.id}`"
                     aria-label="Download file"
+                    @click="onDownload(row.id)"
                 >
                     <i class="pi pi-download" />
-                </a>
+                </button>
             </template>
 
             <template #empty>
                 <div
+                    v-if="hasActiveFilters"
+                    class="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground"
+                    data-test="file-history-filtered-empty"
+                >
+                    <p>No files match these filters.</p>
+                    <Link
+                        :href="settings().url"
+                        class="text-mf-orange hover:underline"
+                        data-test="clear-filters"
+                    >
+                        Clear filters
+                    </Link>
+                </div>
+                <div
+                    v-else
                     class="py-8 text-center text-sm text-muted-foreground"
                     data-test="file-history-empty"
                 >
@@ -183,27 +273,17 @@ const downloadUrl = (id: number) => downloadAction(id).url;
                             />
                         </span>
                     </div>
-                    <a
+                    <button
                         v-if="!row.is_expired"
-                        :href="downloadUrl(row.id)"
-                        target="_blank"
-                        rel="noopener"
+                        type="button"
                         class="inline-flex h-9 w-9 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                         aria-label="Download file"
+                        @click="onDownload(row.id)"
                     >
                         <i class="pi pi-download" />
-                    </a>
+                    </button>
                 </div>
             </template>
         </MfTable>
-
-        <div
-            v-if="files.meta.total === 0"
-            class="mt-2 text-center text-sm text-muted-foreground"
-        >
-            <Link :href="settings().url" class="text-mf-orange hover:underline">
-                Clear filters
-            </Link>
-        </div>
     </section>
 </template>
