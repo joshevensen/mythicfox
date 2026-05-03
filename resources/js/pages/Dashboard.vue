@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MfPageHeader from '@/components/MfPageHeader.vue';
-import { addCards, catalog, inventory } from '@/routes';
+import { addCards, inventory } from '@/routes';
+import { index as catalogIndex } from '@/routes/catalog';
 import { index as ordersIndex } from '@/routes/orders';
 
 defineProps<{
@@ -35,7 +36,7 @@ const tiles: Tile[] = [
         label: '📃 Catalog',
         icon: 'pi pi-list',
         description: 'Browse the card catalog',
-        href: catalog().url,
+        href: catalogIndex().url,
         testId: 'tile-catalog',
     },
     {

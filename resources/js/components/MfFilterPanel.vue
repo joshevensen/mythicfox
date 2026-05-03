@@ -4,6 +4,7 @@ import Drawer from 'primevue/drawer';
 import InputNumber from 'primevue/inputnumber';
 import MultiSelect from 'primevue/multiselect';
 import Panel from 'primevue/panel';
+import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { computed, ref, watch } from 'vue';
 import type {
@@ -45,6 +46,9 @@ const readValueForFilter = (def: FilterDef): FilterValue => {
             const raw = url.searchParams.get(def.key);
 
             return raw ? raw.split(',').filter((v) => v.length > 0) : [];
+        }
+        case 'select': {
+            return url.searchParams.get(def.key) ?? '';
         }
         case 'range': {
             return {
@@ -127,6 +131,17 @@ const setFilter = (def: FilterDef, value: FilterValue) => {
 
                 break;
             }
+            case 'select': {
+                const text = String(value ?? '');
+
+                if (text.length > 0) {
+                    params.set(def.key, text);
+                } else {
+                    params.delete(def.key);
+                }
+
+                break;
+            }
             case 'range': {
                 removeKeys([`${def.key}_min`, `${def.key}_max`]);
 
@@ -192,6 +207,10 @@ const removeFilter = (key: string) => {
         }
         case 'enum': {
             setFilter(def, []);
+            break;
+        }
+        case 'select': {
+            setFilter(def, '');
             break;
         }
         case 'range': {
@@ -261,6 +280,20 @@ const activeFilters = computed<ActiveFilter[]>(() => {
                 key: def.key,
                 label: def.label,
                 display: labels.join(', '),
+                raw: value,
+            });
+        } else if (
+            def.kind === 'select' &&
+            typeof value === 'string' &&
+            value.length > 0
+        ) {
+            const label =
+                def.options?.find((o) => o.value === value)?.label ?? value;
+
+            list.push({
+                key: def.key,
+                label: def.label,
+                display: label,
                 raw: value,
             });
         } else if (def.kind === 'range') {
@@ -373,6 +406,19 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                         class="w-full"
                         @update:model-value="(v: string[]) => setFilter(def, v)"
                     />
+                    <Select
+                        v-else-if="def.kind === 'select'"
+                        :model-value="(values[def.key] as string) ?? ''"
+                        :options="def.options"
+                        option-value="value"
+                        option-label="label"
+                        :placeholder="def.label"
+                        class="w-full"
+                        show-clear
+                        @update:model-value="
+                            (v: string | null) => setFilter(def, v ?? '')
+                        "
+                    />
                     <div
                         v-else-if="def.kind === 'range'"
                         class="flex items-center gap-2"
@@ -471,6 +517,19 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                         :placeholder="def.label"
                         class="w-full"
                         @update:model-value="(v: string[]) => setFilter(def, v)"
+                    />
+                    <Select
+                        v-else-if="def.kind === 'select'"
+                        :model-value="(values[def.key] as string) ?? ''"
+                        :options="def.options"
+                        option-value="value"
+                        option-label="label"
+                        :placeholder="def.label"
+                        class="w-full"
+                        show-clear
+                        @update:model-value="
+                            (v: string | null) => setFilter(def, v ?? '')
+                        "
                     />
                     <ToggleSwitch
                         v-else-if="def.kind === 'boolean'"

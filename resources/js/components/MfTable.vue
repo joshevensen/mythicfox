@@ -150,6 +150,13 @@ const toggleExpand = (row: TRow): void => {
 const isRowExpanded = (row: TRow): boolean =>
     expandedKeys.value.has(rowKeyOf(row));
 
+// PrimeVue DataTable expects expandedRows as an array of row records.
+// We mirror the Set into an array so the chevron column and any external
+// trigger (e.g. clicking the parent row) keep state in sync.
+const expandedRowsArray = computed(() =>
+    props.rows.filter((row) => expandedKeys.value.has(rowKeyOf(row))),
+);
+
 const buildQuery = (): Record<string, string | number> => {
     const params: Record<string, string | number> = {
         page: page.value,
@@ -355,6 +362,9 @@ const sortOrder = computed(() =>
                 :sort-field="sortField ?? undefined"
                 :sort-order="sortOrder ?? undefined"
                 :data-key="rowKey"
+                :expanded-rows="
+                    expandable && !loading ? expandedRowsArray : undefined
+                "
                 paginator-template=""
                 :paginator="false"
                 striped-rows

@@ -1,7 +1,7 @@
 ---
 id: "60-004"
 title: "Catalog browse page — aggregated table with expand-rows + stale-data indicator"
-status: pending
+status: complete
 phase: "61-catalog-pages"
 size: L
 depends_on:
@@ -25,25 +25,25 @@ Build the `/catalog` Inertia page: a server-paginated, sortable, filterable brow
 
 ## Acceptance criteria
 
-- [ ] Route `GET /catalog` registered behind auth middleware, named `catalog.index`, rendered via Inertia (`Catalog/Index.vue`). Wayfinder helper regenerated.
-- [ ] Controller returns paginated, aggregated parent rows grouped by `(set_id, product_name, number)` with: card name, collector number, set name, rarity, `SUM(inventory.quantity) AS total_qty` (defaulting to 0 when no inventory rows exist).
-- [ ] Default sort: card name asc. Server-side sort supported on card name, number, set name, rarity, total qty.
-- [ ] Page renders an `MfTable` with `expandable` enabled. Per-row expand toggle (`▸` chevron); clicking the toggle (or anywhere on a desktop parent row) expands inline.
-- [ ] Expand row renders a nested table with one row per condition variant: Condition (verbatim string), Quantity (`0` if no `inventory` row), TCGplayer ID (`MfMonospaceId`). Sub-rows sorted by Condition asc.
-- [ ] Filter panel (`MfFilterPanel`) above the table:
+- [x] Route `GET /catalog` registered behind auth middleware, named `catalog.index`, rendered via Inertia (`Catalog/Index.vue`). Wayfinder helper regenerated.
+- [x] Controller returns paginated, aggregated parent rows grouped by `(set_id, product_name, number)` with: card name, collector number, set name, rarity, `SUM(inventory.quantity) AS total_qty` (defaulting to 0 when no inventory rows exist).
+- [x] Default sort: card name asc. Server-side sort supported on card name, number, set name, rarity, total qty.
+- [x] Page renders an `MfTable` with `expandable` enabled. Per-row expand toggle (`▸` chevron); clicking the toggle (or anywhere on a desktop parent row) expands inline.
+- [x] Expand row renders a nested table with one row per condition variant: Condition (verbatim string), Quantity (`0` if no `inventory` row), TCGplayer ID (`MfMonospaceId`). Sub-rows sorted by Condition asc.
+- [x] Filter panel (`MfFilterPanel`) above the table:
   - Product — single-select dropdown, default "All products".
   - Set — multi-select chained to Product; selections that don't match the new Product are dropped silently with a small toast (*"Removed N set filters not in {Product}"*).
   - In stock — toggle, default off; when on adds a `HAVING SUM(inventory.quantity) > 0` clause to the aggregated query.
-- [ ] Stale-data indicator beside the upload button: renders one inline string per product (e.g. "Magic refreshed 2 days ago"). Reads from `products.priced_at`. Renders the entry in amber/warning text when any product's `priced_at` is null or older than 3 days.
-- [ ] Empty states implemented: "no catalog rows ever" with upload CTA (CTA stub for `60-005`), "filters return zero rows" with Clear filters.
-- [ ] Mobile (`< 768px`) renders the parent-row card layout from `docs/ux/catalog.md#mobile-layout` via the `mobile-row` slot. Tap-anywhere-to-expand. Sub-rows render as a tighter list inside the expanded card.
-- [ ] Expand-all is **not** offered — explicitly disabled per `docs/ux/catalog.md#things-to-consider`.
-- [ ] Pest feature test: authenticated GET `/catalog` returns 200, renders Inertia page `Catalog/Index`, paginated parent rows include the seeded card.
-- [ ] Pest feature test: filtering by Product narrows results; filtering by Set requires a Product to be selected (chained behavior verified).
-- [ ] Pest feature test: "In stock" toggle excludes cards where every condition variant has zero quantity.
-- [ ] Pest feature test: sort by `total_qty` desc orders results (assert first row).
-- [ ] Pest feature test: stale-data indicator data is present in the page props with the correct shape (one entry per product, with `priced_at` and `is_stale` boolean).
-- [ ] `composer test` passes.
+- [x] Stale-data indicator beside the upload button: renders one inline string per product (e.g. "Magic refreshed 2 days ago"). Reads from `products.priced_at`. Renders the entry in amber/warning text when any product's `priced_at` is null or older than 3 days.
+- [x] Empty states implemented: "no catalog rows ever" with upload CTA (CTA stub for `60-005`), "filters return zero rows" with Clear filters.
+- [x] Mobile (`< 768px`) renders the parent-row card layout from `docs/ux/catalog.md#mobile-layout` via the `mobile-row` slot. Tap-anywhere-to-expand. Sub-rows render as a tighter list inside the expanded card.
+- [x] Expand-all is **not** offered — explicitly disabled per `docs/ux/catalog.md#things-to-consider`.
+- [x] Pest feature test: authenticated GET `/catalog` returns 200, renders Inertia page `Catalog/Index`, paginated parent rows include the seeded card.
+- [x] Pest feature test: filtering by Product narrows results; filtering by Set requires a Product to be selected (chained behavior verified).
+- [x] Pest feature test: "In stock" toggle excludes cards where every condition variant has zero quantity.
+- [x] Pest feature test: sort by `total_qty` desc orders results (assert first row).
+- [x] Pest feature test: stale-data indicator data is present in the page props with the correct shape (one entry per product, with `priced_at` and `is_stale` boolean).
+- [x] `composer test` passes.
 
 ## Implementation notes
 
