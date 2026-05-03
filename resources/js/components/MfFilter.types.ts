@@ -1,4 +1,10 @@
-export type FilterKind = 'text' | 'enum' | 'range' | 'date' | 'boolean';
+export type FilterKind =
+    | 'text'
+    | 'enum'
+    | 'select'
+    | 'range'
+    | 'date'
+    | 'boolean';
 
 export type FilterOption = {
     value: string;

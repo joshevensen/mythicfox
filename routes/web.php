@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AddCardsController;
+use App\Http\Controllers\Catalog\CatalogController;
+use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
@@ -57,11 +59,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('orders/{order:tcgplayer_order_number}/packing-slip', [PackingSlipController::class, 'show'])
         ->name('orders.packing-slip.show');
 
-    // Phase-60 placeholders. Real implementations land in phase 60 (catalog,
-    // inventory). Registered now so Wayfinder generates typed helpers for the
+    Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
+
+    // Phase-60 placeholder. Real implementation lands in phase 62 (inventory).
+    // Registered now so Wayfinder generates typed helpers for the
     // dashboard quick-action tiles and top-nav links.
-    Route::inertia('catalog', 'placeholders/ComingSoon', ['title' => 'Catalog'])
-        ->name('catalog');
     Route::inertia('inventory', 'placeholders/ComingSoon', ['title' => 'Inventory'])
         ->name('inventory');
 });
