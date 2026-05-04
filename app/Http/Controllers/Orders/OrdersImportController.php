@@ -34,6 +34,7 @@ class OrdersImportController extends Controller
         $packingSlipFile = $this->persistUpload($request, 'packing_slips');
 
         Cache::put(ImportOrdersJob::IN_FLIGHT_CACHE_KEY, true, now()->addHour());
+        Cache::forget(ImportOrdersJob::LAST_RESULT_CACHE_KEY);
 
         ImportOrdersJob::dispatch(
             $orderListFile->id,

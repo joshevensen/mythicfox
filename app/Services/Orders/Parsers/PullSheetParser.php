@@ -92,8 +92,10 @@ class PullSheetParser
     private function splitOrderQuantity(string $cell, int $rowNumber): array
     {
         $cell = trim($cell);
+        // TCGplayer pull sheets end with a summary row whose Order Quantity is
+        // blank — drop it (and any other Order-Quantity-less rows) silently.
         if ($cell === '') {
-            throw InvalidPullSheetException::invalidOrderQuantity($rowNumber, '(empty)');
+            return [];
         }
 
         // Split on `|` with optional surrounding whitespace; tolerates `A:1|B:2` and `A:1 | B:2`.

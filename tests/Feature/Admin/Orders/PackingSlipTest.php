@@ -139,24 +139,23 @@ test('bulk endpoint with select_all=1 resolves to all orders matching the curren
     );
 });
 
-test('bulk endpoint with select_all=1 honors the date-range filter signature', function () {
+test('bulk endpoint with select_all=1 honors the date_window filter signature', function () {
     Order::factory()->create([
-        'tcgplayer_order_number' => 'IN-RANGE',
-        'order_date' => Carbon::parse('2026-04-15'),
+        'tcgplayer_order_number' => 'IN-WINDOW',
+        'order_date' => Carbon::now()->subDays(5),
     ]);
     Order::factory()->create([
-        'tcgplayer_order_number' => 'OUT-OF-RANGE',
-        'order_date' => Carbon::parse('2026-01-01'),
+        'tcgplayer_order_number' => 'OUT-OF-WINDOW',
+        'order_date' => Carbon::now()->subDays(45),
     ]);
 
     $this->get(route('orders.packing-slip.bulk', [
         'select_all' => '1',
-        'order_date_from' => '2026-04-01',
-        'order_date_to' => '2026-04-30',
+        'date_window' => '30',
     ]))->assertInertia(
         fn ($page) => $page
             ->has('orders', 1)
-            ->where('orders.0.tcgplayer_order_number', 'IN-RANGE')
+            ->where('orders.0.tcgplayer_order_number', 'IN-WINDOW')
     );
 });
 

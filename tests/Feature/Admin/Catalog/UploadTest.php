@@ -49,7 +49,7 @@ function fakeValidPricingCustomExport(): UploadedFile
 test('unauthenticated POST to /catalog/upload is rejected', function () {
     auth()->logout();
 
-    $this->post(route('catalog.upload'), [
+    $this->post(route('cards.upload'), [
         'file' => fakeValidPricingCustomExport(),
     ])->assertRedirect(route('login'));
 });
@@ -58,11 +58,11 @@ test('valid CSV upload stores a files row and dispatches the importer job', func
     Bus::fake();
     Cache::flush();
 
-    $this->from(route('catalog.index'))
-        ->post(route('catalog.upload'), [
+    $this->from(route('cards.index'))
+        ->post(route('cards.upload'), [
             'file' => fakeValidPricingCustomExport(),
         ])
-        ->assertRedirect(route('catalog.index'));
+        ->assertRedirect(route('cards.index'));
 
     expect(File::query()->count())->toBe(1);
 
@@ -79,8 +79,8 @@ test('valid CSV upload stores a files row and dispatches the importer job', func
 test('non-CSV file is rejected with 422', function () {
     Bus::fake();
 
-    $this->from(route('catalog.index'))
-        ->post(route('catalog.upload'), [
+    $this->from(route('cards.index'))
+        ->post(route('cards.upload'), [
             'file' => UploadedFile::fake()->createWithContent('notes.txt', 'hello world'),
         ])
         ->assertSessionHasErrors('file');
@@ -95,9 +95,9 @@ test('malformed CSV (missing required columns) still creates a files row but fla
     $body = "Wrong,Header,Columns\nfoo,bar,baz\n";
     $upload = UploadedFile::fake()->createWithContent('weird.csv', $body);
 
-    $this->from(route('catalog.index'))
-        ->post(route('catalog.upload'), ['file' => $upload])
-        ->assertRedirect(route('catalog.index'))
+    $this->from(route('cards.index'))
+        ->post(route('cards.upload'), ['file' => $upload])
+        ->assertRedirect(route('cards.index'))
         ->assertSessionHas('catalog_upload_error');
 
     // File row is preserved for inspection per docs/ux/catalog.md#upload-flow.
@@ -110,11 +110,11 @@ test('upload error is exposed to the page via meta.upload_error after a malforme
 
     $body = "Wrong,Header,Columns\nfoo,bar,baz\n";
 
-    $this->from(route('catalog.index'))->post(route('catalog.upload'), [
+    $this->from(route('cards.index'))->post(route('cards.upload'), [
         'file' => UploadedFile::fake()->createWithContent('weird.csv', $body),
     ]);
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('meta.upload_error', fn ($v) => is_string($v) && str_contains($v, 'Missing columns'))
     );
@@ -156,7 +156,7 @@ test('catalog index page exposes import_in_flight + import_last_result to props'
     Cache::flush();
     Cache::put(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY, true, now()->addHour());
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('meta.import_in_flight', true)
             ->where('meta.import_last_result', null)
@@ -175,7 +175,7 @@ test('catalog index page exposes import_in_flight + import_last_result to props'
         now()->addHour(),
     );
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('meta.import_in_flight', false)
             ->where('meta.import_last_result.success', true)

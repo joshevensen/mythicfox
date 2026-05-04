@@ -73,8 +73,7 @@ class CatalogUploadController extends Controller
         $original = $upload->getClientOriginalName();
         $storagePath = FilePath::build('imports', 'pricing', $original);
 
-        $contents = file_get_contents($upload->getRealPath());
-        Storage::put($storagePath, $contents !== false ? $contents : '');
+        Storage::putFileAs(dirname($storagePath), $upload, basename($storagePath));
 
         return File::create([
             'type' => 'import',
@@ -86,16 +85,18 @@ class CatalogUploadController extends Controller
 
     private function validateHeader(File $file): ?string
     {
-        $contents = Storage::get($file->file_path);
+        $stream = Storage::readStream($file->file_path);
 
-        if ($contents === null || $contents === '') {
+        if ($stream === null) {
             return 'The uploaded file is empty.';
         }
 
-        $firstLineEnd = strpos($contents, "\n");
-        $headerLine = $firstLineEnd === false
-            ? $contents
-            : substr($contents, 0, $firstLineEnd);
+        $headerLine = fgets($stream);
+        fclose($stream);
+
+        if ($headerLine === false || trim($headerLine) === '') {
+            return 'The uploaded file is empty.';
+        }
 
         $headers = str_getcsv(trim($headerLine, "\r\n"));
         $missing = array_values(array_diff(self::REQUIRED_HEADER_COLUMNS, $headers));

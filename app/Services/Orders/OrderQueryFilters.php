@@ -7,15 +7,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 /**
- * Shared status + date-range filter resolution for the orders table and any
+ * Shared status + date-window filter resolution for the orders table and any
  * surface (e.g. bulk packing-slip print) that needs the same set of "what's
  * the user looking at right now" matches.
  */
 class OrderQueryFilters
 {
-    public const DEFAULT_WINDOW_DAYS = 90;
+    public const DEFAULT_DATE_WINDOW = '90';
 
-    public const FILTER_KEYS = ['status', 'order_date_from', 'order_date_to'];
+    public const FILTER_KEYS = ['status', 'date_window'];
+
+    /**
+     * @var list<array{value: string, label: string}>
+     */
+    public const DATE_WINDOWS = [
+        ['value' => '30', 'label' => 'Last 30 Days'],
+        ['value' => '60', 'label' => 'Last 60 Days'],
+        ['value' => '90', 'label' => 'Last 90 Days'],
+        ['value' => '365', 'label' => 'Last Year'],
+        ['value' => '730', 'label' => 'Last 2 Years'],
+        ['value' => 'all', 'label' => 'All Time'],
+    ];
 
     public static function apply(Builder $query, Request $request): Builder
     {
@@ -25,44 +37,17 @@ class OrderQueryFilters
             $query->whereIn('tcgplayer_status', $statuses);
         }
 
-        [$from, $to] = self::resolveDateRange($request);
+        $window = self::resolveWindow($request->query('date_window'));
 
-        if ($from !== null) {
-            $query->where('order_date', '>=', $from->toDateString());
-        }
-
-        if ($to !== null) {
-            $query->where('order_date', '<=', $to->toDateString());
+        if ($window !== null) {
+            $query->where(
+                'order_date',
+                '>=',
+                Carbon::now()->subDays($window)->startOfDay()->toDateString(),
+            );
         }
 
         return $query;
-    }
-
-    /**
-     * @return array{0: ?Carbon, 1: ?Carbon}
-     */
-    public static function resolveDateRange(Request $request): array
-    {
-        $rawFrom = $request->query('order_date_from');
-        $rawTo = $request->query('order_date_to');
-
-        // 90-day default applies only when neither bound is present. Once the
-        // user touches the date range, URL state takes over.
-        if ($rawFrom === null && $rawTo === null) {
-            return [
-                Carbon::now()->subDays(self::DEFAULT_WINDOW_DAYS)->startOfDay(),
-                Carbon::now()->endOfDay(),
-            ];
-        }
-
-        $from = is_string($rawFrom) && $rawFrom !== ''
-            ? Carbon::parse($rawFrom)->startOfDay()
-            : null;
-        $to = is_string($rawTo) && $rawTo !== ''
-            ? Carbon::parse($rawTo)->endOfDay()
-            : null;
-
-        return [$from, $to];
     }
 
     /**
@@ -78,5 +63,27 @@ class OrderQueryFilters
             array_map('trim', explode(',', $raw)),
             fn (string $v) => $v !== '',
         ));
+    }
+
+    /**
+     * Returns the day-count to apply, or null when no date filter should run
+     * (i.e. the "All Time" preset). Falls back to the default window when the
+     * input is absent or unrecognised so legacy URLs keep working.
+     */
+    private static function resolveWindow(mixed $raw): ?int
+    {
+        $value = is_string($raw) && $raw !== '' ? $raw : self::DEFAULT_DATE_WINDOW;
+
+        if ($value === 'all') {
+            return null;
+        }
+
+        $allowed = array_column(self::DATE_WINDOWS, 'value');
+
+        if (! in_array($value, $allowed, true)) {
+            $value = self::DEFAULT_DATE_WINDOW;
+        }
+
+        return (int) $value;
     }
 }

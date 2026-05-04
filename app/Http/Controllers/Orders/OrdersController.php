@@ -32,8 +32,9 @@ class OrdersController extends Controller
             'orders' => $this->loadOrders($request),
             'meta' => [
                 'statuses' => $this->statusOptions(),
-                'default_window_days' => OrderQueryFilters::DEFAULT_WINDOW_DAYS,
+                'date_windows' => OrderQueryFilters::DATE_WINDOWS,
                 'import_in_flight' => Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY),
+                'import_last_result' => Cache::get(ImportOrdersJob::LAST_RESULT_CACHE_KEY),
             ],
         ]);
     }

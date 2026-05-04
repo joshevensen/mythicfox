@@ -90,6 +90,22 @@ CSV);
     @unlink($tmp);
 });
 
+test('rows with empty Order Quantity are skipped (TCGplayer summary row)', function () {
+    $tmp = sys_get_temp_dir().'/pullsheet-summary-row.csv';
+    file_put_contents($tmp, <<<'CSV'
+Product Line,Product Name,Condition,Number,Set,Rarity,Quantity,Main Photo URL,Set Release Date,SkuId,Order Quantity
+"Magic","Counterspell","Near Mint","25","S","C","1","","","100","623394E9-AAA-001:1"
+"","Total","","","","","2","","","",""
+CSV);
+
+    $items = (new PullSheetParser)->parse($tmp);
+
+    expect($items)->toHaveCount(1);
+    expect($items->first()->productName)->toBe('Counterspell');
+
+    @unlink($tmp);
+});
+
 test('malformed Order Quantity raises InvalidPullSheetException with row number', function () {
     $tmp = sys_get_temp_dir().'/pullsheet-bad-qty.csv';
     file_put_contents($tmp, <<<'CSV'

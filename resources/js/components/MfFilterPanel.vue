@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import Drawer from 'primevue/drawer';
 import InputNumber from 'primevue/inputnumber';
 import MultiSelect from 'primevue/multiselect';
-import Panel from 'primevue/panel';
 import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { computed, ref, watch } from 'vue';
@@ -21,8 +19,6 @@ type Props = {
 };
 
 const props = defineProps<Props>();
-
-const open = defineModel<boolean>('open', { default: false });
 
 const page = usePage();
 
@@ -370,165 +366,109 @@ const setDateTo = (def: FilterDef, raw: string): void => {
             @clear-all="clearAll"
         />
 
-        <Panel toggleable header="Filters" class="hidden md:block">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+            class="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-card p-4"
+        >
+            <div
+                v-for="def in FILTER_PANEL_CONTENT"
+                :key="def.key"
+                class="flex flex-col gap-1.5"
+            >
+                <label class="text-xs font-medium text-muted-foreground">{{
+                    def.label
+                }}</label>
+                <MfSearchInput
+                    v-if="def.kind === 'text'"
+                    :model-value="(values[def.key] as string) ?? ''"
+                    :placeholder="def.label"
+                    @update:model-value="(v: string) => setFilter(def, v)"
+                />
+                <MultiSelect
+                    v-else-if="def.kind === 'enum'"
+                    :model-value="(values[def.key] as string[]) ?? []"
+                    :options="def.options"
+                    option-value="value"
+                    option-label="label"
+                    display="chip"
+                    :placeholder="def.label"
+                    @update:model-value="(v: string[]) => setFilter(def, v)"
+                />
+                <Select
+                    v-else-if="def.kind === 'select'"
+                    :model-value="(values[def.key] as string) ?? ''"
+                    :options="def.options"
+                    option-value="value"
+                    option-label="label"
+                    :placeholder="def.label"
+                    show-clear
+                    @update:model-value="
+                        (v: string | null) => setFilter(def, v ?? '')
+                    "
+                />
                 <div
-                    v-for="def in FILTER_PANEL_CONTENT"
-                    :key="def.key"
-                    class="flex flex-col gap-1.5"
+                    v-else-if="def.kind === 'range'"
+                    class="flex items-center gap-2"
                 >
-                    <label class="text-xs font-medium text-muted-foreground">{{
-                        def.label
-                    }}</label>
-                    <MfSearchInput
-                        v-if="def.kind === 'text'"
-                        :model-value="(values[def.key] as string) ?? ''"
-                        :placeholder="def.label"
-                        @update:model-value="(v: string) => setFilter(def, v)"
-                    />
-                    <MultiSelect
-                        v-else-if="def.kind === 'enum'"
-                        :model-value="(values[def.key] as string[]) ?? []"
-                        :options="def.options"
-                        option-value="value"
-                        option-label="label"
-                        display="chip"
-                        :placeholder="def.label"
-                        class="w-full"
-                        @update:model-value="(v: string[]) => setFilter(def, v)"
-                    />
-                    <Select
-                        v-else-if="def.kind === 'select'"
-                        :model-value="(values[def.key] as string) ?? ''"
-                        :options="def.options"
-                        option-value="value"
-                        option-label="label"
-                        :placeholder="def.label"
-                        class="w-full"
-                        show-clear
+                    <InputNumber
+                        :model-value="
+                            rangeOf(def.key).min !== undefined
+                                ? Number(rangeOf(def.key).min)
+                                : null
+                        "
+                        placeholder="Min"
                         @update:model-value="
-                            (v: string | null) => setFilter(def, v ?? '')
+                            (v: number | null) => setRangeMin(def, v)
                         "
                     />
-                    <div
-                        v-else-if="def.kind === 'range'"
-                        class="flex items-center gap-2"
-                    >
-                        <InputNumber
-                            :model-value="
-                                rangeOf(def.key).min !== undefined
-                                    ? Number(rangeOf(def.key).min)
-                                    : null
-                            "
-                            placeholder="Min"
-                            class="w-full"
-                            @update:model-value="
-                                (v: number | null) => setRangeMin(def, v)
-                            "
-                        />
-                        <span class="text-muted-foreground">–</span>
-                        <InputNumber
-                            :model-value="
-                                rangeOf(def.key).max !== undefined
-                                    ? Number(rangeOf(def.key).max)
-                                    : null
-                            "
-                            placeholder="Max"
-                            class="w-full"
-                            @update:model-value="
-                                (v: number | null) => setRangeMax(def, v)
-                            "
-                        />
-                    </div>
-                    <div
-                        v-else-if="def.kind === 'date'"
-                        class="flex items-center gap-2"
-                    >
-                        <input
-                            type="date"
-                            :value="dateOf(def.key).from ?? ''"
-                            class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                            @input="
-                                (e) =>
-                                    setDateFrom(
-                                        def,
-                                        (e.target as HTMLInputElement).value,
-                                    )
-                            "
-                        />
-                        <span class="text-muted-foreground">→</span>
-                        <input
-                            type="date"
-                            :value="dateOf(def.key).to ?? ''"
-                            class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                            @input="
-                                (e) =>
-                                    setDateTo(
-                                        def,
-                                        (e.target as HTMLInputElement).value,
-                                    )
-                            "
-                        />
-                    </div>
-                    <ToggleSwitch
-                        v-else-if="def.kind === 'boolean'"
-                        :model-value="values[def.key] === true"
-                        @update:model-value="(v: boolean) => setFilter(def, v)"
-                    />
-                </div>
-            </div>
-        </Panel>
-
-        <Drawer v-model:visible="open" position="right" class="w-80!">
-            <template #header>
-                <span class="font-semibold">Filters</span>
-            </template>
-            <div class="flex flex-col gap-4">
-                <div
-                    v-for="def in FILTER_PANEL_CONTENT"
-                    :key="`m-${def.key}`"
-                    class="flex flex-col gap-1.5"
-                >
-                    <label class="text-xs font-medium text-muted-foreground">{{
-                        def.label
-                    }}</label>
-                    <MfSearchInput
-                        v-if="def.kind === 'text'"
-                        :model-value="(values[def.key] as string) ?? ''"
-                        :placeholder="def.label"
-                        @update:model-value="(v: string) => setFilter(def, v)"
-                    />
-                    <MultiSelect
-                        v-else-if="def.kind === 'enum'"
-                        :model-value="(values[def.key] as string[]) ?? []"
-                        :options="def.options"
-                        option-value="value"
-                        option-label="label"
-                        display="chip"
-                        :placeholder="def.label"
-                        class="w-full"
-                        @update:model-value="(v: string[]) => setFilter(def, v)"
-                    />
-                    <Select
-                        v-else-if="def.kind === 'select'"
-                        :model-value="(values[def.key] as string) ?? ''"
-                        :options="def.options"
-                        option-value="value"
-                        option-label="label"
-                        :placeholder="def.label"
-                        class="w-full"
-                        show-clear
+                    <span class="text-muted-foreground">–</span>
+                    <InputNumber
+                        :model-value="
+                            rangeOf(def.key).max !== undefined
+                                ? Number(rangeOf(def.key).max)
+                                : null
+                        "
+                        placeholder="Max"
                         @update:model-value="
-                            (v: string | null) => setFilter(def, v ?? '')
+                            (v: number | null) => setRangeMax(def, v)
                         "
                     />
-                    <ToggleSwitch
-                        v-else-if="def.kind === 'boolean'"
-                        :model-value="values[def.key] === true"
-                        @update:model-value="(v: boolean) => setFilter(def, v)"
+                </div>
+                <div
+                    v-else-if="def.kind === 'date'"
+                    class="flex items-center gap-2"
+                >
+                    <input
+                        type="date"
+                        :value="dateOf(def.key).from ?? ''"
+                        class="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                        @input="
+                            (e) =>
+                                setDateFrom(
+                                    def,
+                                    (e.target as HTMLInputElement).value,
+                                )
+                        "
+                    />
+                    <span class="text-muted-foreground">→</span>
+                    <input
+                        type="date"
+                        :value="dateOf(def.key).to ?? ''"
+                        class="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                        @input="
+                            (e) =>
+                                setDateTo(
+                                    def,
+                                    (e.target as HTMLInputElement).value,
+                                )
+                        "
                     />
                 </div>
+                <ToggleSwitch
+                    v-else-if="def.kind === 'boolean'"
+                    :model-value="values[def.key] === true"
+                    @update:model-value="(v: boolean) => setFilter(def, v)"
+                />
             </div>
-        </Drawer>
+        </div>
     </div>
 </template>

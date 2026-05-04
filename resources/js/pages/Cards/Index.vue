@@ -13,8 +13,8 @@ import MfTable from '@/components/MfTable.vue';
 import { useCatalogUploadModal } from '@/composables/useCatalogUploadModal';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
-import RowExpand from '@/pages/Catalog/RowExpand.vue';
-import { index as catalogIndex } from '@/routes/catalog';
+import RowExpand from '@/pages/Cards/RowExpand.vue';
+import { index as cardsIndex } from '@/routes/cards';
 
 type CardRow = {
     key: string;
@@ -79,7 +79,7 @@ const { info, success } = useMfToast();
 const uploadModal = useCatalogUploadModal();
 
 const tableState = useTableState({
-    endpoint: catalogIndex().url,
+    endpoint: cardsIndex().url,
     filterKeys: ['product', 'sets', 'in_stock'],
     defaultSort: { field: 'product_name', dir: 'asc' },
     inertiaOnly: ['cards', 'variants', 'meta'],
@@ -208,12 +208,6 @@ const columns: ColumnDef<CardRow>[] = [
     },
 ];
 
-const panelDrawerOpen = ref(false);
-
-const showFiltersDrawer = (): void => {
-    panelDrawerOpen.value = true;
-};
-
 const onUploadClick = (): void => {
     uploadModal.open();
 };
@@ -240,6 +234,10 @@ const importPollHandle = ref<number | null>(null);
 const wasInFlight = ref(props.meta.import_in_flight);
 
 const stopPolling = (): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     if (importPollHandle.value !== null) {
         window.clearInterval(importPollHandle.value);
         importPollHandle.value = null;
@@ -247,6 +245,10 @@ const stopPolling = (): void => {
 };
 
 const startPolling = (): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     if (importPollHandle.value !== null) {
         return;
     }
@@ -323,9 +325,9 @@ const stalenessLabel = (entry: StaleEntry): string => {
 </script>
 
 <template>
-    <Head title="Catalog" />
+    <Head title="Cards" />
 
-    <MfPageHeader title="Catalog">
+    <MfPageHeader title="Cards">
         <div
             v-if="meta.products_priced_at.length > 0"
             class="mr-2 hidden flex-col gap-0.5 text-xs sm:flex"
@@ -344,15 +346,6 @@ const stalenessLabel = (entry: StaleEntry): string => {
                 {{ stalenessLabel(entry) }}
             </span>
         </div>
-        <Button
-            type="button"
-            icon="pi pi-filter"
-            label="Filters"
-            severity="secondary"
-            class="md:hidden"
-            data-test="catalog-mobile-filters"
-            @click="showFiltersDrawer"
-        />
         <Button
             type="button"
             :icon="
@@ -396,9 +389,8 @@ const stalenessLabel = (entry: StaleEntry): string => {
     >
         <template #filters>
             <MfFilterPanel
-                v-model:open="panelDrawerOpen"
                 :filters="filters"
-                :endpoint="catalogIndex().url"
+                :endpoint="cardsIndex().url"
             />
         </template>
 
@@ -440,7 +432,7 @@ const stalenessLabel = (entry: StaleEntry): string => {
                 data-test="catalog-empty"
             >
                 <p class="text-base font-medium text-foreground">
-                    Your catalog is empty.
+                    No cards yet.
                 </p>
                 <p class="max-w-md text-sm text-muted-foreground">
                     Upload a TCGPlayer PricingCustomExport to seed it.

@@ -18,8 +18,9 @@ type Section = {
 const SECTIONS: Section[] = [
     { label: 'Dashboard', href: dashboard().url, matchPrefix: '/dashboard' },
     { label: 'Orders', href: '/orders', matchPrefix: '/orders' },
-    { label: 'Catalog', href: '/catalog', matchPrefix: '/catalog' },
     { label: 'Inventory', href: '/inventory', matchPrefix: '/inventory' },
+    { label: 'Cards', href: '/cards', matchPrefix: '/cards' },
+    { label: 'Decks', href: '/decks', matchPrefix: '/decks' },
     { label: 'Settings', href: editProfile().url, matchPrefix: '/settings' },
 ];
 

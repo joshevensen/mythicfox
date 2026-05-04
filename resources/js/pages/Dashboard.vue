@@ -2,7 +2,8 @@
 import { Head, Link } from '@inertiajs/vue3';
 import MfPageHeader from '@/components/MfPageHeader.vue';
 import { addCards } from '@/routes';
-import { index as catalogIndex } from '@/routes/catalog';
+import { index as cardsIndex } from '@/routes/cards';
+import { index as decksIndex } from '@/routes/decks';
 import { index as inventoryIndex } from '@/routes/inventory';
 import { index as ordersIndex } from '@/routes/orders';
 
@@ -34,11 +35,18 @@ const tiles: Tile[] = [
         testId: 'tile-import-orders',
     },
     {
-        label: '📃 Catalog',
+        label: '📃 Cards',
         icon: 'pi pi-list',
         description: 'Browse the card catalog',
-        href: catalogIndex().url,
-        testId: 'tile-catalog',
+        href: cardsIndex().url,
+        testId: 'tile-cards',
+    },
+    {
+        label: '🎴 Decks',
+        icon: 'pi pi-box',
+        description: 'Browse sealed decks',
+        href: decksIndex().url,
+        testId: 'tile-decks',
     },
     {
         label: '💲 Export Pricing',

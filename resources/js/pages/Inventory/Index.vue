@@ -199,12 +199,6 @@ const columns: ColumnDef<InventoryRow>[] = [
     { key: 'actions', label: '' },
 ];
 
-const panelDrawerOpen = ref(false);
-
-const showFiltersDrawer = (): void => {
-    panelDrawerOpen.value = true;
-};
-
 // Local row cache lets inline edits update the visible table immediately
 // (last-write-wins from server response). Inertia's full prop refresh on
 // navigation overwrites this — that's fine, by then any in-flight saves are
@@ -678,16 +672,6 @@ if (initialUrl.searchParams.get('export') === '1') {
 
         <Button
             type="button"
-            icon="pi pi-filter"
-            label="Filters"
-            severity="secondary"
-            class="md:hidden"
-            data-test="inventory-mobile-filters"
-            @click="showFiltersDrawer"
-        />
-
-        <Button
-            type="button"
             icon="pi pi-dollar"
             label="Export Pricing"
             class="fixed right-4 bottom-4 z-30 shadow-lg md:static md:right-auto md:bottom-auto md:shadow-none"
@@ -696,17 +680,12 @@ if (initialUrl.searchParams.get('export') === '1') {
         />
     </MfPageHeader>
 
-    <div
-        v-if="!meta.filters_complete"
-        class="mt-4 rounded-lg border-2 border-dashed border-border bg-muted/20 px-6 py-12 text-center"
-        data-test="inventory-empty-filters"
-    >
+    <div v-if="!meta.filters_complete" data-test="inventory-empty-filters">
         <MfFilterPanel
-            v-model:open="panelDrawerOpen"
             :filters="filters"
             :endpoint="inventoryIndex().url"
         />
-        <p class="mt-6 text-base font-medium text-foreground">
+        <p class="mt-6 text-center text-base font-medium text-foreground">
             Pick a product, set, and condition to view inventory.
         </p>
     </div>
@@ -728,7 +707,6 @@ if (initialUrl.searchParams.get('export') === '1') {
     >
         <template #filters>
             <MfFilterPanel
-                v-model:open="panelDrawerOpen"
                 :filters="filters"
                 :endpoint="inventoryIndex().url"
             />

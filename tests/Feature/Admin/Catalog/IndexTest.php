@@ -14,7 +14,7 @@ beforeEach(function () {
 test('unauthenticated visit redirects to login', function () {
     auth()->logout();
 
-    $this->get(route('catalog.index'))->assertRedirect(route('login'));
+    $this->get(route('cards.index'))->assertRedirect(route('login'));
 });
 
 test('authenticated visit returns 200 and renders Catalog/Index with paginator shape', function () {
@@ -26,11 +26,11 @@ test('authenticated visit returns 200 and renders Catalog/Index with paginator s
         'rarity' => 'Rare',
     ]);
 
-    $this->get(route('catalog.index'))
+    $this->get(route('cards.index'))
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->component('Catalog/Index')
+                ->component('Cards/Index')
                 ->has('cards.data', 1)
                 ->where('cards.data.0.product_name', 'Boltyn')
                 ->where('cards.data.0.number', 'BOL001')
@@ -63,7 +63,7 @@ test('parent-row aggregation sums quantity across condition variants', function 
     Inventory::factory()->state(['card_id' => $nm->id, 'quantity' => 3])->create();
     Inventory::factory()->state(['card_id' => $foil->id, 'quantity' => 2])->create();
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
             ->where('cards.data.0.total_qty', 5)
@@ -79,7 +79,7 @@ test('filtering by Product narrows results', function () {
     Card::factory()->state(['set_id' => $magicSet->id])->create(['product_name' => 'Lightning Bolt', 'number' => '1']);
     Card::factory()->state(['set_id' => $lorcanaSet->id])->create(['product_name' => 'Mickey', 'number' => '1']);
 
-    $this->get(route('catalog.index', ['product' => $magic->id]))->assertInertia(
+    $this->get(route('cards.index', ['product' => $magic->id]))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
             ->where('cards.data.0.product_name', 'Lightning Bolt')
@@ -94,7 +94,7 @@ test('filtering by Set requires a Product to drive option list (chained behavior
     Card::factory()->state(['set_id' => $setA->id])->create(['product_name' => 'Card A', 'number' => '1']);
     Card::factory()->state(['set_id' => $setB->id])->create(['product_name' => 'Card B', 'number' => '1']);
 
-    $this->get(route('catalog.index', [
+    $this->get(route('cards.index', [
         'product' => $magic->id,
         'sets' => (string) $setA->id,
     ]))->assertInertia(
@@ -105,7 +105,7 @@ test('filtering by Set requires a Product to drive option list (chained behavior
 
     // Chained: meta.sets_by_product carries the per-product set list so the
     // page can validate selections client-side when Product changes.
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page->has('meta.sets_by_product.'.$magic->id, 2)
     );
 });
@@ -120,7 +120,7 @@ test('In stock toggle excludes cards where every condition variant has zero quan
     Inventory::factory()->state(['card_id' => $stocked->id, 'quantity' => 4])->create();
     Inventory::factory()->state(['card_id' => $unstocked->id, 'quantity' => 0])->create();
 
-    $this->get(route('catalog.index', ['in_stock' => '1']))->assertInertia(
+    $this->get(route('cards.index', ['in_stock' => '1']))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
             ->where('cards.data.0.product_name', 'Stocked')
@@ -137,7 +137,7 @@ test('sort by total_qty desc orders results', function () {
     Inventory::factory()->state(['card_id' => $low->id, 'quantity' => 1])->create();
     Inventory::factory()->state(['card_id' => $high->id, 'quantity' => 99])->create();
 
-    $this->get(route('catalog.index', ['sort' => 'total_qty', 'dir' => 'desc']))->assertInertia(
+    $this->get(route('cards.index', ['sort' => 'total_qty', 'dir' => 'desc']))->assertInertia(
         fn ($page) => $page
             ->where('cards.data.0.product_name', 'High')
             ->where('cards.data.1.product_name', 'Low')
@@ -158,7 +158,7 @@ test('stale-data indicator data is present in page props with the correct shape'
         'priced_at' => null,
     ]);
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->has('meta.products_priced_at', 3, fn ($entry) => $entry
                 ->has('id')
@@ -168,7 +168,7 @@ test('stale-data indicator data is present in page props with the correct shape'
             )
     );
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('meta.products_priced_at.0.name', 'Flesh & Blood TCG')
             ->where('meta.products_priced_at.0.is_stale', true)
@@ -201,7 +201,7 @@ test('expand-row variants are eager-loaded into props keyed by parent row key', 
 
     $expectedKey = sprintf('%d|Boltyn|BOL001', $set->id);
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('cards.data.0.key', $expectedKey)
             ->has('variants.'.$expectedKey, 2)

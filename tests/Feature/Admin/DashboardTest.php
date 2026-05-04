@@ -43,12 +43,14 @@ test('all four quick-action tile destinations are present in the rendered Dashbo
     expect($source)
         ->toContain('addCards().url')
         ->toContain('ordersIndex({ query: { import: 1 } }).url')
-        ->toContain('catalogIndex().url')
+        ->toContain('cardsIndex().url')
+        ->toContain('decksIndex().url')
         ->toContain('inventoryIndex({ query: { export: 1 } }).url');
 
     // The Wayfinder route helpers themselves resolve to the actual paths.
     expect(route('add-cards'))->toContain('/add-cards');
     expect(route('orders.index'))->toContain('/orders');
-    expect(route('catalog.index'))->toContain('/catalog');
+    expect(route('cards.index'))->toContain('/cards');
+    expect(route('decks.index'))->toContain('/decks');
     expect(route('inventory.index'))->toContain('/inventory');
 });

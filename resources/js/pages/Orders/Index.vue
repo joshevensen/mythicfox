@@ -39,10 +39,30 @@ type OrdersPayload = {
     };
 };
 
+type ImportResult =
+    | {
+          success: true;
+          orders_inserted: number;
+          orders_updated: number;
+          line_items_created: number;
+          line_items_unmatched_to_pdf: number;
+          line_items_unmatched_to_inventory: number;
+          errors: string[];
+          warnings: string[];
+          completed_at: string;
+      }
+    | {
+          success: false;
+          message?: string;
+          errors?: string[];
+          completed_at: string;
+      };
+
 type Meta = {
     statuses: FilterOption[];
-    default_window_days: number;
+    date_windows: FilterOption[];
     import_in_flight: boolean;
+    import_last_result: ImportResult | null;
 };
 
 const props = defineProps<{
@@ -71,9 +91,10 @@ const filters = computed<FilterDef[]>(() => [
         options: props.meta.statuses,
     },
     {
-        kind: 'date',
-        key: 'order_date',
+        kind: 'select',
+        key: 'date_window',
         label: 'Date range',
+        options: props.meta.date_windows,
     },
 ]);
 
@@ -118,17 +139,11 @@ const columns: ColumnDef<OrderRow>[] = [
 
 const tableState = useTableState({
     endpoint: ordersIndex().url,
-    filterKeys: ['status', 'order_date_from', 'order_date_to'],
+    filterKeys: ['status', 'date_window'],
     defaultSort: { field: 'order_date', dir: 'desc' },
     inertiaOnly: ['orders'],
 });
 const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
-
-const panelDrawerOpen = ref(false);
-
-const showFiltersDrawer = (): void => {
-    panelDrawerOpen.value = true;
-};
 
 const onImportClick = (): void => {
     importModal.open();
@@ -160,11 +175,7 @@ const onTcgplayerRow = (orderNumber: string): void => {
 const { confirm } = useMfConfirm();
 const { error: toastError } = useMfToast();
 
-const FILTER_SIGNATURE_KEYS = [
-    'status',
-    'order_date_from',
-    'order_date_to',
-] as const;
+const FILTER_SIGNATURE_KEYS = ['status', 'date_window'] as const;
 
 const buildIdsUrl = (orderNumbers: string[]): string =>
     packingSlipRoutes.bulk.url({
@@ -223,11 +234,15 @@ const onBulkPrint = (
     openInNewTab(url);
 };
 
-const { success } = useMfToast();
+const { success, error } = useMfToast();
 const importPollHandle = ref<number | null>(null);
 const wasInFlight = ref(props.meta.import_in_flight);
 
 const stopPolling = (): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     if (importPollHandle.value !== null) {
         window.clearInterval(importPollHandle.value);
         importPollHandle.value = null;
@@ -235,6 +250,10 @@ const stopPolling = (): void => {
 };
 
 const startPolling = (): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     if (importPollHandle.value !== null) {
         return;
     }
@@ -244,19 +263,44 @@ const startPolling = (): void => {
     }, 2000);
 };
 
+const buildImportSummary = (last: ImportResult & { success: true }): string => {
+    const total = last.orders_inserted + last.orders_updated;
+    const orderWord = total === 1 ? 'order' : 'orders';
+    let message = `Imported ${total} ${orderWord} (${last.orders_inserted} new, ${last.orders_updated} updated).`;
+
+    if (last.line_items_unmatched_to_inventory > 0) {
+        const itemWord =
+            last.line_items_unmatched_to_inventory === 1 ? 'item' : 'items';
+        message += ` ${last.line_items_unmatched_to_inventory} ${itemWord} could not be matched to inventory.`;
+    }
+
+    return message;
+};
+
 watch(
     () => props.meta.import_in_flight,
     (next) => {
         if (next) {
             wasInFlight.value = true;
             startPolling();
-        } else {
-            stopPolling();
 
-            if (wasInFlight.value) {
-                wasInFlight.value = false;
-                success(`Imported ${props.orders.meta.total} orders.`);
-            }
+            return;
+        }
+
+        stopPolling();
+
+        if (!wasInFlight.value) {
+            return;
+        }
+
+        wasInFlight.value = false;
+
+        const last = props.meta.import_last_result;
+
+        if (last && last.success) {
+            success(buildImportSummary(last));
+        } else if (last && !last.success) {
+            error(last.message ?? 'Order import failed.');
         }
     },
     { immediate: true },
@@ -269,15 +313,6 @@ onUnmounted(stopPolling);
     <Head title="Orders" />
 
     <MfPageHeader title="Orders">
-        <Button
-            type="button"
-            icon="pi pi-filter"
-            label="Filters"
-            severity="secondary"
-            class="md:hidden"
-            data-test="orders-mobile-filters"
-            @click="showFiltersDrawer"
-        />
         <Button
             type="button"
             :icon="
@@ -306,7 +341,6 @@ onUnmounted(stopPolling);
     >
         <template #filters>
             <MfFilterPanel
-                v-model:open="panelDrawerOpen"
                 :filters="filters"
                 :endpoint="ordersIndex().url"
             />

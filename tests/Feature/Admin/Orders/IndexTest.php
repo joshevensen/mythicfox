@@ -27,7 +27,9 @@ test('authenticated visit returns 200 and renders Orders/Index with paginator sh
             ->where('orders.meta.current_page', 1)
             ->where('orders.meta.total', 3)
             ->has('meta.statuses')
-            ->where('meta.default_window_days', 90)
+            ->has('meta.date_windows', 6)
+            ->where('meta.date_windows.0.value', '30')
+            ->where('meta.date_windows.0.label', 'Last 30 Days')
     );
 });
 
@@ -80,23 +82,35 @@ test('filter by status=Canceled narrows results to canceled orders only', functi
         );
 });
 
-test('date-range filter excludes orders outside the range', function () {
+test('date_window=30 excludes orders older than 30 days', function () {
     Order::factory()->create([
-        'tcgplayer_order_number' => 'IN-RANGE',
-        'order_date' => Carbon::parse('2026-04-15'),
+        'tcgplayer_order_number' => 'IN-WINDOW',
+        'order_date' => Carbon::now()->subDays(5),
     ]);
     Order::factory()->create([
-        'tcgplayer_order_number' => 'OUT-OF-RANGE',
-        'order_date' => Carbon::parse('2026-01-01'),
+        'tcgplayer_order_number' => 'OUT-OF-WINDOW',
+        'order_date' => Carbon::now()->subDays(45),
     ]);
 
-    $this->get(route('orders.index', [
-        'order_date_from' => '2026-04-01',
-        'order_date_to' => '2026-04-30',
-    ]))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '30']))->assertInertia(
         fn ($page) => $page
             ->has('orders.data', 1)
-            ->where('orders.data.0.tcgplayer_order_number', 'IN-RANGE')
+            ->where('orders.data.0.tcgplayer_order_number', 'IN-WINDOW')
+    );
+});
+
+test('date_window=all bypasses the date filter', function () {
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'RECENT',
+        'order_date' => Carbon::now()->subDays(5),
+    ]);
+    Order::factory()->create([
+        'tcgplayer_order_number' => 'ANCIENT',
+        'order_date' => Carbon::now()->subYears(3),
+    ]);
+
+    $this->get(route('orders.index', ['date_window' => 'all']))->assertInertia(
+        fn ($page) => $page->has('orders.data', 2)
     );
 });
 

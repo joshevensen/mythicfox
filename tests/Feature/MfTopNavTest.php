@@ -1,9 +1,9 @@
 <?php
 
-test('MfTopNav declares all five section links', function () {
+test('MfTopNav declares all six section links', function () {
     $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
 
-    foreach (['Dashboard', 'Orders', 'Catalog', 'Inventory', 'Settings'] as $label) {
+    foreach (['Dashboard', 'Orders', 'Cards', 'Decks', 'Inventory', 'Settings'] as $label) {
         expect($source)->toContain("label: '{$label}'");
     }
 });

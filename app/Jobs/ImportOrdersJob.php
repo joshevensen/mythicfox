@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\File;
 use App\Services\Orders\OrderImporter;
 use App\Services\Orders\OrderImportInput;
+use App\Services\Orders\OrderImportResult;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class ImportOrdersJob implements ShouldQueue
 {
@@ -22,6 +24,8 @@ class ImportOrdersJob implements ShouldQueue
     use SerializesModels;
 
     public const IN_FLIGHT_CACHE_KEY = 'orders:import-in-flight';
+
+    public const LAST_RESULT_CACHE_KEY = 'orders:import-last-result';
 
     public int $timeout = 300;
 
@@ -76,6 +80,16 @@ class ImportOrdersJob implements ShouldQueue
             if ($result->errors !== []) {
                 Log::warning('Order import completed with errors', ['errors' => $result->errors]);
             }
+
+            Cache::put(self::LAST_RESULT_CACHE_KEY, $this->resultPayload($result), now()->addHour());
+        } catch (Throwable $e) {
+            Cache::put(self::LAST_RESULT_CACHE_KEY, [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'completed_at' => now()->toIso8601String(),
+            ], now()->addHour());
+
+            throw $e;
         } finally {
             foreach ($tmpPaths as $path) {
                 if (is_file($path)) {
@@ -90,6 +104,24 @@ class ImportOrdersJob implements ShouldQueue
     public function failed(?\Throwable $exception): void
     {
         Cache::forget(self::IN_FLIGHT_CACHE_KEY);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resultPayload(OrderImportResult $result): array
+    {
+        return [
+            'success' => $result->errors === [],
+            'orders_inserted' => $result->ordersInserted,
+            'orders_updated' => $result->ordersUpdated,
+            'line_items_created' => $result->lineItemsCreated,
+            'line_items_unmatched_to_pdf' => $result->lineItemsUnmatchedToPdf,
+            'line_items_unmatched_to_inventory' => $result->lineItemsUnmatchedToInventory,
+            'errors' => $result->errors,
+            'warnings' => $result->warnings,
+            'completed_at' => now()->toIso8601String(),
+        ];
     }
 
     /**

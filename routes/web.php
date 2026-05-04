@@ -4,6 +4,7 @@ use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
 use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Decks\DecksController;
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\InventoryExportController;
 use App\Http\Controllers\Orders\OrdersController;
@@ -38,7 +39,8 @@ Allow: /
 Disallow: /login
 Disallow: /dashboard
 Disallow: /orders
-Disallow: /catalog
+Disallow: /cards
+Disallow: /decks
 Disallow: /inventory
 Disallow: /add-cards
 Disallow: /settings
@@ -61,8 +63,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('orders/{order:tcgplayer_order_number}/packing-slip', [PackingSlipController::class, 'show'])
         ->name('orders.packing-slip.show');
 
-    Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
-    Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
+    Route::get('cards', [CatalogController::class, 'index'])->name('cards.index');
+    Route::post('cards/upload', [CatalogUploadController::class, 'store'])->name('cards.upload');
+
+    Route::get('decks', [DecksController::class, 'index'])->name('decks.index');
 
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::patch('inventory/{inventory}', [InventoryController::class, 'update'])->name('inventory.update');
