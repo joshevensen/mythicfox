@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import CatalogUploadModal from '@/components/catalog/CatalogUploadModal.vue';
+import { computed, ref, watch } from 'vue';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
@@ -10,7 +9,7 @@ import MfMonospaceId from '@/components/MfMonospaceId.vue';
 import MfPageHeader from '@/components/MfPageHeader.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
-import { useCatalogUploadModal } from '@/composables/useCatalogUploadModal';
+import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
 import RowExpand from '@/pages/Cards/RowExpand.vue';
@@ -75,8 +74,8 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const { info, success } = useMfToast();
-const uploadModal = useCatalogUploadModal();
+const { info } = useMfToast();
+const importModal = useGlobalImportModal();
 
 const tableState = useTableState({
     endpoint: cardsIndex().url,
@@ -209,7 +208,7 @@ const columns: ColumnDef<CardRow>[] = [
 ];
 
 const onUploadClick = (): void => {
-    uploadModal.open();
+    importModal.open('catalog');
 };
 
 const errorBanner = ref<string | null>(props.meta.upload_error);
@@ -226,77 +225,6 @@ watch(
 const dismissErrorBanner = (): void => {
     errorBanner.value = null;
 };
-
-// Polling pattern mirrors Orders/Index.vue (60-002): while the catalog import
-// job is in flight, partial-reload the catalog props every 2s so the table
-// auto-refreshes when the job completes.
-const importPollHandle = ref<number | null>(null);
-const wasInFlight = ref(props.meta.import_in_flight);
-
-const stopPolling = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    if (importPollHandle.value !== null) {
-        window.clearInterval(importPollHandle.value);
-        importPollHandle.value = null;
-    }
-};
-
-const startPolling = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    if (importPollHandle.value !== null) {
-        return;
-    }
-
-    importPollHandle.value = window.setInterval(() => {
-        router.reload({ only: ['cards', 'variants', 'meta'] });
-    }, 2000);
-};
-
-watch(
-    () => props.meta.import_in_flight,
-    (next) => {
-        if (next) {
-            wasInFlight.value = true;
-            startPolling();
-
-            return;
-        }
-
-        stopPolling();
-
-        if (!wasInFlight.value) {
-            return;
-        }
-
-        wasInFlight.value = false;
-
-        const last = props.meta.import_last_result;
-
-        if (last && last.success) {
-            const rows = last.rows_processed ?? 0;
-            const label = last.product_label ?? 'the catalog';
-            success(`Refreshed ${rows} cards across ${label}.`);
-        } else if (last && !last.success) {
-            const message = last.message ?? 'Catalog import failed.';
-            errorBanner.value = message;
-        }
-    },
-    { immediate: true },
-);
-
-onMounted(() => {
-    if (props.meta.import_in_flight) {
-        startPolling();
-    }
-});
-
-onUnmounted(stopPolling);
 
 const dayDiff = (iso: string): number => {
     const then = new Date(iso).getTime();
@@ -351,11 +279,7 @@ const stalenessLabel = (entry: StaleEntry): string => {
             :icon="
                 meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
             "
-            :label="
-                meta.import_in_flight
-                    ? 'Importing…'
-                    : 'Upload PricingCustomExport'
-            "
+            :label="meta.import_in_flight ? 'Importing…' : 'Import catalog'"
             :disabled="meta.import_in_flight"
             class="fixed right-4 bottom-4 z-30 shadow-lg md:static md:right-auto md:bottom-auto md:shadow-none"
             data-test="catalog-upload-button"
@@ -370,8 +294,6 @@ const stalenessLabel = (entry: StaleEntry): string => {
         :message="errorBanner"
         @dismiss="dismissErrorBanner"
     />
-
-    <CatalogUploadModal />
 
     <MfTable
         :columns="columns"
@@ -388,10 +310,7 @@ const stalenessLabel = (entry: StaleEntry): string => {
         @update:sort="tableState.setSort"
     >
         <template #filters>
-            <MfFilterPanel
-                :filters="filters"
-                :endpoint="cardsIndex().url"
-            />
+            <MfFilterPanel :filters="filters" :endpoint="cardsIndex().url" />
         </template>
 
         <template #cell-product_name="{ row }">
@@ -435,12 +354,12 @@ const stalenessLabel = (entry: StaleEntry): string => {
                     No cards yet.
                 </p>
                 <p class="max-w-md text-sm text-muted-foreground">
-                    Upload a TCGPlayer PricingCustomExport to seed it.
+                    Import a TCGPlayer PricingCustomExport to seed it.
                 </p>
                 <Button
                     type="button"
                     icon="pi pi-upload"
-                    label="Upload PricingCustomExport"
+                    label="Import catalog"
                     data-test="catalog-empty-upload"
                     @click="onUploadClick"
                 />

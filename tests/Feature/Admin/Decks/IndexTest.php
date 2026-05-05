@@ -71,3 +71,11 @@ test('meta.products only includes products that have decks', function () {
             ->where('meta.products.0.label', 'Has Decks')
     );
 });
+
+test('empty decks copy points to the global import button instead of Cards', function () {
+    $source = file_get_contents(resource_path('js/pages/Decks/Index.vue'));
+
+    expect($source)
+        ->toContain('PricingCustomExport from the global import button')
+        ->not->toContain('PricingCustomExport on the Cards page');
+});

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted } from 'vue';
 import MfDate from '@/components/MfDate.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
@@ -11,10 +11,9 @@ import MfPageHeader from '@/components/MfPageHeader.vue';
 import MfStatusPill from '@/components/MfStatusPill.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
-import OrdersImportModal from '@/components/orders/OrdersImportModal.vue';
+import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
-import { useOrdersImportModal } from '@/composables/useOrdersImportModal';
 import { useTableState } from '@/composables/useTableState';
 import { index as ordersIndex } from '@/routes/orders';
 import packingSlipRoutes from '@/routes/orders/packing-slip';
@@ -71,7 +70,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const importModal = useOrdersImportModal();
+const importModal = useGlobalImportModal();
 
 // Dashboard quick-action shortcut: ?import=1 opens the import modal on mount.
 // The modal is wired in 60-002; the composable carries the open state across.
@@ -79,7 +78,7 @@ onMounted(() => {
     const url = new URL(page.url, 'http://localhost');
 
     if (url.searchParams.get('import') === '1') {
-        importModal.open();
+        importModal.open('orders');
     }
 });
 
@@ -146,7 +145,7 @@ const tableState = useTableState({
 const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
 
 const onImportClick = (): void => {
-    importModal.open();
+    importModal.open('orders');
 };
 
 const TCGPLAYER_ORDER_URL_BASE = 'https://sellerportal.tcgplayer.com/orders/';
@@ -233,80 +232,6 @@ const onBulkPrint = (
 
     openInNewTab(url);
 };
-
-const { success, error } = useMfToast();
-const importPollHandle = ref<number | null>(null);
-const wasInFlight = ref(props.meta.import_in_flight);
-
-const stopPolling = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    if (importPollHandle.value !== null) {
-        window.clearInterval(importPollHandle.value);
-        importPollHandle.value = null;
-    }
-};
-
-const startPolling = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    if (importPollHandle.value !== null) {
-        return;
-    }
-
-    importPollHandle.value = window.setInterval(() => {
-        router.reload({ only: ['orders', 'meta'] });
-    }, 2000);
-};
-
-const buildImportSummary = (last: ImportResult & { success: true }): string => {
-    const total = last.orders_inserted + last.orders_updated;
-    const orderWord = total === 1 ? 'order' : 'orders';
-    let message = `Imported ${total} ${orderWord} (${last.orders_inserted} new, ${last.orders_updated} updated).`;
-
-    if (last.line_items_unmatched_to_inventory > 0) {
-        const itemWord =
-            last.line_items_unmatched_to_inventory === 1 ? 'item' : 'items';
-        message += ` ${last.line_items_unmatched_to_inventory} ${itemWord} could not be matched to inventory.`;
-    }
-
-    return message;
-};
-
-watch(
-    () => props.meta.import_in_flight,
-    (next) => {
-        if (next) {
-            wasInFlight.value = true;
-            startPolling();
-
-            return;
-        }
-
-        stopPolling();
-
-        if (!wasInFlight.value) {
-            return;
-        }
-
-        wasInFlight.value = false;
-
-        const last = props.meta.import_last_result;
-
-        if (last && last.success) {
-            success(buildImportSummary(last));
-        } else if (last && !last.success) {
-            error(last.message ?? 'Order import failed.');
-        }
-    },
-    { immediate: true },
-);
-
-onUnmounted(stopPolling);
 </script>
 
 <template>
@@ -340,10 +265,7 @@ onUnmounted(stopPolling);
         @update:sort="tableState.setSort"
     >
         <template #filters>
-            <MfFilterPanel
-                :filters="filters"
-                :endpoint="ordersIndex().url"
-            />
+            <MfFilterPanel :filters="filters" :endpoint="ordersIndex().url" />
         </template>
 
         <template #bulk-actions="{ selectedKeys, selectAllMatching }">
@@ -519,6 +441,4 @@ onUnmounted(stopPolling);
             </div>
         </template>
     </MfTable>
-
-    <OrdersImportModal />
 </template>

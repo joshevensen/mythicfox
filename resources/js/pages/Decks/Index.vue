@@ -206,7 +206,7 @@ const columns: ColumnDef<DeckRow>[] = [
                 </p>
                 <p class="max-w-md text-sm text-muted-foreground">
                     Sealed product (decks) is seeded by uploading a TCGPlayer
-                    PricingCustomExport on the Cards page.
+                    PricingCustomExport from the global import button.
                 </p>
             </div>
         </template>

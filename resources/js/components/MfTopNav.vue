@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import Drawer from 'primevue/drawer';
 import Popover from 'primevue/popover';
 import { computed, ref, useTemplateRef } from 'vue';
+import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { dashboard, logout } from '@/routes';
 import { edit as editProfile } from '@/routes/profile';
 import type { User } from '@/types';
@@ -41,6 +42,7 @@ const toggleUserMenu = (event: MouseEvent) => {
 };
 
 const drawerOpen = ref(false);
+const importModal = useGlobalImportModal();
 
 const handleLogout = () => {
     router.flushAll();
@@ -62,7 +64,11 @@ const handleLogout = () => {
             <i class="pi pi-bars text-lg" />
         </button>
 
-        <Link :href="dashboard()" class="flex items-center" aria-label="Mythic Fox Games">
+        <Link
+            :href="dashboard()"
+            class="flex items-center"
+            aria-label="Mythic Fox Games"
+        >
             <img src="/logo.png" alt="Mythic Fox Games" class="h-8 w-auto" />
         </Link>
 
@@ -85,6 +91,17 @@ const handleLogout = () => {
         </nav>
 
         <div class="ml-auto flex items-center">
+            <button
+                type="button"
+                class="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-muted"
+                aria-label="Open import modal"
+                title="Import files"
+                data-test="topnav-import-button"
+                @click="importModal.open()"
+            >
+                <i class="pi pi-upload" />
+            </button>
+
             <button
                 type="button"
                 class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-muted"
