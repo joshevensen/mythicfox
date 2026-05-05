@@ -62,12 +62,8 @@ const handleLogout = () => {
             <i class="pi pi-bars text-lg" />
         </button>
 
-        <Link
-            :href="dashboard()"
-            class="flex items-center gap-2 font-semibold tracking-tight text-mf-orange"
-        >
-            <i class="pi pi-shield text-xl" />
-            <span>Mythic Fox</span>
+        <Link :href="dashboard()" class="flex items-center" aria-label="Mythic Fox Games">
+            <img src="/logo.png" alt="Mythic Fox Games" class="h-8 w-auto" />
         </Link>
 
         <nav class="ml-6 hidden items-center gap-1 md:flex">
@@ -128,12 +124,11 @@ const handleLogout = () => {
             class="w-72!"
         >
             <template #header>
-                <div
-                    class="flex items-center gap-2 font-semibold text-mf-orange"
-                >
-                    <i class="pi pi-shield text-xl" />
-                    <span>Mythic Fox</span>
-                </div>
+                <img
+                    src="/logo.png"
+                    alt="Mythic Fox Games"
+                    class="h-8 w-auto"
+                />
             </template>
             <nav class="flex flex-col gap-1">
                 <Link

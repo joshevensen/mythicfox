@@ -104,9 +104,9 @@ const banner = computed<Banner | null>(() => {
         >
             <div class="mb-6 flex flex-col items-center gap-3">
                 <img
-                    src="/mythicfox.png"
+                    src="/logo.png"
                     alt="Mythic Fox Games"
-                    class="h-16 w-16"
+                    class="h-12 w-auto"
                 />
                 <h1 class="text-xl font-semibold text-foreground">Sign in</h1>
             </div>
