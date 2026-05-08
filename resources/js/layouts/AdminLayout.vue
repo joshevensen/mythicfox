@@ -42,10 +42,22 @@ type GlobalImports = {
     };
 };
 
-const page = usePage<{ global_imports: GlobalImports }>();
+const emptyImports = (): GlobalImports => ({
+    catalog: {
+        in_flight: false,
+        last_result: null,
+        upload_error: null,
+    },
+    orders: {
+        in_flight: false,
+        last_result: null,
+    },
+});
+
+const page = usePage<{ global_imports?: GlobalImports }>();
 const { success, error } = useMfToast();
 
-const imports = computed(() => page.props.global_imports);
+const imports = computed(() => page.props.global_imports ?? emptyImports());
 const pollHandle = ref<number | null>(null);
 const wasCatalogInFlight = ref(imports.value.catalog.in_flight);
 const wasOrdersInFlight = ref(imports.value.orders.in_flight);
@@ -77,6 +89,10 @@ const startPolling = (): void => {
 const reloadCurrentImportPage = (kind: 'catalog' | 'orders'): void => {
     if (kind === 'catalog' && page.url.startsWith('/cards')) {
         router.reload({ only: ['cards', 'variants', 'meta'] });
+    }
+
+    if (kind === 'catalog' && page.url.startsWith('/decks')) {
+        router.reload({ only: ['decks', 'meta'] });
     }
 
     if (kind === 'orders' && page.url.startsWith('/orders')) {
@@ -119,17 +135,10 @@ watch(
 
         lastCatalogError.value = next.catalog.upload_error;
 
-        if (next.catalog.in_flight || next.orders.in_flight) {
-            wasCatalogInFlight.value ||= next.catalog.in_flight;
-            wasOrdersInFlight.value ||= next.orders.in_flight;
-            startPolling();
+        wasCatalogInFlight.value ||= next.catalog.in_flight;
+        wasOrdersInFlight.value ||= next.orders.in_flight;
 
-            return;
-        }
-
-        stopPolling();
-
-        if (wasCatalogInFlight.value) {
+        if (wasCatalogInFlight.value && !next.catalog.in_flight) {
             wasCatalogInFlight.value = false;
             reloadCurrentImportPage('catalog');
 
@@ -145,7 +154,7 @@ watch(
             }
         }
 
-        if (wasOrdersInFlight.value) {
+        if (wasOrdersInFlight.value && !next.orders.in_flight) {
             wasOrdersInFlight.value = false;
             reloadCurrentImportPage('orders');
 
@@ -156,6 +165,12 @@ watch(
             } else if (last && !last.success) {
                 error(last.message ?? 'Order import failed.', 'Import failed');
             }
+        }
+
+        if (next.catalog.in_flight || next.orders.in_flight) {
+            startPolling();
+        } else {
+            stopPolling();
         }
     },
     { immediate: true },

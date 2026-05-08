@@ -44,18 +44,29 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            'global_imports' => [
-                'catalog' => [
-                    'in_flight' => Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY),
-                    'last_result' => Cache::get(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY),
-                    'upload_error' => $request->session()->get('catalog_upload_error'),
-                ],
-                'orders' => [
-                    'in_flight' => Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY),
-                    'last_result' => Cache::get(ImportOrdersJob::LAST_RESULT_CACHE_KEY),
-                ],
-            ],
+            ...($request->user() ? ['global_imports' => $this->globalImports($request)] : []),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * @return array{
+     *     catalog: array{in_flight: bool, last_result: mixed, upload_error: mixed},
+     *     orders: array{in_flight: bool, last_result: mixed}
+     * }
+     */
+    private function globalImports(Request $request): array
+    {
+        return [
+            'catalog' => [
+                'in_flight' => Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY),
+                'last_result' => Cache::get(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY),
+                'upload_error' => $request->session()->get('catalog_upload_error'),
+            ],
+            'orders' => [
+                'in_flight' => Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY),
+                'last_result' => Cache::get(ImportOrdersJob::LAST_RESULT_CACHE_KEY),
+            ],
         ];
     }
 }

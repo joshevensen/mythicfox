@@ -5,6 +5,20 @@ use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
+beforeEach(function () {
+    Cache::forget(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY);
+    Cache::forget(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY);
+    Cache::forget(ImportOrdersJob::IN_FLIGHT_CACHE_KEY);
+    Cache::forget(ImportOrdersJob::LAST_RESULT_CACHE_KEY);
+});
+
+afterEach(function () {
+    Cache::forget(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY);
+    Cache::forget(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY);
+    Cache::forget(ImportOrdersJob::IN_FLIGHT_CACHE_KEY);
+    Cache::forget(ImportOrdersJob::LAST_RESULT_CACHE_KEY);
+});
+
 test('AdminLayout file declares all required shell pieces', function () {
     expect(file_get_contents(resource_path('js/layouts/AdminLayout.vue')))
         ->toContain('<MfTopNav')
@@ -15,6 +29,12 @@ test('AdminLayout file declares all required shell pieces', function () {
 
     expect(file_get_contents(resource_path('js/components/MfToast.vue')))
         ->toContain('position="top-right"');
+});
+
+test('anonymous inertia responses do not expose global import status props', function () {
+    $this->get(route('login'))->assertInertia(
+        fn ($page) => $page->missing('global_imports')
+    );
 });
 
 test('GlobalImportModal exposes catalog and orders import panels', function () {

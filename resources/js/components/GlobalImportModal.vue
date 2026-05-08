@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import { computed, ref, watch } from 'vue';
@@ -18,6 +18,15 @@ type SlotDef = {
     accept: string;
     required: boolean;
     hint: string | null;
+};
+
+type GlobalImports = {
+    catalog: {
+        in_flight: boolean;
+    };
+    orders: {
+        in_flight: boolean;
+    };
 };
 
 const ORDER_SLOTS: SlotDef[] = [
@@ -52,7 +61,16 @@ const ORDER_SLOTS: SlotDef[] = [
 ];
 
 const importModal = useGlobalImportModal();
-const { error: toastError } = useMfToast();
+const page = usePage<{ global_imports?: GlobalImports }>();
+const { error: toastError, success } = useMfToast();
+
+const imports = computed(
+    () =>
+        page.props.global_imports ?? {
+            catalog: { in_flight: false },
+            orders: { in_flight: false },
+        },
+);
 
 const catalogForm = useForm<{ file: File | null }>({ file: null });
 const ordersForm = useForm<{
@@ -81,8 +99,14 @@ const orderErrorMessage = ref<string | null>(null);
 const processing = computed(
     () => catalogForm.processing || ordersForm.processing,
 );
+const canUploadCatalog = computed(
+    () => !catalogForm.processing && !imports.value.catalog.in_flight,
+);
 const canSubmitOrders = computed(
-    () => ordersForm.orderlist !== null && !ordersForm.processing,
+    () =>
+        ordersForm.orderlist !== null &&
+        !ordersForm.processing &&
+        !imports.value.orders.in_flight,
 );
 
 const setOrderInputRef = (key: SlotKey) => (el: unknown) => {
@@ -116,7 +140,7 @@ const refreshGlobalImportStatus = (): void => {
 const onCatalogUpload = (files: File[]): void => {
     const file = files[0] ?? null;
 
-    if (!file) {
+    if (!file || imports.value.catalog.in_flight) {
         return;
     }
 
@@ -129,6 +153,7 @@ const onCatalogUpload = (files: File[]): void => {
         onSuccess: () => {
             resetCatalog();
             importModal.close();
+            success('PricingCustomExport queued — refreshing catalog…');
             refreshGlobalImportStatus();
         },
         onError: () => {
@@ -166,6 +191,7 @@ const submitOrders = (): void => {
         onSuccess: () => {
             resetOrders();
             importModal.close();
+            success('Import queued — processing orders…');
             refreshGlobalImportStatus();
         },
         onError: (errors) => {
@@ -262,7 +288,7 @@ watch(
                     ref="catalogDropzoneRef"
                     accept=".csv"
                     :max-size="209715200"
-                    :disabled="catalogForm.processing"
+                    :disabled="!canUploadCatalog"
                     @upload="onCatalogUpload"
                 />
                 <p
@@ -271,6 +297,13 @@ watch(
                     data-test="global-import-catalog-uploading"
                 >
                     Uploading... do not close this window.
+                </p>
+                <p
+                    v-else-if="imports.catalog.in_flight"
+                    class="text-xs text-muted-foreground"
+                    data-test="global-import-catalog-in-flight"
+                >
+                    A catalog import is already running.
                 </p>
             </section>
 
@@ -327,6 +360,7 @@ watch(
                             :ref="setOrderInputRef(slot.key)"
                             type="file"
                             :accept="slot.accept"
+                            :disabled="imports.orders.in_flight"
                             class="block w-full text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-mf-orange/10 file:px-3 file:py-1.5 file:text-mf-orange hover:file:bg-mf-orange/20"
                             :data-test="`global-import-input-${slot.key}`"
                             @change="(e) => onPickOrderFile(slot.key, e)"
@@ -337,6 +371,16 @@ watch(
                         class="text-xs text-emerald-600 dark:text-emerald-400"
                     >
                         Selected: {{ ordersForm[slot.key]?.name }}
+                    </p>
+                    <p
+                        v-else-if="
+                            slot.key === 'orderlist' &&
+                            imports.orders.in_flight
+                        "
+                        class="text-xs text-muted-foreground"
+                        data-test="global-import-orders-in-flight"
+                    >
+                        An order import is already running.
                     </p>
                     <p
                         v-else-if="slot.hint"
