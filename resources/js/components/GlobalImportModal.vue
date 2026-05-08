@@ -374,8 +374,7 @@ watch(
                     </p>
                     <p
                         v-else-if="
-                            slot.key === 'orderlist' &&
-                            imports.orders.in_flight
+                            slot.key === 'orderlist' && imports.orders.in_flight
                         "
                         class="text-xs text-muted-foreground"
                         data-test="global-import-orders-in-flight"
