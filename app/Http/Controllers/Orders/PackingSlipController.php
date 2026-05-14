@@ -80,6 +80,28 @@ class PackingSlipController extends Controller
             ? $order->items->sortBy('id')->values()
             : $order->items()->orderBy('id')->get();
 
+        $chunks = $items->chunk(self::MAX_CARDS_PER_SHEET);
+        $sheetTotal = max(1, $chunks->count());
+
+        $sheets = $chunks->values()->map(function ($chunk, int $index) use ($sheetTotal) {
+            return [
+                'sheet_index' => $index + 1,
+                'sheet_total' => $sheetTotal,
+                'items' => $chunk->map(fn (OrderItem $item) => [
+                    'product_line' => $item->product_line,
+                    'product_name' => $item->product_name,
+                    'set_name' => $item->set_name,
+                    'condition' => $item->condition,
+                    'quantity' => $item->quantity,
+                ])->values()->all(),
+            ];
+        })->all();
+
+        // Orders with no items still need one (empty) sheet so the slip renders.
+        if (empty($sheets)) {
+            $sheets = [['sheet_index' => 1, 'sheet_total' => 1, 'items' => []]];
+        }
+
         return [
             'id' => $order->id,
             'tcgplayer_order_number' => $order->tcgplayer_order_number,
@@ -92,13 +114,7 @@ class PackingSlipController extends Controller
             'country' => $order->country,
             'order_date' => $order->order_date?->format('M j, Y'),
             'total_amount_formatted' => Number::currency(($order->total_amount ?? 0) / 100, 'USD', 'en'),
-            'items' => $items->map(fn (OrderItem $item) => [
-                'product_line' => $item->product_line,
-                'product_name' => $item->product_name,
-                'set_name' => $item->set_name,
-                'condition' => $item->condition,
-                'quantity' => $item->quantity,
-            ])->all(),
+            'sheets' => $sheets,
         ];
     }
 }

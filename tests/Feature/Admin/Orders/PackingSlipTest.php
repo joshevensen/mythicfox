@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Orders\PackingSlipController;
 use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -45,7 +46,7 @@ test('packing slip props include order number, buyer name, formatted total, and 
     $order = Order::factory()->create([
         'tcgplayer_order_number' => 'PROP-CHECK-001',
         'buyer_name' => 'Alice Buyer',
-        'total_amount' => 2345, // $23.45
+        'total_amount' => 2345,
         'order_date' => '2025-04-28',
     ]);
 
@@ -91,9 +92,9 @@ test('packing slip props include recipient shipping address fields', function ()
         );
 });
 
-// ── Item rendering ────────────────────────────────────────────
+// ── Sheet / item rendering ────────────────────────────────────
 
-test('order with 1 line item has 1 item in props', function () {
+test('order with 1 line item produces 1 sheet with 1 item', function () {
     $order = Order::factory()
         ->has(OrderItem::factory()->count(1), 'items')
         ->create();
@@ -101,11 +102,14 @@ test('order with 1 line item has 1 item in props', function () {
     $this->get(route('orders.packing-slip.show', $order))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('orders.0.items', 1)
+            ->has('orders.0.sheets', 1)
+            ->has('orders.0.sheets.0.items', 1)
+            ->where('orders.0.sheets.0.sheet_index', 1)
+            ->where('orders.0.sheets.0.sheet_total', 1)
         );
 });
 
-test('order with 20 line items has 20 items in props (single-sheet)', function () {
+test('order with 20 line items produces 1 sheet with 20 items (single-sheet boundary)', function () {
     $order = Order::factory()
         ->has(OrderItem::factory()->count(20), 'items')
         ->create();
@@ -113,7 +117,43 @@ test('order with 20 line items has 20 items in props (single-sheet)', function (
     $this->get(route('orders.packing-slip.show', $order))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('orders.0.items', 20)
+            ->has('orders.0.sheets', 1)
+            ->has('orders.0.sheets.0.items', 20)
+        );
+});
+
+test('order with 21 line items produces 2 sheets (20 + 1)', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(21), 'items')
+        ->create();
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.sheets', 2)
+            ->has('orders.0.sheets.0.items', 20)
+            ->has('orders.0.sheets.1.items', 1)
+            ->where('orders.0.sheets.0.sheet_index', 1)
+            ->where('orders.0.sheets.0.sheet_total', 2)
+            ->where('orders.0.sheets.1.sheet_index', 2)
+            ->where('orders.0.sheets.1.sheet_total', 2)
+        );
+});
+
+test('order with 47 line items produces 3 sheets (20, 20, 7)', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(47), 'items')
+        ->create();
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.sheets', 3)
+            ->has('orders.0.sheets.0.items', 20)
+            ->has('orders.0.sheets.1.items', 20)
+            ->has('orders.0.sheets.2.items', 7)
+            ->where('orders.0.sheets.0.sheet_total', 3)
+            ->where('orders.0.sheets.2.sheet_index', 3)
         );
 });
 
@@ -131,12 +171,16 @@ test('item props include product_line, product_name, set_name, condition, quanti
     $this->get(route('orders.packing-slip.show', $order))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('orders.0.items.0.product_line', 'Magic')
-            ->where('orders.0.items.0.product_name', 'Black Lotus')
-            ->where('orders.0.items.0.set_name', 'Alpha')
-            ->where('orders.0.items.0.condition', 'NM')
-            ->where('orders.0.items.0.quantity', 1)
+            ->where('orders.0.sheets.0.items.0.product_line', 'Magic')
+            ->where('orders.0.sheets.0.items.0.product_name', 'Black Lotus')
+            ->where('orders.0.sheets.0.items.0.set_name', 'Alpha')
+            ->where('orders.0.sheets.0.items.0.condition', 'NM')
+            ->where('orders.0.sheets.0.items.0.quantity', 1)
         );
+});
+
+test('MAX_CARDS_PER_SHEET constant is 20', function () {
+    expect(PackingSlipController::MAX_CARDS_PER_SHEET)->toBe(20);
 });
 
 // ── No files row created ──────────────────────────────────────

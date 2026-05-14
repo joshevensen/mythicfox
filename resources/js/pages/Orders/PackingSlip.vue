@@ -9,6 +9,12 @@ type OrderItem = {
     quantity: number;
 };
 
+type Sheet = {
+    sheet_index: number;
+    sheet_total: number;
+    items: OrderItem[];
+};
+
 type OrderData = {
     id: number;
     tcgplayer_order_number: string;
@@ -21,7 +27,7 @@ type OrderData = {
     country: string | null;
     order_date: string | null;
     total_amount_formatted: string;
-    items: OrderItem[];
+    sheets: Sheet[];
 };
 
 type ReturnAddress = {
@@ -63,12 +69,16 @@ function recipientLines(order: OrderData): string[] {
 
     return lines;
 }
+
+function sheetQty(sheet: Sheet): number {
+    return sheet.items.reduce((sum, i) => sum + i.quantity, 0);
+}
 </script>
 
 <template>
     <Head title="Packing slip" />
 
-    <!-- Screen-only print prompt -->
+    <!-- Screen-only print prompt (hidden in @media print via CSS) -->
     <div class="print-prompt">
         <p>
             Press <kbd>Cmd/Ctrl+P</kbd> to print. Set duplex to
@@ -76,153 +86,168 @@ function recipientLines(order: OrderData): string[] {
         </p>
     </div>
 
-    <!-- One page-pair per order -->
-    <div
-        v-for="order in props.orders"
-        :key="order.id"
-        class="slip-sequence"
-        :data-test="`slip-order-${order.tcgplayer_order_number}`"
-    >
-        <!-- ══ SIDE A — Address panel ══ -->
-        <div class="slip-page side-a">
-            <!-- Return address — upper window (4.125"–5.125") -->
-            <div class="return-address" data-test="return-address">
-                <div>{{ returnAddress.name }}</div>
-                <div>{{ returnAddress.line1 }}</div>
-                <div>{{ returnAddress.line2 }}</div>
-            </div>
-
-            <!-- Recipient address — lower window (5.75"–7") -->
+    <!-- One set of page-pairs per order; one pair per sheet -->
+    <template v-for="order in props.orders" :key="order.id">
+        <template
+            v-for="sheet in order.sheets"
+            :key="`${order.id}-${sheet.sheet_index}`"
+        >
+            <!-- ══ SIDE A — Address panel ══ -->
             <div
-                class="recipient-address"
-                :data-test="`recipient-address-${order.tcgplayer_order_number}`"
+                class="slip-page side-a"
+                :data-test="`side-a-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
             >
-                <div v-for="(line, i) in recipientLines(order)" :key="i">
-                    {{ line }}
+                <!-- Return address — upper window (4.125"–5.125") -->
+                <div class="return-address" data-test="return-address">
+                    <div>{{ returnAddress.name }}</div>
+                    <div>{{ returnAddress.line1 }}</div>
+                    <div>{{ returnAddress.line2 }}</div>
                 </div>
-            </div>
 
-            <!-- Brand logo — right side of middle panel -->
-            <div class="brand-logo">
-                <img src="/logo.png" alt="Mythic Fox Games" />
-            </div>
-        </div>
-
-        <!-- ══ SIDE B — Packing slip ══ -->
-        <div class="slip-page side-b">
-            <!-- Fold guides at 3.5" and 7.5" (print only) -->
-            <div class="fold-guide fold-guide--top"></div>
-            <div class="fold-guide fold-guide--bottom"></div>
-
-            <!-- Content area (1" left, 0.5" top) -->
-            <div class="slip-content">
-                <!-- Two-column order header -->
+                <!-- Recipient address — lower window (5.75"–7") -->
                 <div
-                    class="order-header"
-                    :data-test="`order-header-${order.tcgplayer_order_number}`"
+                    class="recipient-address"
+                    :data-test="`recipient-address-${order.tcgplayer_order_number}`"
                 >
-                    <div class="order-header__col">
-                        <div>
-                            <span class="key">ORDER NUMBER</span>
-                            <span class="value">{{
-                                order.tcgplayer_order_number
-                            }}</span>
-                        </div>
-                        <div>
-                            <span class="key">ORDER AMOUNT</span>
-                            <span class="value">{{
-                                order.total_amount_formatted
-                            }}</span>
-                        </div>
-                    </div>
-                    <div class="order-header__col">
-                        <div>
-                            <span class="key">BUYER NAME</span>
-                            <span class="value">{{ order.buyer_name }}</span>
-                        </div>
-                        <div>
-                            <span class="key">ORDER DATE</span>
-                            <span class="value">{{ order.order_date }}</span>
-                        </div>
+                    <div v-for="(line, i) in recipientLines(order)" :key="i">
+                        {{ line }}
                     </div>
                 </div>
 
-                <!-- Card table -->
-                <table
-                    class="card-table"
-                    :data-test="`card-table-${order.tcgplayer_order_number}`"
-                >
-                    <thead>
-                        <tr>
-                            <th class="col-game">GAME</th>
-                            <th class="col-name">CARD NAME</th>
-                            <th class="col-set">SET</th>
-                            <th class="col-cond">COND.</th>
-                            <th class="col-qty">QTY</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="(item, idx) in order.items"
-                            :key="idx"
-                            :data-test="`card-row-${order.tcgplayer_order_number}-${idx}`"
-                        >
-                            <td class="col-game">{{ item.product_line }}</td>
-                            <td class="col-name truncate">
-                                {{ item.product_name }}
-                            </td>
-                            <td class="col-set">{{ item.set_name }}</td>
-                            <td class="col-cond">{{ item.condition }}</td>
-                            <td class="col-qty">{{ item.quantity }}</td>
-                        </tr>
-                        <!-- Total row -->
-                        <tr
-                            class="total-row"
-                            :data-test="`total-row-${order.tcgplayer_order_number}`"
-                        >
-                            <td colspan="4" class="total-label">
-                                TOTAL NUMBER OF CARDS
-                            </td>
-                            <td class="col-qty">
-                                {{
-                                    order.items.reduce(
-                                        (sum, i) => sum + i.quantity,
-                                        0,
-                                    )
-                                }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- Brand logo — right side of middle panel -->
+                <div class="brand-logo">
+                    <img src="/logo.png" alt="Mythic Fox Games" />
+                </div>
+            </div>
 
-                <!-- Footer contact block -->
-                <div
-                    class="slip-footer"
-                    :data-test="`slip-footer-${order.tcgplayer_order_number}`"
-                >
-                    <p>
-                        If you have any questions or concerns about this order:
-                    </p>
-                    <ol>
-                        <li>
-                            Email me directly at
-                            <span class="contact-email"
-                                >josh@mythicfoxgames.com</span
+            <!-- ══ SIDE B — Packing slip ══ -->
+            <div
+                class="slip-page side-b"
+                :data-test="`side-b-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
+            >
+                <!-- Fold guides at 3.5" and 7.5" -->
+                <div class="fold-guide fold-guide--top"></div>
+                <div class="fold-guide fold-guide--bottom"></div>
+
+                <!-- Content area (1" left, 0.5" top) -->
+                <div class="slip-content">
+                    <!-- Sheet X of N indicator (multi-sheet only) -->
+                    <div
+                        v-if="sheet.sheet_total > 1"
+                        class="sheet-indicator"
+                        :data-test="`sheet-indicator-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
+                    >
+                        Sheet {{ sheet.sheet_index }} of {{ sheet.sheet_total }}
+                    </div>
+
+                    <!-- Two-column order header -->
+                    <div
+                        class="order-header"
+                        :data-test="`order-header-${order.tcgplayer_order_number}`"
+                    >
+                        <div class="order-header__col">
+                            <div>
+                                <span class="key">ORDER NUMBER</span>
+                                <span class="value">{{
+                                    order.tcgplayer_order_number
+                                }}</span>
+                            </div>
+                            <div>
+                                <span class="key">ORDER AMOUNT</span>
+                                <span class="value">{{
+                                    order.total_amount_formatted
+                                }}</span>
+                            </div>
+                        </div>
+                        <div class="order-header__col">
+                            <div>
+                                <span class="key">BUYER NAME</span>
+                                <span class="value">{{
+                                    order.buyer_name
+                                }}</span>
+                            </div>
+                            <div>
+                                <span class="key">ORDER DATE</span>
+                                <span class="value">{{
+                                    order.order_date
+                                }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card table -->
+                    <table
+                        class="card-table"
+                        :data-test="`card-table-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
+                    >
+                        <thead>
+                            <tr>
+                                <th class="col-game">GAME</th>
+                                <th class="col-name">CARD NAME</th>
+                                <th class="col-set">SET</th>
+                                <th class="col-cond">COND.</th>
+                                <th class="col-qty">QTY</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(item, idx) in sheet.items"
+                                :key="idx"
+                                :data-test="`card-row-${order.tcgplayer_order_number}-${sheet.sheet_index}-${idx}`"
                             >
-                        </li>
-                        <li>
-                            Message me via your TCGplayer order history page
-                        </li>
-                        <li>
-                            Leave feedback by clicking &ldquo;Rate
-                            Transaction&rdquo; on your TCGplayer order history
-                            page
-                        </li>
-                    </ol>
+                                <td class="col-game">
+                                    {{ item.product_line }}
+                                </td>
+                                <td class="col-name truncate">
+                                    {{ item.product_name }}
+                                </td>
+                                <td class="col-set">{{ item.set_name }}</td>
+                                <td class="col-cond">{{ item.condition }}</td>
+                                <td class="col-qty">{{ item.quantity }}</td>
+                            </tr>
+                            <!-- Per-sheet total row -->
+                            <tr
+                                class="total-row"
+                                :data-test="`total-row-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
+                            >
+                                <td colspan="4" class="total-label">
+                                    TOTAL NUMBER OF CARDS
+                                </td>
+                                <td class="col-qty">{{ sheetQty(sheet) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Footer contact block (on every sheet) -->
+                    <div
+                        class="slip-footer"
+                        :data-test="`slip-footer-${order.tcgplayer_order_number}`"
+                    >
+                        <p>
+                            If you have any questions or concerns about this
+                            order:
+                        </p>
+                        <ol>
+                            <li>
+                                Email me directly at
+                                <span class="contact-email"
+                                    >josh@mythicfoxgames.com</span
+                                >
+                            </li>
+                            <li>
+                                Message me via your TCGplayer order history page
+                            </li>
+                            <li>
+                                Leave feedback by clicking &ldquo;Rate
+                                Transaction&rdquo; on your TCGplayer order
+                                history page
+                            </li>
+                        </ol>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </template>
+    </template>
 </template>
 
 <style>
@@ -230,13 +255,6 @@ function recipientLines(order: OrderData): string[] {
 @page {
     size: letter;
     margin: 0;
-}
-
-/* Hide the screen prompt when printing */
-@media print {
-    .print-prompt {
-        display: none !important;
-    }
 }
 
 /* ── Screen prompt ──────────────────────────────────────────── */
@@ -274,8 +292,7 @@ function recipientLines(order: OrderData): string[] {
 
 /* ══ SIDE A ════════════════════════════════════════════════════ */
 
-/* Return address: rows 4.125"–5.125", inset 0.875" from left.
-   Middle of band is at 4.625" → center at 4.625in from top.     */
+/* Return address: rows 4.125"–5.125", inset 0.875" from left. */
 .return-address {
     position: absolute;
     top: 4.125in;
@@ -288,7 +305,7 @@ function recipientLines(order: OrderData): string[] {
     line-height: 1.4;
 }
 
-/* Recipient address: rows 5.75"–7", inset 0.875" from left.     */
+/* Recipient address: rows 5.75"–7", inset 0.875" from left. */
 .recipient-address {
     position: absolute;
     top: 5.75in;
@@ -301,9 +318,7 @@ function recipientLines(order: OrderData): string[] {
     line-height: 1.4;
 }
 
-/* Brand logo: ~1.5" wide, right edge ~1" from right edge,
-   vertically centered in the 4" middle band (3.5"–7.5").
-   Center of band = 5.5in; logo height assumed ~0.75in.           */
+/* Brand logo: ~1.5" wide, right edge ~1" from right, centered in 4" band. */
 .brand-logo {
     position: absolute;
     top: 3.5in;
@@ -323,8 +338,7 @@ function recipientLines(order: OrderData): string[] {
 
 /* ══ SIDE B ════════════════════════════════════════════════════ */
 
-/* Fold guides: hairline segments at 3.5" and 7.5", extending
-   0.75" inward from each edge. Split so middle stays clear.     */
+/* Fold guides: hairline segments at 3.5" and 7.5" from each edge. */
 .fold-guide {
     position: absolute;
     left: 0;
@@ -340,7 +354,6 @@ function recipientLines(order: OrderData): string[] {
     top: 7.5in;
 }
 
-/* Left and right segments via pseudo-elements */
 .fold-guide::before,
 .fold-guide::after {
     content: '';
@@ -359,7 +372,7 @@ function recipientLines(order: OrderData): string[] {
     right: 0;
 }
 
-/* Content area: 1" left margin, 0.5" top margin */
+/* Content area: 1" left, 0.5" top/bottom */
 .slip-content {
     position: absolute;
     top: 0.5in;
@@ -367,6 +380,14 @@ function recipientLines(order: OrderData): string[] {
     width: 6.5in;
     bottom: 0.5in;
     box-sizing: border-box;
+}
+
+/* ── Sheet X of N indicator ─────────────────────────────────── */
+.sheet-indicator {
+    font-size: 9pt;
+    font-weight: bold;
+    text-align: right;
+    margin-bottom: 4pt;
 }
 
 /* ── Order header ───────────────────────────────────────────── */
@@ -416,7 +437,6 @@ function recipientLines(order: OrderData): string[] {
     border-top: 0.25pt solid #ccc;
 }
 
-/* Column widths per spec */
 .col-game {
     width: 0.6in;
 }
@@ -438,14 +458,12 @@ function recipientLines(order: OrderData): string[] {
     text-align: right;
 }
 
-/* Truncate long card names */
 .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Total row */
 .total-row td {
     font-weight: bold;
     border-top: 0.5pt solid #000 !important;
