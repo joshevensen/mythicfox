@@ -1,7 +1,7 @@
 ---
 id: "70-004"
 title: "Weekly file-cleanup job (90-day import retention, audit row preserved)"
-status: pending
+status: complete
 phase: "70-jobs"
 size: M
 depends_on: ["phase:20-orders"]
@@ -17,28 +17,28 @@ Purge stale `imports/...` storage objects on a 90-day rolling window so the DO S
 
 ## Acceptance criteria
 
-- [ ] `App\Jobs\PurgeExpiredFiles` job exists, implements `ShouldQueue`.
-- [ ] `php artisan files:purge` console command invokes the job.
-- [ ] Scheduler entry in `routes/console.php` (or `app/Console/Kernel.php`) runs `files:purge` **weekly** (suggest Sunday at 3:00 AM server time — pick one and document in the commit). Per [§Scheduled jobs](../../docs/saas-design.md#scheduled-jobs).
-- [ ] The job selects `files` rows matching ALL of:
-  - [ ] `file_path` starts with `imports/` (case-sensitive prefix match).
-  - [ ] `uploaded_at < now() - 90 days`.
-  - [ ] `expired_at IS NULL`.
-- [ ] For each matched row, the job:
-  - [ ] Deletes the storage object via the configured disk (`Storage::disk('spaces')->delete($file->file_path)` in prod, `local` disk in dev/test).
-  - [ ] Sets `expired_at = now()` on the `files` row and saves.
-  - [ ] Does **not** delete the row.
-- [ ] Storage-delete failures (object already missing, transient S3 error) do not abort the whole job. The job logs the failure for that file, leaves `expired_at` NULL on that row (so the next run retries), and continues to the next.
-- [ ] Files with `file_path` starting `exports/...` are **never** matched, even if older than 90 days.
-- [ ] Files with `expired_at` already set are skipped (idempotent — the next run is a no-op for already-purged rows).
-- [ ] Pest feature tests cover:
-  - [ ] **Success path**: seed a `files` row with `file_path = 'imports/orders/2025/01/...csv'` and `uploaded_at = now()->subDays(91)`; put a fake file at that path on the `local` disk via `Storage::fake()`; run the job; assert the storage object is gone, `expired_at` is set on the row, and the row still exists.
-  - [ ] **Boundary**: row with `uploaded_at = now()->subDays(89)` is NOT matched.
-  - [ ] **Exports preserved**: row with `file_path = 'exports/pricing/...csv'` and `uploaded_at = now()->subYears(2)` is NOT matched.
-  - [ ] **Idempotency**: row with `expired_at` already set is skipped (no second `delete()` call on the disk — assert via `Storage::fake()` events or counter).
-  - [ ] **Storage failure tolerance**: if the disk's `delete()` throws on one row, the job continues with the next row and the throwing row's `expired_at` remains NULL.
-  - [ ] **No imports to purge**: empty result set runs cleanly without errors.
-- [ ] `composer test` passes.
+- [x] `App\Jobs\PurgeExpiredFiles` job exists, implements `ShouldQueue`.
+- [x] `php artisan files:purge` console command invokes the job.
+- [x] Scheduler entry in `routes/console.php` (or `app/Console/Kernel.php`) runs `files:purge` **weekly** (suggest Sunday at 3:00 AM server time — pick one and document in the commit). Per [§Scheduled jobs](../../docs/saas-design.md#scheduled-jobs).
+- [x] The job selects `files` rows matching ALL of:
+  - [x] `file_path` starts with `imports/` (case-sensitive prefix match).
+  - [x] `uploaded_at < now() - 90 days`.
+  - [x] `expired_at IS NULL`.
+- [x] For each matched row, the job:
+  - [x] Deletes the storage object via the configured disk (`Storage::disk('spaces')->delete($file->file_path)` in prod, `local` disk in dev/test).
+  - [x] Sets `expired_at = now()` on the `files` row and saves.
+  - [x] Does **not** delete the row.
+- [x] Storage-delete failures (object already missing, transient S3 error) do not abort the whole job. The job logs the failure for that file, leaves `expired_at` NULL on that row (so the next run retries), and continues to the next.
+- [x] Files with `file_path` starting `exports/...` are **never** matched, even if older than 90 days.
+- [x] Files with `expired_at` already set are skipped (idempotent — the next run is a no-op for already-purged rows).
+- [x] Pest feature tests cover:
+  - [x] **Success path**: seed a `files` row with `file_path = 'imports/orders/2025/01/...csv'` and `uploaded_at = now()->subDays(91)`; put a fake file at that path on the `local` disk via `Storage::fake()`; run the job; assert the storage object is gone, `expired_at` is set on the row, and the row still exists.
+  - [x] **Boundary**: row with `uploaded_at = now()->subDays(89)` is NOT matched.
+  - [x] **Exports preserved**: row with `file_path = 'exports/pricing/...csv'` and `uploaded_at = now()->subYears(2)` is NOT matched.
+  - [x] **Idempotency**: row with `expired_at` already set is skipped (no second `delete()` call on the disk — assert via `Storage::fake()` events or counter).
+  - [x] **Storage failure tolerance**: if the disk's `delete()` throws on one row, the job continues with the next row and the throwing row's `expired_at` remains NULL.
+  - [x] **No imports to purge**: empty result set runs cleanly without errors.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
