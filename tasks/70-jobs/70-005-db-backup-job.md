@@ -1,7 +1,7 @@
 ---
 id: "70-005"
 title: "Nightly DB backup job (pg_dump → DO Spaces)"
-status: pending
+status: complete
 phase: "70-jobs"
 size: M
 depends_on: ["phase:00-foundation"]
@@ -17,26 +17,26 @@ Take a nightly logical backup of the production PostgreSQL database via `pg_dump
 
 ## Acceptance criteria
 
-- [ ] `App\Jobs\BackupDatabase` job exists, implements `ShouldQueue`.
-- [ ] `php artisan db:backup` console command invokes the job.
-- [ ] Scheduler entry in `routes/console.php` (or `app/Console/Kernel.php`) runs `db:backup` **nightly** (suggest 2:00 AM server time — pick one and document in the commit). Per [§Scheduled jobs](../../docs/saas-design.md#scheduled-jobs).
-- [ ] The job:
-  - [ ] Builds a `pg_dump` invocation against the configured `pgsql` connection (host/port/db/user from `config('database.connections.pgsql')`; password supplied via `PGPASSWORD` env on the subprocess to avoid leaking it via `ps`).
-  - [ ] Uses `--format=custom --no-owner --no-privileges` for a portable, restorable dump.
-  - [ ] Pipes output to a temp file, e.g. `storage/app/backups/mythicfox-{YYYYMMDD-HHMM}.dump`.
-  - [ ] Uploads the temp file to the `spaces` disk at path `backups/db/{YYYY}/{MM}/mythicfox-{YYYYMMDDHHMM}.dump`.
-  - [ ] Deletes the local temp file after a successful upload.
-  - [ ] Logs `Log::info('DB backup uploaded', ['path' => ..., 'bytes' => ...])` on success.
-- [ ] On failure (pg_dump non-zero exit, upload failure):
-  - [ ] The local temp file is cleaned up (no orphaned dumps in `storage/app/backups/`).
-  - [ ] `Log::error(...)` records the failure.
-  - [ ] The exception bubbles so the queue worker / scheduler records it as failed (no silent loss).
-- [ ] **Old-backup retention** (in this same job or as a follow-up step): backups older than **30 days** under `backups/db/...` on the `spaces` disk are deleted. 30 days of nightly dumps is sufficient for point-in-time recovery within a reasonable window without unbounded storage growth.
-- [ ] Pest feature tests cover:
-  - [ ] **Success path**: mock the subprocess runner so it produces a small fake dump file at the expected temp path; run the job against `Storage::fake('spaces')`; assert the file exists at the expected `backups/db/YYYY/MM/...dump` path on the fake disk; assert the temp file is cleaned up.
-  - [ ] **Failure path**: mock the runner to exit non-zero; assert the job throws (or fails the queue), the temp file is cleaned up, and no upload was attempted.
-  - [ ] **Retention**: pre-seed the fake spaces disk with dump files at `backups/db/...` dated 31 days ago; run the job; assert the old file was deleted and the just-uploaded file remains.
-- [ ] `composer test` passes.
+- [x] `App\Jobs\BackupDatabase` job exists, implements `ShouldQueue`.
+- [x] `php artisan db:backup` console command invokes the job.
+- [x] Scheduler entry in `routes/console.php` (or `app/Console/Kernel.php`) runs `db:backup` **nightly** (suggest 2:00 AM server time — pick one and document in the commit). Per [§Scheduled jobs](../../docs/saas-design.md#scheduled-jobs).
+- [x] The job:
+  - [x] Builds a `pg_dump` invocation against the configured `pgsql` connection (host/port/db/user from `config('database.connections.pgsql')`; password supplied via `PGPASSWORD` env on the subprocess to avoid leaking it via `ps`).
+  - [x] Uses `--format=custom --no-owner --no-privileges` for a portable, restorable dump.
+  - [x] Pipes output to a temp file, e.g. `storage/app/backups/mythicfox-{YYYYMMDD-HHMM}.dump`.
+  - [x] Uploads the temp file to the `spaces` disk at path `backups/db/{YYYY}/{MM}/mythicfox-{YYYYMMDDHHMM}.dump`.
+  - [x] Deletes the local temp file after a successful upload.
+  - [x] Logs `Log::info('DB backup uploaded', ['path' => ..., 'bytes' => ...])` on success.
+- [x] On failure (pg_dump non-zero exit, upload failure):
+  - [x] The local temp file is cleaned up (no orphaned dumps in `storage/app/backups/`).
+  - [x] `Log::error(...)` records the failure.
+  - [x] The exception bubbles so the queue worker / scheduler records it as failed (no silent loss).
+- [x] **Old-backup retention** (in this same job or as a follow-up step): backups older than **30 days** under `backups/db/...` on the `spaces` disk are deleted. 30 days of nightly dumps is sufficient for point-in-time recovery within a reasonable window without unbounded storage growth.
+- [x] Pest feature tests cover:
+  - [x] **Success path**: mock the subprocess runner so it produces a small fake dump file at the expected temp path; run the job against `Storage::fake('spaces')`; assert the file exists at the expected `backups/db/YYYY/MM/...dump` path on the fake disk; assert the temp file is cleaned up.
+  - [x] **Failure path**: mock the runner to exit non-zero; assert the job throws (or fails the queue), the temp file is cleaned up, and no upload was attempted.
+  - [x] **Retention**: pre-seed the fake spaces disk with dump files at `backups/db/...` dated 31 days ago; run the job; assert the old file was deleted and the just-uploaded file remains.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

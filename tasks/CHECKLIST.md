@@ -2,7 +2,7 @@
 
 Live progress tracker. Check the box when a task's `status` is `complete` (i.e. all acceptance criteria pass and the work is committed). Each line links to the task file.
 
-**Total: 63 / 67 tasks complete**
+**Total: 64 / 67 tasks complete**
 
 Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
@@ -97,13 +97,13 @@ Sizes: `S` < 1h, `M` 1–4h, `L` 4h+.
 
 - [x] **60-008** `M` — [Shared composable for URL-driven table state (pagination, sort, filters, chips)](63-table-url-state/60-008-table-url-state-composable.md)
 
-## Phase 70 — Jobs (4 / 5)
+## Phase 70 — Jobs (5 / 5)
 
 - [x] **70-001** `L` — [Render packing slip via HTML + print CSS (browser-printed, no PDF artifact)](70-jobs/70-001-packing-slip-renderer.md)
 - [x] **70-002** `M` — [Packing slip multi-sheet support (Sheet X of N, 20-card chunking)](70-jobs/70-002-packing-slip-multi-sheet.md)
 - [x] **70-003** `L` — [RefreshSellerStats scraper job (daily, Browsershot, failure tracking)](70-jobs/70-003-seller-stats-scraper-job.md)
 - [x] **70-004** `M` — [Weekly file-cleanup job (90-day import retention, audit row preserved)](70-jobs/70-004-files-purge-job.md)
-- [ ] **70-005** `M` — [Nightly DB backup job (pg_dump → DO Spaces)](70-jobs/70-005-db-backup-job.md)
+- [x] **70-005** `M` — [Nightly DB backup job (pg_dump → DO Spaces)](70-jobs/70-005-db-backup-job.md)
 
 ## Phase 80 — Deploy (0 / 3)
 
