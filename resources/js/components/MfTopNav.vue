@@ -62,7 +62,11 @@ const handleLogout = () => {
             <i class="pi pi-bars text-lg" />
         </button>
 
-        <Link :href="dashboard()" class="flex items-center" aria-label="Mythic Fox Games">
+        <Link
+            :href="dashboard()"
+            class="flex items-center"
+            aria-label="Mythic Fox Games"
+        >
             <img src="/logo.png" alt="Mythic Fox Games" class="h-8 w-auto" />
         </Link>
 

@@ -340,10 +340,7 @@ onUnmounted(stopPolling);
         @update:sort="tableState.setSort"
     >
         <template #filters>
-            <MfFilterPanel
-                :filters="filters"
-                :endpoint="ordersIndex().url"
-            />
+            <MfFilterPanel :filters="filters" :endpoint="ordersIndex().url" />
         </template>
 
         <template #bulk-actions="{ selectedKeys, selectAllMatching }">
