@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\SellerStats;
+use App\Services\SellerStats\StorefrontFetcher;
+use App\Services\SellerStats\TcgplayerStorefrontParser;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -10,13 +12,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
-// Stub for the scraper job. Phase 70 task 70-003 replaces handle() with the
-// real Browsershot-based TCGPlayer storefront scrape. The stub implementation
-// here is intentionally minimal: it stamps last_attempt_at so the Settings
-// "Seller stats scraper" card UX (50-005) has something live to show, and it
-// honours the in-flight cache flag the controller uses to disable the
-// "Refresh now" button.
 class RefreshSellerStats implements ShouldQueue
 {
     use Dispatchable;
@@ -26,17 +23,45 @@ class RefreshSellerStats implements ShouldQueue
 
     public const IN_FLIGHT_CACHE_KEY = 'seller-stats:refreshing';
 
-    public int $timeout = 60;
+    public int $timeout = 120;
 
-    public function handle(): void
+    public function handle(StorefrontFetcher $fetcher, TcgplayerStorefrontParser $parser): void
     {
         try {
             $stats = SellerStats::query()->orderBy('id')->first()
                 ?? SellerStats::query()->create([]);
 
-            $stats->forceFill([
+            $url = (string) config('services.tcgplayer.storefront_url', '');
+
+            $html = $fetcher->fetchHtml($url);
+            $result = $parser->parse($html);
+
+            if ($result->rating === null) {
+                throw new \RuntimeException('Parser returned no rating — selector may have changed.');
+            }
+
+            $updates = [
+                'rating' => $result->rating,
+                'review_count' => $result->reviewCount,
+                'scraped_at' => Carbon::now(),
                 'last_attempt_at' => Carbon::now(),
-            ])->save();
+                'last_error' => null,
+                'consecutive_failures' => 0,
+            ];
+
+            // Only overwrite feedback when the parser found comment text.
+            if ($result->feedback !== null && $result->feedback !== []) {
+                $updates['feedback'] = $result->feedback;
+            }
+
+            $stats->forceFill($updates)->save();
+
+            Log::info('Seller stats refresh succeeded.', [
+                'rating' => $result->rating,
+                'review_count' => $result->reviewCount,
+            ]);
+        } catch (\Throwable $e) {
+            $this->handleFailure($e);
         } finally {
             Cache::forget(self::IN_FLIGHT_CACHE_KEY);
         }
@@ -44,17 +69,33 @@ class RefreshSellerStats implements ShouldQueue
 
     public function failed(?\Throwable $exception): void
     {
+        // Safety net for unexpected errors outside the handle() catch block.
         Cache::forget(self::IN_FLIGHT_CACHE_KEY);
+        $this->handleFailure($exception);
+    }
 
+    private function handleFailure(?\Throwable $e): void
+    {
         $stats = SellerStats::query()->orderBy('id')->first();
 
         if ($stats === null) {
+            Log::warning('Seller stats refresh failed before singleton could be created.', [
+                'error' => $e?->getMessage(),
+            ]);
+
             return;
         }
 
+        $message = $e !== null
+            ? substr(get_class($e).': '.$e->getMessage(), 0, 500)
+            : 'Unknown error';
+
         $stats->forceFill([
-            'last_error' => $exception?->getMessage(),
+            'last_attempt_at' => Carbon::now(),
+            'last_error' => $message,
             'consecutive_failures' => $stats->consecutive_failures + 1,
         ])->save();
+
+        Log::warning('Seller stats refresh failed.', ['error' => $message]);
     }
 }
