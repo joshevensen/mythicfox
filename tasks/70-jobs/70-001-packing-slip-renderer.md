@@ -1,7 +1,7 @@
 ---
 id: "70-001"
 title: "Render packing slip via HTML + print CSS (browser-printed, no PDF artifact)"
-status: pending
+status: complete
 phase: "70-jobs"
 size: L
 depends_on: ["phase:20-orders", "phase:00-foundation"]
@@ -24,33 +24,33 @@ This task delivers the single-sheet (≤20 cards) version. Multi-sheet behavior 
 
 ## Acceptance criteria
 
-- [ ] Route `GET /orders/{order}/packing-slip` resolves to an Inertia page that renders the slip for the given order. Authenticated only (admin session).
-- [ ] Page emits a **two-page pair**: side A (address panel) followed by side B (slip body), separated by `page-break-after: always` per [§Rendering](../../docs/packingslip-spec.md#rendering).
-- [ ] `@page { size: letter; margin: 0; }` is applied so absolute-inch positioning matches the spec.
-- [ ] **Side A** layout matches [§Side A](../../docs/packingslip-spec.md#side-a--address-panel):
-  - [ ] Top 3.5" and bottom 3.5" of the page are blank.
-  - [ ] Return address `Mythic Fox Games / 3030 Junction Bay / San Antonio, TX 78109` lives at page rows **4 1/8" – 5 1/8"**, horizontally inset **7/8"** from page left, vertically centered in the 1" band.
-  - [ ] Recipient address (buyer name + shipping address from the order) lives at page rows **5 3/4" – 7"**, horizontally inset **7/8"**, vertically centered in the 1 1/4" band.
-  - [ ] Mythic Fox Games card logo on the right side of the middle panel, ~1 1/2" wide, vertically centered within the 4" middle band, right edge ~1" from the page right edge.
-  - [ ] **No fold guides** on side A.
-- [ ] **Side B** layout matches [§Side B](../../docs/packingslip-spec.md#side-b--packing-slip):
-  - [ ] Margins: 1/2" top, 1/2" bottom, 1" left, 1" right (content area 6.5" × 10").
-  - [ ] Faint hairline fold guides at rows **3.5"** and **7.5"** — two segments per line, each **3/4"** long, extending inward from the left and right page edges; middle of the page stays clear; stroke 0.5pt at ~30% black.
-  - [ ] Two-column header block at top of content area: left column `ORDER NUMBER` + `ORDER AMOUNT`; right column `BUYER NAME` + `ORDER DATE`. Keys bold, values regular.
-  - [ ] Card table columns and widths: GAME (0.6"), CARD NAME (2.6"), SET (2.0"), COND. (0.7"), QTY (0.6"). Headers bold. QTY right-aligned. No empty rows.
-  - [ ] Final row spans GAME + CARD NAME + SET + COND. with `TOTAL NUMBER OF CARDS`, count right-aligned in QTY column. Bold.
-  - [ ] Footer contact block matches [§Footer](../../docs/packingslip-spec.md#footer) verbatim (3 numbered items, brand email pulled from `config('brand.contact_email')`).
-- [ ] Typography: system sans-serif stack (Helvetica / Arial / `sans-serif`), body ~10pt, table headers and TOTAL row bold, header keys bold, black on white.
-- [ ] Long card names truncate with ellipsis to fit the 2.6" CARD NAME column (per [§Things to consider](../../docs/packingslip-spec.md#things-to-consider) — truncation is the safer default).
-- [ ] **No `files` row** is created when the slip is rendered. Confirmed in a Pest test that asserts `Files::count()` is unchanged across a slip render request.
-- [ ] Pest feature tests cover:
-  - [ ] Authenticated GET returns 200 and the response HTML contains the order number, buyer name, formatted order amount (US currency per [saas-design.md §Monetary values](../../docs/saas-design.md#monetary-values)), and order date.
-  - [ ] Unauthenticated GET redirects to login.
-  - [ ] An order with 1 line item renders 1 row plus the TOTAL row.
-  - [ ] An order with 20 line items renders 20 rows plus the TOTAL row, all on a single side B (multi-sheet behavior is `70-002`).
-  - [ ] Snapshot test (or substring assertions) confirms the address-panel block contains the return address text and the recipient address from the order's `shipping_address_*` fields.
-  - [ ] No `files` row created by the request.
-- [ ] `composer test` passes.
+- [x] Route `GET /orders/{order}/packing-slip` resolves to an Inertia page that renders the slip for the given order. Authenticated only (admin session).
+- [x] Page emits a **two-page pair**: side A (address panel) followed by side B (slip body), separated by `page-break-after: always` per [§Rendering](../../docs/packingslip-spec.md#rendering).
+- [x] `@page { size: letter; margin: 0; }` is applied so absolute-inch positioning matches the spec.
+- [x] **Side A** layout matches [§Side A](../../docs/packingslip-spec.md#side-a--address-panel):
+  - [x] Top 3.5" and bottom 3.5" of the page are blank.
+  - [x] Return address `Mythic Fox Games / 3030 Junction Bay / San Antonio, TX 78109` lives at page rows **4 1/8" – 5 1/8"**, horizontally inset **7/8"** from page left, vertically centered in the 1" band.
+  - [x] Recipient address (buyer name + shipping address from the order) lives at page rows **5 3/4" – 7"**, horizontally inset **7/8"**, vertically centered in the 1 1/4" band.
+  - [x] Mythic Fox Games card logo on the right side of the middle panel, ~1 1/2" wide, vertically centered within the 4" middle band, right edge ~1" from the page right edge.
+  - [x] **No fold guides** on side A.
+- [x] **Side B** layout matches [§Side B](../../docs/packingslip-spec.md#side-b--packing-slip):
+  - [x] Margins: 1/2" top, 1/2" bottom, 1" left, 1" right (content area 6.5" × 10").
+  - [x] Faint hairline fold guides at rows **3.5"** and **7.5"** — two segments per line, each **3/4"** long, extending inward from the left and right page edges; middle of the page stays clear; stroke 0.5pt at ~30% black.
+  - [x] Two-column header block at top of content area: left column `ORDER NUMBER` + `ORDER AMOUNT`; right column `BUYER NAME` + `ORDER DATE`. Keys bold, values regular.
+  - [x] Card table columns and widths: GAME (0.6"), CARD NAME (2.6"), SET (2.0"), COND. (0.7"), QTY (0.6"). Headers bold. QTY right-aligned. No empty rows.
+  - [x] Final row spans GAME + CARD NAME + SET + COND. with `TOTAL NUMBER OF CARDS`, count right-aligned in QTY column. Bold.
+  - [x] Footer contact block matches [§Footer](../../docs/packingslip-spec.md#footer) verbatim (3 numbered items, brand email pulled from `config('brand.contact_email')`).
+- [x] Typography: system sans-serif stack (Helvetica / Arial / `sans-serif`), body ~10pt, table headers and TOTAL row bold, header keys bold, black on white.
+- [x] Long card names truncate with ellipsis to fit the 2.6" CARD NAME column (per [§Things to consider](../../docs/packingslip-spec.md#things-to-consider) — truncation is the safer default).
+- [x] **No `files` row** is created when the slip is rendered. Confirmed in a Pest test that asserts `Files::count()` is unchanged across a slip render request.
+- [x] Pest feature tests cover:
+  - [x] Authenticated GET returns 200 and the response HTML contains the order number, buyer name, formatted order amount (US currency per [saas-design.md §Monetary values](../../docs/saas-design.md#monetary-values)), and order date.
+  - [x] Unauthenticated GET redirects to login.
+  - [x] An order with 1 line item renders 1 row plus the TOTAL row.
+  - [x] An order with 20 line items renders 20 rows plus the TOTAL row, all on a single side B (multi-sheet behavior is `70-002`).
+  - [x] Snapshot test (or substring assertions) confirms the address-panel block contains the return address text and the recipient address from the order's `shipping_address_*` fields.
+  - [x] No `files` row created by the request.
+- [x] `composer test` passes.
 
 ## Implementation notes
 

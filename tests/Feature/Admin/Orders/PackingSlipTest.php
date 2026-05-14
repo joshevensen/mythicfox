@@ -1,12 +1,16 @@
 <?php
 
+use App\Models\File;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
 });
+
+// ── Single-order route ────────────────────────────────────────
 
 test('per-order packing-slip route returns 200 for an existing order', function () {
     $order = Order::factory()->create([
@@ -26,6 +30,127 @@ test('per-order packing-slip route returns 200 for an existing order', function 
 test('per-order packing-slip route returns 404 for an unknown order number', function () {
     $this->get('/orders/NONEXISTENT-ORDER/packing-slip')->assertNotFound();
 });
+
+test('unauthenticated request redirects to login', function () {
+    auth()->logout();
+
+    $order = Order::factory()->create();
+
+    $this->get(route('orders.packing-slip.show', $order))->assertRedirect(route('login'));
+});
+
+// ── Full order data in props ──────────────────────────────────
+
+test('packing slip props include order number, buyer name, formatted total, and order date', function () {
+    $order = Order::factory()->create([
+        'tcgplayer_order_number' => 'PROP-CHECK-001',
+        'buyer_name' => 'Alice Buyer',
+        'total_amount' => 2345, // $23.45
+        'order_date' => '2025-04-28',
+    ]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orders.0.tcgplayer_order_number', 'PROP-CHECK-001')
+            ->where('orders.0.buyer_name', 'Alice Buyer')
+            ->where('orders.0.total_amount_formatted', '$23.45')
+            ->where('orders.0.order_date', 'Apr 28, 2025')
+        );
+});
+
+test('packing slip props include return address from config', function () {
+    $order = Order::factory()->create();
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('returnAddress')
+            ->where('returnAddress.name', config('brand.return_address.name'))
+            ->where('returnAddress.line1', config('brand.return_address.line1'))
+            ->where('returnAddress.line2', config('brand.return_address.line2'))
+        );
+});
+
+test('packing slip props include recipient shipping address fields', function () {
+    $order = Order::factory()->create([
+        'tcgplayer_order_number' => 'ADDR-CHECK',
+        'address1' => '123 Main St',
+        'city' => 'Austin',
+        'state' => 'TX',
+        'postal_code' => '78701',
+    ]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orders.0.address1', '123 Main St')
+            ->where('orders.0.city', 'Austin')
+            ->where('orders.0.state', 'TX')
+            ->where('orders.0.postal_code', '78701')
+        );
+});
+
+// ── Item rendering ────────────────────────────────────────────
+
+test('order with 1 line item has 1 item in props', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(1), 'items')
+        ->create();
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.items', 1)
+        );
+});
+
+test('order with 20 line items has 20 items in props (single-sheet)', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(20), 'items')
+        ->create();
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.items', 20)
+        );
+});
+
+test('item props include product_line, product_name, set_name, condition, quantity', function () {
+    $order = Order::factory()->create();
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_line' => 'Magic',
+        'product_name' => 'Black Lotus',
+        'set_name' => 'Alpha',
+        'condition' => 'NM',
+        'quantity' => 1,
+    ]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orders.0.items.0.product_line', 'Magic')
+            ->where('orders.0.items.0.product_name', 'Black Lotus')
+            ->where('orders.0.items.0.set_name', 'Alpha')
+            ->where('orders.0.items.0.condition', 'NM')
+            ->where('orders.0.items.0.quantity', 1)
+        );
+});
+
+// ── No files row created ──────────────────────────────────────
+
+test('rendering a packing slip does not create a files row', function () {
+    $order = Order::factory()->create();
+    $before = File::count();
+
+    $this->get(route('orders.packing-slip.show', $order))->assertOk();
+
+    expect(File::count())->toBe($before);
+});
+
+// ── Bulk route ────────────────────────────────────────────────
 
 test('bulk packing-slip route returns 200 with valid IDs', function () {
     $a = Order::factory()->create(['tcgplayer_order_number' => 'BULK-001']);
@@ -65,6 +190,8 @@ test('bulk packing-slip route preserves the order in which IDs were requested', 
         );
 });
 
+// ── Orders index integration ──────────────────────────────────
+
 test('orders index page renders per-row print URLs with the correct order number', function () {
     $order = Order::factory()->create([
         'tcgplayer_order_number' => 'RENDER-LOOK-ME-UP',
@@ -94,23 +221,14 @@ test('bulk action bar wires the bulk-print handler in the Vue source', function 
         ->toContain('BULK_PRINT_CONFIRM_THRESHOLD');
 });
 
-test('per-order packing-slip stub view explains that phase 70 will fill it in', function () {
-    $order = Order::factory()->create();
-
-    $this->get(route('orders.packing-slip.show', $order))->assertInertia(
-        fn ($page) => $page->where(
-            'placeholder_message',
-            'Packing slip rendering is implemented in phase 70.',
-        )
-    );
-});
-
 test('routes use Wayfinder typed helpers via /orders/{order}/packing-slip and /orders/print', function () {
     expect(route('orders.packing-slip.show', ['order' => 'ABC123']))
         ->toContain('/orders/ABC123/packing-slip');
     expect(route('orders.packing-slip.bulk', ['ids' => 'ABC,DEF']))
         ->toContain('/orders/print');
 });
+
+// ── Bulk select-all ───────────────────────────────────────────
 
 test('bulk endpoint with select_all=1 resolves to all orders matching the current filters', function () {
     Order::factory()->create([
