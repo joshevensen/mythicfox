@@ -25,3 +25,15 @@ test('MfTopNav is sticky and exposes a mobile drawer trigger', function () {
         ->toContain('topnav-hamburger')
         ->toContain('Drawer');
 });
+
+test('MfTopNav exposes a global import button before the user menu', function () {
+    $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
+
+    expect($source)
+        ->toContain('importModal.open()')
+        ->toContain('data-test="topnav-import-button"')
+        ->toContain('aria-label="Open import modal"');
+
+    expect(strpos($source, 'data-test="topnav-import-button"'))
+        ->toBeLessThan(strpos($source, 'data-test="topnav-user-menu"'));
+});

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { login } from '@/routes';
 
 type Feedback = {
     text: string;
@@ -15,54 +16,37 @@ type SellerStats = {
     feedback: Feedback[];
 };
 
-const props = defineProps<{
+defineProps<{
     tcgplayerStorefrontUrl: string | null;
     sellerStats: SellerStats | null;
     showBuyersSay: boolean;
 }>();
 
-defineOptions({
-    layout: {
-        title: 'Mythic Fox Games — Buy & Sell Trading Card Games',
-        description:
-            'Mythic Fox Games is a TCGPlayer storefront for Magic: The Gathering, Lorcana, and Flesh & Blood. Pack-fresh cards, honest grading, fast shipping.',
-    },
-});
 
-const features = [
+const mainFeatures = [
     {
-        icon: 'pi pi-box',
-        title: 'Pack-fresh inventory',
-        body: 'Most cards come straight from sealed product we open ourselves. Never played, never shuffled.',
-    },
-    {
-        icon: 'pi pi-check-circle',
-        title: 'Honest condition',
-        body: 'Cards graded conservatively. NM means NM.',
+        icon: 'pi pi-tag',
+        title: 'Great Prices',
+        body: 'We offer some of the most competitive prices on the market for both buyers and sellers.',
     },
     {
         icon: 'pi pi-shield',
-        title: 'Protective packaging',
-        body: 'Penny sleeves and TCGuardian shipping protectors. Cards arrive flat and dry.',
+        title: 'Trusted & Secure',
+        body: 'Safe transactions, secure payments, and data protection you can count on.',
     },
     {
-        icon: 'pi pi-send',
-        title: 'Fast shipping',
-        body: 'Orders pack and ship within 1 business day.',
+        icon: 'pi pi-truck',
+        title: 'Fast & Reliable',
+        body: 'Quick shipping and fast payments so you can get back to what you love.',
     },
 ];
 
-const ratingStars = computed(() => {
-    if (!props.sellerStats) {
-        return [];
-    }
-
-    const filled = Math.round(props.sellerStats.rating);
-
-    return Array.from({ length: 5 }, (_, i) =>
-        i < filled ? 'pi pi-star-fill' : 'pi pi-star',
-    );
-});
+const aboutFeatures = [
+    { icon: 'pi pi-star', title: 'Collector Focused' },
+    { icon: 'pi pi-thumbs-up', title: 'Fair & Honest Deals' },
+    { icon: 'pi pi-lock', title: 'Safe & Secure Payments' },
+    { icon: 'pi pi-comments', title: 'Responsive Support' },
+];
 
 const organizationJsonLd = computed(() =>
     JSON.stringify({
@@ -70,14 +54,18 @@ const organizationJsonLd = computed(() =>
         '@type': 'Organization',
         name: 'Mythic Fox Games',
         url: 'https://mythicfoxgames.com',
-        logo: 'https://mythicfoxgames.com/mythicfox.png',
+        logo: 'https://mythicfoxgames.com/logo.png',
     }),
 );
 </script>
 
 <template>
     <Head>
-        <!-- Vue's template parser refuses a literal <script> tag, so we emit it via the dynamic-component trick. -->
+        <title>Mythic Fox Games — Buy & Sell Trading Card Games</title>
+        <meta
+            name="description"
+            content="Mythic Fox Games is your trusted source for buying and selling TCG singles. We offer competitive prices, fast payments, and a seamless experience for collectors and players alike."
+        />
         <!-- eslint-disable vue/no-v-text-v-html-on-component -->
         <component
             :is="'script'"
@@ -87,107 +75,182 @@ const organizationJsonLd = computed(() =>
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
-    <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:py-14">
+    <div class="min-h-screen bg-[#12100C] font-sans text-[#FCFAEF]">
         <!-- HERO -->
-        <section
-            class="flex flex-col items-center gap-6 py-8 text-center sm:py-14"
-        >
-            <img
-                src="/mythicfox.png"
-                alt="Mythic Fox Games"
-                class="h-24 w-24 sm:h-32 sm:w-32"
-            />
-            <h1 class="text-3xl font-semibold text-mf-brown sm:text-4xl">
-                We buy &amp; sell trading card games.
-            </h1>
-            <a
-                v-if="tcgplayerStorefrontUrl"
-                :href="tcgplayerStorefrontUrl"
-                target="_blank"
-                rel="noopener"
-                data-test="hero-shop-cta"
-                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-mf-orange px-6 py-3 text-base font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-            >
-                Shop on TCGPlayer →
-            </a>
-        </section>
-
-        <!-- ABOUT -->
-        <section class="mx-auto max-w-3xl py-10 sm:py-14">
-            <p class="text-base leading-relaxed text-foreground sm:text-lg">
-                Mythic Fox Games is a TCGPlayer storefront. We buy and sell any
-                trading card game — currently specializing in Magic: The
-                Gathering, Lorcana, and Flesh &amp; Blood. Most of our inventory
-                comes from sealed product we open ourselves, so cards arrive
-                pack-fresh — never played, never shuffled. Every card is graded
-                honestly, packed in penny sleeves with TCGuardian shipping
-                protectors, and shipped within one business day. If anything
-                arrives wrong, message me — I'll make it right.
-            </p>
-        </section>
-
-        <!-- WHAT YOU GET -->
-        <section class="py-10 sm:py-14">
-            <h2 class="mb-8 text-center text-2xl font-semibold text-mf-brown">
-                What you get
-            </h2>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section class="relative flex min-h-[85vh] flex-col">
+            <!-- Background forest image with overlay -->
+            <div class="absolute inset-0 overflow-hidden">
+                <img
+                    src="/forest-image.png"
+                    alt=""
+                    class="h-full w-full object-cover object-center"
+                />
                 <div
-                    v-for="feature in features"
-                    :key="feature.title"
-                    class="flex flex-col items-start gap-3 rounded-lg border border-border bg-card p-5"
-                >
-                    <i :class="[feature.icon, 'text-2xl text-mf-orange']" />
-                    <h3 class="text-lg font-semibold text-foreground">
-                        {{ feature.title }}
-                    </h3>
-                    <p class="text-sm text-muted-foreground">
-                        {{ feature.body }}
+                    class="absolute inset-0 bg-gradient-to-r from-[#12100C] via-[#12100C]/85 to-[#12100C]/25"
+                />
+                <div
+                    class="absolute right-0 bottom-0 left-0 h-40 bg-gradient-to-t from-[#12100C] to-transparent"
+                />
+            </div>
+
+            <!-- Logo -->
+            <div class="relative z-10 flex justify-center pt-8 pb-4">
+                <img src="/logo.png" alt="Mythic Fox Games" class="h-14 w-auto" />
+            </div>
+
+            <!-- Hero content -->
+            <div
+                class="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 pb-20 sm:px-10"
+            >
+                <div class="max-w-xl">
+                    <h1 class="mb-6 text-5xl font-bold leading-tight sm:text-6xl">
+                        We buy and<br />
+                        Sell
+                        <span class="text-[#F38B17]">TCG Cards</span>
+                    </h1>
+                    <p class="mb-8 text-base leading-relaxed text-[#FCFAEF]/75 sm:text-lg">
+                        Mythic Fox Games is your trusted source for buying and selling TCG
+                        singles. We offer competitive prices, fast payments, and a seamless
+                        experience for collectors and players alike.
                     </p>
+                    <a
+                        v-if="tcgplayerStorefrontUrl"
+                        :href="tcgplayerStorefrontUrl"
+                        target="_blank"
+                        rel="noopener"
+                        data-test="hero-shop-cta"
+                        class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
+                    >
+                        Browse Inventory →
+                    </a>
                 </div>
             </div>
         </section>
 
-        <!-- WHAT BUYERS SAY -->
-        <section
-            v-if="showBuyersSay && sellerStats"
-            data-test="buyers-say"
-            class="py-10 sm:py-14"
-        >
-            <h2 class="mb-6 text-center text-2xl font-semibold text-mf-brown">
-                What buyers say
-            </h2>
-            <div
-                class="mb-8 flex items-center justify-center gap-2 text-lg"
-                data-test="buyers-say-rating"
-            >
-                <span
-                    v-for="(star, idx) in ratingStars"
-                    :key="idx"
-                    :class="[star, 'text-mf-orange']"
-                />
-                <span class="ml-2 text-foreground">
-                    {{ sellerStats.rating.toFixed(1) }} from
-                    {{ sellerStats.review_count }} reviews on TCGPlayer
-                </span>
-            </div>
-            <div
-                v-if="sellerStats.feedback.length > 0"
-                class="grid grid-cols-1 gap-4 sm:grid-cols-3"
-            >
-                <article
-                    v-for="(item, idx) in sellerStats.feedback"
-                    :key="idx"
-                    class="flex flex-col gap-3 rounded-lg border border-border bg-card p-5"
-                >
-                    <p class="text-sm leading-relaxed text-mf-brown">
-                        “{{ item.text }}”
-                    </p>
-                    <div class="text-xs text-muted-foreground">
-                        — {{ item.author }} · {{ item.date }}
+        <!-- MAIN FEATURES -->
+        <section class="px-6 py-16">
+            <div class="mx-auto max-w-5xl">
+                <div class="grid grid-cols-1 gap-10 sm:grid-cols-3">
+                    <div
+                        v-for="feature in mainFeatures"
+                        :key="feature.title"
+                        class="flex flex-col items-center gap-4 text-center"
+                    >
+                        <div
+                            class="flex h-16 w-16 items-center justify-center rounded-full border border-[#F38B17]/40 text-[#F38B17]"
+                        >
+                            <i :class="[feature.icon, 'text-2xl']" />
+                        </div>
+                        <h3 class="text-lg font-semibold text-[#FCFAEF]">
+                            {{ feature.title }}
+                        </h3>
+                        <p class="text-sm leading-relaxed text-[#FCFAEF]/55">
+                            {{ feature.body }}
+                        </p>
                     </div>
-                </article>
+                </div>
             </div>
         </section>
+
+        <!-- ABOUT US -->
+        <section class="px-6 py-16">
+            <div class="mx-auto max-w-3xl text-center">
+                <div class="mb-4 flex items-center justify-center gap-3">
+                    <div class="h-px w-10 bg-[#F38B17]/40" />
+                    <span
+                        class="text-xs font-semibold tracking-widest text-[#F38B17] uppercase"
+                    >
+                        About Us
+                    </span>
+                    <div class="h-px w-10 bg-[#F38B17]/40" />
+                </div>
+                <h2 class="mb-6 text-3xl font-bold text-[#FCFAEF] sm:text-4xl">
+                    Built for Collectors,<br />by Collectors
+                </h2>
+                <p class="mb-14 text-base leading-relaxed text-[#FCFAEF]/65">
+                    Mythic Fox Games was built by passionate collectors, for collectors. We
+                    believe in fair deals, honest communication, and helping the TCG
+                    community grow. Whether you're looking to sell your collection or find
+                    that missing piece, we're here to help.
+                </p>
+            </div>
+
+            <div class="mx-auto max-w-4xl">
+                <div class="grid grid-cols-2 gap-8 sm:grid-cols-4">
+                    <div
+                        v-for="feat in aboutFeatures"
+                        :key="feat.title"
+                        class="flex flex-col items-center gap-3 text-center"
+                    >
+                        <div
+                            class="flex h-14 w-14 items-center justify-center rounded-full border border-[#F38B17]/30 text-[#F38B17]"
+                        >
+                            <i :class="[feat.icon, 'text-xl']" />
+                        </div>
+                        <p class="text-sm font-medium text-[#FCFAEF]/75">
+                            {{ feat.title }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="border-t border-[#FCFAEF]/10 px-6 py-12 text-center">
+            <img
+                src="/logo.png"
+                alt="Mythic Fox Games"
+                class="mx-auto mb-6 h-10 w-auto"
+            />
+            <div class="mb-6 flex items-center justify-center gap-5">
+                <a
+                    href="#"
+                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
+                    aria-label="Facebook"
+                >
+                    <i class="pi pi-facebook text-lg" />
+                </a>
+                <a
+                    href="#"
+                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
+                    aria-label="Twitter"
+                >
+                    <i class="pi pi-twitter text-lg" />
+                </a>
+                <a
+                    href="#"
+                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
+                    aria-label="Instagram"
+                >
+                    <i class="pi pi-instagram text-lg" />
+                </a>
+                <a
+                    href="mailto:contact@mythicfoxgames.com"
+                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
+                    aria-label="Email"
+                >
+                    <i class="pi pi-envelope text-lg" />
+                </a>
+            </div>
+            <p class="mb-3 text-xs text-[#FCFAEF]/35">
+                © 2024 Mythic Fox Games. All rights reserved.
+            </p>
+            <div class="flex items-center justify-center gap-4 text-xs text-[#FCFAEF]/35">
+                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+                    Terms of Service
+                </a>
+                <span>·</span>
+                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+                    Privacy Policy
+                </a>
+                <span>·</span>
+                <Link
+                    :href="login().url"
+                    class="transition-colors hover:text-[#FCFAEF]/65"
+                >
+                    Login
+                </Link>
+            </div>
+        </footer>
     </div>
 </template>

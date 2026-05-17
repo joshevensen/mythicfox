@@ -20,6 +20,7 @@ createInertiaApp({
         switch (true) {
             case name === 'Welcome':
             case name === 'Orders/PackingSlip':
+            case name === 'public/Home':
                 return null;
             case name.startsWith('public/'):
                 return PublicLayout;
