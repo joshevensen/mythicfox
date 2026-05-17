@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { abbreviateGame } from '@/lib/gameAbbreviations';
 
 type OrderItem = {
     product_line: string;
@@ -7,6 +8,9 @@ type OrderItem = {
     set_name: string;
     condition: string;
     quantity: number;
+    number: string;
+    unit_price: number | null;
+    total_price: number | null;
 };
 
 type Sheet = {
@@ -27,6 +31,7 @@ type OrderData = {
     country: string | null;
     order_date: string | null;
     total_amount_formatted: string;
+    shipping_method: string | null;
     sheets: Sheet[];
 };
 
@@ -44,34 +49,41 @@ const props = defineProps<{
 function recipientLines(order: OrderData): string[] {
     const lines: string[] = [];
 
-    if (order.buyer_name) {
-        lines.push(order.buyer_name);
-    }
-
-    if (order.address1) {
-        lines.push(order.address1);
-    }
-
-    if (order.address2) {
-        lines.push(order.address2);
-    }
+    if (order.buyer_name) lines.push(order.buyer_name);
+    if (order.address1) lines.push(order.address1);
+    if (order.address2) lines.push(order.address2);
 
     const cityLine = [order.city, order.state].filter(Boolean).join(', ');
     const cityPostal = [cityLine, order.postal_code].filter(Boolean).join(' ');
+    if (cityPostal) lines.push(cityPostal);
 
-    if (cityPostal) {
-        lines.push(cityPostal);
-    }
-
-    if (order.country && order.country !== 'US') {
-        lines.push(order.country);
-    }
+    if (order.country && order.country !== 'US') lines.push(order.country);
 
     return lines;
 }
 
+function abbreviateCondition(cond: string): string {
+    const c = cond.toLowerCase();
+    if (c.startsWith('near mint')) return 'NM';
+    if (c.startsWith('lightly played')) return 'LP';
+    if (c.startsWith('moderately played')) return 'MP';
+    if (c.startsWith('heavily played')) return 'HP';
+    if (c.startsWith('damaged')) return 'D';
+    return cond.length <= 3 ? cond : cond.slice(0, 3);
+}
+
+function formatCents(cents: number | null): string {
+    if (cents == null) return '—';
+    return '$' + (cents / 100).toFixed(2);
+}
+
 function sheetQty(sheet: Sheet): number {
     return sheet.items.reduce((sum, i) => sum + i.quantity, 0);
+}
+
+function sheetTotalPrice(sheet: Sheet): string {
+    const total = sheet.items.reduce((sum, i) => sum + (i.total_price ?? 0), 0);
+    return formatCents(total);
 }
 </script>
 
@@ -97,6 +109,41 @@ function sheetQty(sheet: Sheet): number {
                 class="slip-page side-a"
                 :data-test="`side-a-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
             >
+                <!-- Order info box — top section (above address windows) -->
+                <div
+                    class="order-info-box"
+                    :data-test="`order-header-${order.tcgplayer_order_number}`"
+                >
+                    <div class="order-info-col">
+                        <div class="info-row">
+                            <span class="info-label">ORDER #</span>
+                            <span>{{ order.tcgplayer_order_number }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">BUYER</span>
+                            <span>{{ order.buyer_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">SELLER</span>
+                            <span>{{ returnAddress.name }}</span>
+                        </div>
+                    </div>
+                    <div class="order-info-col">
+                        <div class="info-row">
+                            <span class="info-label">DATE</span>
+                            <span>{{ order.order_date }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">AMOUNT</span>
+                            <span>{{ order.total_amount_formatted }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">SHIPPING</span>
+                            <span>{{ order.shipping_method ?? '—' }}</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Return address — upper window (4.125"–5.125") -->
                 <div class="return-address" data-test="return-address">
                     <div>{{ returnAddress.name }}</div>
@@ -109,7 +156,11 @@ function sheetQty(sheet: Sheet): number {
                     class="recipient-address"
                     :data-test="`recipient-address-${order.tcgplayer_order_number}`"
                 >
-                    <div v-for="(line, i) in recipientLines(order)" :key="i">
+                    <div
+                        v-for="(line, i) in recipientLines(order)"
+                        :key="i"
+                        :class="{ 'buyer-name': i === 0 && !!order.buyer_name }"
+                    >
                         {{ line }}
                     </div>
                 </div>
@@ -118,64 +169,53 @@ function sheetQty(sheet: Sheet): number {
                 <div class="brand-logo">
                     <img src="/logo.png" alt="Mythic Fox Games" />
                 </div>
+
+                <!-- Thank you + contact — bottom section (below address windows) -->
+                <div
+                    class="side-a-footer"
+                    :data-test="`slip-footer-${order.tcgplayer_order_number}`"
+                >
+                    <p class="thank-you-heading">Thank you for your order</p>
+                    <div class="footer-columns">
+                        <div class="footer-col">
+                            <p class="footer-col-heading">For Any Questions About Your Order:</p>
+                            <ol>
+                                <li>Please contact the seller directly by logging into your account and navigating to the Order History page.</li>
+                                <li>Click the &ldquo;Contact Seller&rdquo; link to compose a message to the seller and let them know of the issue.</li>
+                                <li>If the seller does not respond to your message within 2 business days, or if they aren&rsquo;t able to assist you please contact TCGplayer customer service via <strong>help.tcgplayer.com</strong>.</li>
+                            </ol>
+                        </div>
+                        <div class="footer-col">
+                            <p class="footer-col-heading">To Provide Feedback for This Order:</p>
+                            <p>If you have an issue with the order, it&rsquo;s best to contact the seller first using the steps on the left in order to give them an opportunity to correct the issue for you.</p>
+                            <ol>
+                                <li>Log into your account to the Order History page.</li>
+                                <li>Click on the &ldquo;Rate Transaction&rdquo; button to leave feedback for your order.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- ══ SIDE B — Packing slip ══ -->
+            <!-- ══ SIDE B — Card table ══ -->
             <div
                 class="slip-page side-b"
                 :data-test="`side-b-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
             >
-                <!-- Fold guides at 3.5" and 7.5" -->
-                <div class="fold-guide fold-guide--top"></div>
+                <!-- Fold guide: fold top section down until its edge meets this line -->
                 <div class="fold-guide fold-guide--bottom"></div>
 
-                <!-- Content area (1" left, 0.5" top) -->
+                <!-- Content area -->
                 <div class="slip-content">
-                    <!-- Sheet X of N indicator (multi-sheet only) -->
+                    <!-- Order number left + sheet indicator right -->
                     <div
-                        v-if="sheet.sheet_total > 1"
-                        class="sheet-indicator"
+                        class="table-subheader"
                         :data-test="`sheet-indicator-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
                     >
-                        Sheet {{ sheet.sheet_index }} of {{ sheet.sheet_total }}
+                        <span>{{ order.tcgplayer_order_number }}</span>
+                        <span>Sheet {{ sheet.sheet_index }} of {{ sheet.sheet_total }}</span>
                     </div>
 
-                    <!-- Two-column order header -->
-                    <div
-                        class="order-header"
-                        :data-test="`order-header-${order.tcgplayer_order_number}`"
-                    >
-                        <div class="order-header__col">
-                            <div>
-                                <span class="key">ORDER NUMBER</span>
-                                <span class="value">{{
-                                    order.tcgplayer_order_number
-                                }}</span>
-                            </div>
-                            <div>
-                                <span class="key">ORDER AMOUNT</span>
-                                <span class="value">{{
-                                    order.total_amount_formatted
-                                }}</span>
-                            </div>
-                        </div>
-                        <div class="order-header__col">
-                            <div>
-                                <span class="key">BUYER NAME</span>
-                                <span class="value">{{
-                                    order.buyer_name
-                                }}</span>
-                            </div>
-                            <div>
-                                <span class="key">ORDER DATE</span>
-                                <span class="value">{{
-                                    order.order_date
-                                }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card table -->
                     <table
                         class="card-table"
                         :data-test="`card-table-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
@@ -183,9 +223,10 @@ function sheetQty(sheet: Sheet): number {
                         <thead>
                             <tr>
                                 <th class="col-game">GAME</th>
-                                <th class="col-name">CARD NAME</th>
                                 <th class="col-set">SET</th>
-                                <th class="col-cond">COND.</th>
+                                <th class="col-name">CARD NAME</th>
+                                <th class="col-num">#</th>
+                                <th class="col-price">PRICE</th>
                                 <th class="col-qty">QTY</th>
                             </tr>
                         </thead>
@@ -196,13 +237,17 @@ function sheetQty(sheet: Sheet): number {
                                 :data-test="`card-row-${order.tcgplayer_order_number}-${sheet.sheet_index}-${idx}`"
                             >
                                 <td class="col-game">
-                                    {{ item.product_line }}
+                                    {{ abbreviateGame(item.product_line) }}
                                 </td>
-                                <td class="col-name truncate">
+                                <td class="col-set">
+                                    {{ item.set_name }}
+                                </td>
+                                <td class="col-name">
                                     {{ item.product_name }}
+                                    <span class="cond-tag">[{{ abbreviateCondition(item.condition) }}]</span>
                                 </td>
-                                <td class="col-set">{{ item.set_name }}</td>
-                                <td class="col-cond">{{ item.condition }}</td>
+                                <td class="col-num">{{ item.number }}</td>
+                                <td class="col-price">{{ formatCents(item.unit_price) }}</td>
                                 <td class="col-qty">{{ item.quantity }}</td>
                             </tr>
                             <!-- Per-sheet total row -->
@@ -210,40 +255,12 @@ function sheetQty(sheet: Sheet): number {
                                 class="total-row"
                                 :data-test="`total-row-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
                             >
-                                <td colspan="4" class="total-label">
-                                    TOTAL NUMBER OF CARDS
-                                </td>
+                                <td colspan="4" class="total-label">TOTAL</td>
+                                <td class="col-price">{{ sheetTotalPrice(sheet) }}</td>
                                 <td class="col-qty">{{ sheetQty(sheet) }}</td>
                             </tr>
                         </tbody>
                     </table>
-
-                    <!-- Footer contact block (on every sheet) -->
-                    <div
-                        class="slip-footer"
-                        :data-test="`slip-footer-${order.tcgplayer_order_number}`"
-                    >
-                        <p>
-                            If you have any questions or concerns about this
-                            order:
-                        </p>
-                        <ol>
-                            <li>
-                                Email me directly at
-                                <span class="contact-email"
-                                    >josh@mythicfoxgames.com</span
-                                >
-                            </li>
-                            <li>
-                                Message me via your TCGplayer order history page
-                            </li>
-                            <li>
-                                Leave feedback by clicking &ldquo;Rate
-                                Transaction&rdquo; on your TCGplayer order
-                                history page
-                            </li>
-                        </ol>
-                    </div>
                 </div>
             </div>
         </template>
@@ -265,6 +282,7 @@ function sheetQty(sheet: Sheet): number {
     align-items: center;
     justify-content: center;
     background: #f9f9f9;
+    color: #333;
     font-family: Helvetica, Arial, sans-serif;
     font-size: 14px;
     z-index: 9999;
@@ -292,10 +310,39 @@ function sheetQty(sheet: Sheet): number {
 
 /* ══ SIDE A ════════════════════════════════════════════════════ */
 
-/* Return address: rows 4.125"–5.125", inset 0.875" from left. */
+/* Order info box — sits in the top third, above the address windows. */
+.order-info-box {
+    position: absolute;
+    top: 1.5in;
+    left: 0.875in;
+    right: 0.875in;
+    display: flex;
+    gap: 0.5in;
+    border: 1pt solid #ccc;
+    padding: 16px;
+}
+
+.order-info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5pt;
+}
+
+.info-row {
+    display: flex;
+    gap: 6pt;
+}
+
+.info-label {
+    font-weight: bold;
+    min-width: 0.75in;
+}
+
+/* Return address: rows 3.625"–4.625", inset 0.875" from left. */
 .return-address {
     position: absolute;
-    top: 4.125in;
+    top: 3.625in;
     left: 0.875in;
     width: 3.5in;
     height: 1in;
@@ -305,10 +352,10 @@ function sheetQty(sheet: Sheet): number {
     line-height: 1.4;
 }
 
-/* Recipient address: rows 5.75"–7", inset 0.875" from left. */
+/* Recipient address: rows 5.25"–6.5", inset 0.875" from left. */
 .recipient-address {
     position: absolute;
-    top: 5.75in;
+    top: 5.25in;
     left: 0.875in;
     width: 3.5in;
     height: 1.25in;
@@ -318,12 +365,16 @@ function sheetQty(sheet: Sheet): number {
     line-height: 1.4;
 }
 
-/* Brand logo: ~1.5" wide, right edge ~1" from right, centered in 4" band. */
+.buyer-name {
+    font-weight: bold;
+}
+
+/* Brand logo: ~3" wide, right edge ~1" from right, centered in 4" band. */
 .brand-logo {
     position: absolute;
-    top: 3.5in;
+    top: 3in;
     right: 1in;
-    width: 1.5in;
+    width: 3in;
     height: 4in;
     display: flex;
     align-items: center;
@@ -331,14 +382,61 @@ function sheetQty(sheet: Sheet): number {
 }
 
 .brand-logo img {
-    width: 1.5in;
+    width: 3in;
     height: auto;
     display: block;
 }
 
+/* Thank you + contact — bottom third of Side A, below address windows. */
+.side-a-footer {
+    position: absolute;
+    bottom: 0.75in;
+    left: 0.875in;
+    right: 0.875in;
+    font-size: 9pt;
+    line-height: 1.4;
+}
+
+.thank-you-heading {
+    font-weight: bold;
+    font-size: 14pt;
+    text-align: center;
+    margin: 0 0 10pt 0;
+}
+
+.footer-columns {
+    display: flex;
+    gap: 0.4in;
+}
+
+.footer-col {
+    flex: 1;
+}
+
+.footer-col-heading {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 0 0 3pt 0;
+}
+
+.footer-col p:not(.footer-col-heading) {
+    margin: 0 0 4pt 0;
+}
+
+.footer-col ol {
+    margin: 0 0 0 1.2em;
+    padding: 0;
+    list-style-type: decimal;
+}
+
+.footer-col li {
+    margin-bottom: 2pt;
+}
+
 /* ══ SIDE B ════════════════════════════════════════════════════ */
 
-/* Fold guides: hairline segments at 3.5" and 7.5" from each edge. */
+/* Fold guide: marks where the top flap's edge lands (6" from top) so you know
+   where to crease. The second fold uses that crease edge as its own reference. */
 .fold-guide {
     position: absolute;
     left: 0;
@@ -346,12 +444,8 @@ function sheetQty(sheet: Sheet): number {
     height: 0;
 }
 
-.fold-guide--top {
-    top: 3.5in;
-}
-
 .fold-guide--bottom {
-    top: 7.5in;
+    top: 6in;
 }
 
 .fold-guide::before,
@@ -360,7 +454,7 @@ function sheetQty(sheet: Sheet): number {
     display: block;
     position: absolute;
     top: 0;
-    width: 0.75in;
+    width: 0.5in;
     border-top: 0.5pt solid rgba(0, 0, 0, 0.3);
 }
 
@@ -372,65 +466,55 @@ function sheetQty(sheet: Sheet): number {
     right: 0;
 }
 
-/* Content area: 1" left, 0.5" top/bottom */
+/* Content area */
 .slip-content {
     position: absolute;
     top: 0.5in;
-    left: 1in;
-    width: 6.5in;
+    left: 0.75in;
+    width: 7in;
     bottom: 0.5in;
     box-sizing: border-box;
 }
 
-/* ── Sheet X of N indicator ─────────────────────────────────── */
-.sheet-indicator {
+/* Table subheader: order number left, sheet indicator right */
+.table-subheader {
+    display: flex;
+    justify-content: space-between;
     font-size: 9pt;
     font-weight: bold;
-    text-align: right;
-    margin-bottom: 4pt;
-}
-
-/* ── Order header ───────────────────────────────────────────── */
-.order-header {
-    display: flex;
-    gap: 0.5in;
-    margin-bottom: 0.2in;
-}
-
-.order-header__col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2pt;
-}
-
-.order-header__col > div {
-    display: flex;
-    gap: 6pt;
-}
-
-.key {
-    font-weight: bold;
+    margin-bottom: 3pt;
 }
 
 /* ── Card table ─────────────────────────────────────────────── */
 .card-table {
     width: 100%;
+    margin-top: 0.5in;
     border-collapse: collapse;
-    font-size: 10pt;
+    font-size: 11px;
     table-layout: fixed;
+}
+
+.card-table tbody tr {
+    height: 40px; /* 2 lines × 13px + 7px top + 5px bottom */
 }
 
 .card-table th,
 .card-table td {
-    padding: 2pt 3pt;
+    padding: 7px 3pt;
+    line-height: 13px;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .card-table thead th {
+    font-size: 9px !important;
     font-weight: bold;
     border-bottom: 0.5pt solid #000;
+    padding-top: 3pt;
+    padding-bottom: 3pt;
 }
 
 .card-table tbody tr + tr td {
@@ -438,54 +522,45 @@ function sheetQty(sheet: Sheet): number {
 }
 
 .col-game {
-    width: 0.6in;
-}
-
-.col-name {
-    width: 2.6in;
+    width: 0.5in;
 }
 
 .col-set {
-    width: 2in;
+    width: 1.5in;
 }
 
-.col-cond {
-    width: 0.7in;
+.col-name {
+    width: 3.7in;
+}
+
+.col-num {
+    width: 0.5in;
+    font-size: 10px !important;
+}
+
+.col-price {
+    width: 0.4in;
+    text-align: right !important;
 }
 
 .col-qty {
-    width: 0.6in;
-    text-align: right;
+    width: 0.4in;
+    text-align: right !important;
 }
 
-.truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.cond-tag {
+    color: #555;
+    font-size: 0.9em;
 }
 
 .total-row td {
     font-weight: bold;
     border-top: 0.5pt solid #000 !important;
+    padding-top: 4pt;
+    padding-bottom: 4pt;
 }
 
 .total-label {
     text-align: left;
-}
-
-/* ── Footer ─────────────────────────────────────────────────── */
-.slip-footer {
-    margin-top: 0.2in;
-    font-size: 9pt;
-    line-height: 1.4;
-}
-
-.slip-footer ol {
-    margin: 4pt 0 0 1.2em;
-    padding: 0;
-}
-
-.slip-footer li {
-    margin-bottom: 2pt;
 }
 </style>

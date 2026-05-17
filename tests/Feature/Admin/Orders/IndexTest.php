@@ -19,7 +19,7 @@ test('authenticated visit returns 200 and renders Orders/Index with paginator sh
         'order_date' => Carbon::now()->subDays(2),
     ]);
 
-    $this->get(route('orders.index'))->assertOk()->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '90']))->assertOk()->assertInertia(
         fn ($page) => $page
             ->component('Orders/Index')
             ->has('orders.data', 3)
@@ -43,7 +43,7 @@ test('default sort is order_date desc', function () {
         'order_date' => Carbon::now()->subDays(1),
     ]);
 
-    $this->get(route('orders.index'))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '90']))->assertInertia(
         fn ($page) => $page
             ->where('orders.data.0.tcgplayer_order_number', 'NEWER-ORDER')
             ->where('orders.data.1.tcgplayer_order_number', 'OLDER-ORDER')
@@ -60,7 +60,7 @@ test('sort by order_date asc reorders results', function () {
         'order_date' => Carbon::now()->subDays(1),
     ]);
 
-    $this->get(route('orders.index', ['sort' => 'order_date', 'dir' => 'asc']))
+    $this->get(route('orders.index', ['sort' => 'order_date', 'dir' => 'asc', 'date_window' => '90']))
         ->assertInertia(
             fn ($page) => $page
                 ->where('orders.data.0.tcgplayer_order_number', 'OLDEST')
@@ -73,7 +73,7 @@ test('filter by status=Canceled narrows results to canceled orders only', functi
     Order::factory()->canceled()->create(['tcgplayer_status' => 'Canceled']);
     Order::factory()->canceled()->create(['tcgplayer_status' => 'Canceled']);
 
-    $this->get(route('orders.index', ['status' => 'Canceled']))
+    $this->get(route('orders.index', ['status' => 'Canceled', 'date_window' => 'all']))
         ->assertInertia(
             fn ($page) => $page
                 ->has('orders.data', 2)
@@ -114,7 +114,12 @@ test('date_window=all bypasses the date filter', function () {
     );
 });
 
-test('default 90-day window applies when no date params are present', function () {
+test('visiting without date_window redirects to url with default 90-day window', function () {
+    $this->get(route('orders.index'))
+        ->assertRedirect(route('orders.index', ['date_window' => '90']));
+});
+
+test('default 90-day window excludes orders older than 90 days', function () {
     Order::factory()->create([
         'tcgplayer_order_number' => 'WITHIN-WINDOW',
         'order_date' => Carbon::now()->subDays(10),
@@ -124,7 +129,7 @@ test('default 90-day window applies when no date params are present', function (
         'order_date' => Carbon::now()->subDays(180),
     ]);
 
-    $this->get(route('orders.index'))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '90']))->assertInertia(
         fn ($page) => $page
             ->has('orders.data', 1)
             ->where('orders.data.0.tcgplayer_order_number', 'WITHIN-WINDOW')
@@ -141,7 +146,7 @@ test('status options are sourced from DISTINCT tcgplayer_status at request time'
         'order_date' => Carbon::now()->subDays(2),
     ]);
 
-    $this->get(route('orders.index'))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => 'all']))->assertInertia(
         fn ($page) => $page
             ->where('meta.statuses', [
                 ['value' => 'Canceled', 'label' => 'Canceled'],
@@ -152,7 +157,7 @@ test('status options are sourced from DISTINCT tcgplayer_status at request time'
 });
 
 test('empty state renders when no orders exist', function () {
-    $this->get(route('orders.index'))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '90']))->assertInertia(
         fn ($page) => $page
             ->where('orders.meta.total', 0)
             ->has('orders.data', 0)

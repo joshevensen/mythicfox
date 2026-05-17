@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportOrdersJob;
 use App\Models\Order;
 use App\Services\Orders\OrderQueryFilters;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -26,8 +27,14 @@ class OrdersController extends Controller
         'tcgplayer_status',
     ];
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
+        if ($request->query('date_window') === null) {
+            return redirect()->to($request->fullUrlWithQuery([
+                'date_window' => OrderQueryFilters::DEFAULT_DATE_WINDOW,
+            ]));
+        }
+
         return Inertia::render('Orders/Index', [
             'orders' => $this->loadOrders($request),
             'meta' => [

@@ -99,7 +99,7 @@ test('POST sets the import-in-flight cache flag visible to the orders index cont
 
     expect(Cache::has(ImportOrdersJob::IN_FLIGHT_CACHE_KEY))->toBeTrue();
 
-    $this->get(route('orders.index'))->assertInertia(
+    $this->get(route('orders.index', ['date_window' => '90']))->assertInertia(
         fn ($page) => $page->where('meta.import_in_flight', true)
     );
 });
@@ -146,5 +146,5 @@ test('the dashboard shortcut /orders?import=1 is rendered as a route the modal l
     // The modal-open behaviour itself is client-side; here we only assert that
     // the URL is reachable and renders the page (so the SPA mount can read
     // ?import=1 and open the dialog).
-    $this->get(route('orders.index', ['import' => 1]))->assertOk();
+    $this->get(route('orders.index', ['import' => 1, 'date_window' => '90']))->assertOk();
 });

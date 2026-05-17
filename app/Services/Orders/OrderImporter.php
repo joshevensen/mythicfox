@@ -289,12 +289,8 @@ class OrderImporter
     {
         foreach ($pdfLines as $pdf) {
             if (
-                $this->normalize($pdf->productLine) === $this->normalize($pullItem->productLine)
+                $pdf->number === $pullItem->number
                 && $this->normalize($pdf->setName) === $this->normalize($pullItem->setName)
-                && $this->normalize($pdf->productName) === $this->normalize($pullItem->productName)
-                && $pdf->number === $pullItem->number
-                && $this->normalize($pdf->rarity) === $this->normalize($pullItem->rarity)
-                && $this->normalize($pdf->condition) === $this->normalize($pullItem->condition)
             ) {
                 return $pdf;
             }

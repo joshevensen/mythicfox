@@ -92,8 +92,9 @@ test('clearing filters preserves non-table query params (e.g. dashboard import=1
 
     // The composable's clearFilters() drops only its declared filterKeys
     // (status, date_window). `import=1` lives outside that set and survives
-    // the clear. End-state URL the composable would produce after clear:
-    $this->get('/orders?import=1')->assertOk()->assertInertia(
+    // the clear. The server redirects bare /orders to ?date_window=90, so the
+    // final URL after clear is /orders?import=1&date_window=90.
+    $this->get('/orders?import=1&date_window=90')->assertOk()->assertInertia(
         fn ($page) => $page->component('Orders/Index'),
     );
 

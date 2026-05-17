@@ -5,6 +5,7 @@ use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
+use App\Services\Orders\PackingSlipSplitter;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
@@ -109,9 +110,12 @@ test('order with 1 line item produces 1 sheet with 1 item', function () {
         );
 });
 
+// Row-limit tests use qty=1 + cheap price so weight never triggers an earlier split.
+// (20 non-foil qty=1 cheap cards weigh ~55.18 g, just under the 56.699 g / 2 oz limit.)
+
 test('order with 20 line items produces 1 sheet with 20 items (single-sheet boundary)', function () {
     $order = Order::factory()
-        ->has(OrderItem::factory()->count(20), 'items')
+        ->has(OrderItem::factory()->count(20)->state(['quantity' => 1, 'unit_price' => 25]), 'items')
         ->create();
 
     $this->get(route('orders.packing-slip.show', $order))
@@ -124,7 +128,7 @@ test('order with 20 line items produces 1 sheet with 20 items (single-sheet boun
 
 test('order with 21 line items produces 2 sheets (20 + 1)', function () {
     $order = Order::factory()
-        ->has(OrderItem::factory()->count(21), 'items')
+        ->has(OrderItem::factory()->count(21)->state(['quantity' => 1, 'unit_price' => 25]), 'items')
         ->create();
 
     $this->get(route('orders.packing-slip.show', $order))
@@ -142,7 +146,7 @@ test('order with 21 line items produces 2 sheets (20 + 1)', function () {
 
 test('order with 47 line items produces 3 sheets (20, 20, 7)', function () {
     $order = Order::factory()
-        ->has(OrderItem::factory()->count(47), 'items')
+        ->has(OrderItem::factory()->count(47)->state(['quantity' => 1, 'unit_price' => 25]), 'items')
         ->create();
 
     $this->get(route('orders.packing-slip.show', $order))
@@ -157,7 +161,7 @@ test('order with 47 line items produces 3 sheets (20, 20, 7)', function () {
         );
 });
 
-test('item props include product_line, product_name, set_name, condition, quantity', function () {
+test('item props include product_line, product_name, set_name, condition, quantity, number, unit_price, total_price', function () {
     $order = Order::factory()->create();
     OrderItem::factory()->create([
         'order_id' => $order->id,
@@ -165,7 +169,10 @@ test('item props include product_line, product_name, set_name, condition, quanti
         'product_name' => 'Black Lotus',
         'set_name' => 'Alpha',
         'condition' => 'NM',
-        'quantity' => 1,
+        'quantity' => 2,
+        'number' => '1',
+        'unit_price' => 500,
+        'total_price' => 1000,
     ]);
 
     $this->get(route('orders.packing-slip.show', $order))
@@ -175,12 +182,92 @@ test('item props include product_line, product_name, set_name, condition, quanti
             ->where('orders.0.sheets.0.items.0.product_name', 'Black Lotus')
             ->where('orders.0.sheets.0.items.0.set_name', 'Alpha')
             ->where('orders.0.sheets.0.items.0.condition', 'NM')
-            ->where('orders.0.sheets.0.items.0.quantity', 1)
+            ->where('orders.0.sheets.0.items.0.quantity', 2)
+            ->where('orders.0.sheets.0.items.0.number', '1')
+            ->where('orders.0.sheets.0.items.0.unit_price', 500)
+            ->where('orders.0.sheets.0.items.0.total_price', 1000)
         );
 });
 
 test('MAX_CARDS_PER_SHEET constant is 20', function () {
     expect(PackingSlipController::MAX_CARDS_PER_SHEET)->toBe(20);
+});
+
+// ── PWE weight-based splitting ────────────────────────────────
+
+test('items within each sheet are sorted by product_line, set_name, then product_name', function () {
+    $order = Order::factory()->create();
+
+    // Create items out of alphabetical order
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_line' => 'Magic',   'set_name' => 'Zendikar', 'product_name' => 'Zephyr', 'quantity' => 1, 'unit_price' => 25]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_line' => 'Lorcana',  'set_name' => 'Alpha',    'product_name' => 'Ariel',  'quantity' => 1, 'unit_price' => 25]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_line' => 'Magic',   'set_name' => 'Alpha',    'product_name' => 'Bolt',   'quantity' => 1, 'unit_price' => 25]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_line' => 'Magic',   'set_name' => 'Alpha',    'product_name' => 'Ancestor', 'quantity' => 1, 'unit_price' => 25]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.sheets', 1)
+            ->where('orders.0.sheets.0.items.0.product_name', 'Ariel')     // Lorcana / Alpha
+            ->where('orders.0.sheets.0.items.1.product_name', 'Ancestor')  // Magic / Alpha / Ancestor
+            ->where('orders.0.sheets.0.items.2.product_name', 'Bolt')      // Magic / Alpha / Bolt
+            ->where('orders.0.sheets.0.items.3.product_name', 'Zephyr')    // Magic / Zendikar
+        );
+});
+
+test('items that together exceed 3.5 oz are split across sheets', function () {
+    // 24 expensive foil cards alone = 97.93 g (under 3.5 oz limit of 99.22 g).
+    // Adding 1 more expensive card pushes to 100.99 g → 2 sheets.
+    $order = Order::factory()->create();
+
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_name' => 'Dragon Foil', 'quantity' => 24, 'unit_price' => 500]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_name' => 'Goblin',      'quantity' => 1,  'unit_price' => 500]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('orders.0.sheets', 2));
+});
+
+test('foil cards (detected via product_name) are heavier and cause earlier splits', function () {
+    // 25 expensive foil cards (2 items) = 101.13 g → 2 sheets.
+    // Same cards non-foil = 97.63 g → 1 sheet.
+    // Only difference is foil, which adds 0.14 g per card.
+    $foilOrder = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $foilOrder->id, 'product_name' => 'Dragon Foil', 'quantity' => 13, 'unit_price' => 500]);
+    OrderItem::factory()->create(['order_id' => $foilOrder->id, 'product_name' => 'Phoenix Foil', 'quantity' => 12, 'unit_price' => 500]);
+
+    $this->get(route('orders.packing-slip.show', $foilOrder))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('orders.0.sheets', 2));
+
+    $nonFoilOrder = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $nonFoilOrder->id, 'product_name' => 'Dragon',  'quantity' => 13, 'unit_price' => 500]);
+    OrderItem::factory()->create(['order_id' => $nonFoilOrder->id, 'product_name' => 'Phoenix', 'quantity' => 12, 'unit_price' => 500]);
+
+    $this->get(route('orders.packing-slip.show', $nonFoilOrder))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('orders.0.sheets', 1));
+});
+
+test('expensive cards (unit_price > $2.00) use a heavier outer sleeve per card', function () {
+    // 26 expensive non-foil cards (2 items of qty=13) = 100.69 g → 2 sheets.
+    // 26 cheap non-foil cards (same qty) = 72.57 g → 1 sheet.
+    // Only difference is sleeve type (outer vs penny).
+    $expOrder = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $expOrder->id, 'product_name' => 'Dragon',  'quantity' => 13, 'unit_price' => 500]);
+    OrderItem::factory()->create(['order_id' => $expOrder->id, 'product_name' => 'Phoenix', 'quantity' => 13, 'unit_price' => 500]);
+
+    $this->get(route('orders.packing-slip.show', $expOrder))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('orders.0.sheets', 2));
+
+    $cheapOrder = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $cheapOrder->id, 'product_name' => 'Goblin', 'quantity' => 13, 'unit_price' => 25]);
+    OrderItem::factory()->create(['order_id' => $cheapOrder->id, 'product_name' => 'Elf',    'quantity' => 13, 'unit_price' => 25]);
+
+    $this->get(route('orders.packing-slip.show', $cheapOrder))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('orders.0.sheets', 1));
 });
 
 // ── No files row created ──────────────────────────────────────
@@ -242,7 +329,7 @@ test('orders index page renders per-row print URLs with the correct order number
         'order_date' => now()->subDays(2),
     ]);
 
-    $response = $this->get(route('orders.index'));
+    $response = $this->get(route('orders.index', ['date_window' => '90']));
 
     $response->assertOk();
     $response->assertSee($order->tcgplayer_order_number);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\Orders\OrderQueryFilters;
+use App\Services\Orders\PackingSlipSplitter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Number;
 use Inertia\Inertia;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class PackingSlipController extends Controller
 {
-    public const MAX_CARDS_PER_SHEET = 20;
+    public const MAX_CARDS_PER_SHEET = PackingSlipSplitter::MAX_ROWS;
 
     private const BULK_HARD_CAP = 100;
 
@@ -77,25 +78,28 @@ class PackingSlipController extends Controller
     private function presentOrder(Order $order): array
     {
         $items = $order->relationLoaded('items')
-            ? $order->items->sortBy('id')->values()
-            : $order->items()->orderBy('id')->get();
+            ? $order->items->values()
+            : $order->items()->get();
 
-        $chunks = $items->chunk(self::MAX_CARDS_PER_SHEET);
-        $sheetTotal = max(1, $chunks->count());
+        $groups     = (new PackingSlipSplitter)->split($items);
+        $sheetTotal = max(1, count($groups));
 
-        $sheets = $chunks->values()->map(function ($chunk, int $index) use ($sheetTotal) {
+        $sheets = array_values(array_map(function (array $group, int $index) use ($sheetTotal): array {
             return [
                 'sheet_index' => $index + 1,
                 'sheet_total' => $sheetTotal,
-                'items' => $chunk->map(fn (OrderItem $item) => [
+                'items' => array_map(fn (OrderItem $item) => [
                     'product_line' => $item->product_line,
                     'product_name' => $item->product_name,
                     'set_name' => $item->set_name,
                     'condition' => $item->condition,
                     'quantity' => $item->quantity,
-                ])->values()->all(),
+                    'number' => $item->number,
+                    'unit_price' => $item->unit_price,
+                    'total_price' => $item->total_price,
+                ], $group),
             ];
-        })->all();
+        }, $groups, array_keys($groups)));
 
         // Orders with no items still need one (empty) sheet so the slip renders.
         if (empty($sheets)) {
@@ -114,6 +118,7 @@ class PackingSlipController extends Controller
             'country' => $order->country,
             'order_date' => $order->order_date?->format('M j, Y'),
             'total_amount_formatted' => Number::currency(($order->total_amount ?? 0) / 100, 'USD', 'en'),
+            'shipping_method' => $order->shipping_method,
             'sheets' => $sheets,
         ];
     }

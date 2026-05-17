@@ -389,7 +389,7 @@ onUnmounted(stopPolling);
                     :data-href="printSlipUrl(row.tcgplayer_order_number)"
                     @click="onPrintRow(row.tcgplayer_order_number)"
                 >
-                    <i class="pi pi-printer" />
+                    <i class="pi pi-print" />
                 </button>
                 <button
                     type="button"
@@ -498,7 +498,7 @@ onUnmounted(stopPolling);
                         :data-href="printSlipUrl(row.tcgplayer_order_number)"
                         @click="onPrintRow(row.tcgplayer_order_number)"
                     >
-                        <i class="pi pi-printer" />
+                        <i class="pi pi-print" />
                         <span>Print slip</span>
                     </button>
                     <button
