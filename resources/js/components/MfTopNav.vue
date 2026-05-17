@@ -97,7 +97,7 @@ const handleLogout = () => {
                 @click="toggleUserMenu"
             >
                 <span
-                    class="bg-mf-teal/15 text-mf-teal inline-flex h-8 w-8 items-center justify-center rounded-full"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-mf-teal/15 text-mf-teal"
                 >
                     <i class="pi pi-user" />
                 </span>

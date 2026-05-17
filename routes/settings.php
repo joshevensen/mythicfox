@@ -1,11 +1,25 @@
 <?php
 
+use App\Http\Controllers\Settings\FilesController;
+use App\Http\Controllers\Settings\PricingRulesController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SellerStatsController;
+use App\Http\Controllers\Settings\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', '/settings/profile');
+    Route::get('settings', [SettingsController::class, 'show'])->name('settings');
+    Route::patch('settings/products/{product}/pricing-rules', [PricingRulesController::class, 'updateProduct'])
+        ->name('settings.products.pricing-rules.update');
+    Route::patch('settings/sets/{set}/pricing-rules', [PricingRulesController::class, 'updateSet'])
+        ->name('settings.sets.pricing-rules.update');
+    Route::get('settings/files/{file}/download', [FilesController::class, 'download'])
+        ->name('settings.files.download');
+    Route::get('settings/files/{file}/stream', [FilesController::class, 'stream'])
+        ->name('settings.files.stream');
+    Route::post('settings/seller-stats/refresh', [SellerStatsController::class, 'refresh'])
+        ->name('settings.seller-stats.refresh');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');

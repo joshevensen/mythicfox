@@ -4,6 +4,7 @@ namespace App\Services\Catalog;
 
 use App\Models\Card;
 use App\Models\CardSet;
+use App\Models\Deck;
 use App\Models\Product;
 use App\Services\Catalog\Support\CentsParser;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,12 @@ use Illuminate\Support\Carbon;
  */
 class CatalogUpserter
 {
+    /**
+     * Sealed-product condition strings that mark a CSV row as a deck rather
+     * than a singleton card. Matched case-insensitively.
+     */
+    private const DECK_CONDITIONS = ['unopened', 'opened'];
+
     /** @var array<string, int> name → product id */
     private array $productCache = [];
 
@@ -28,6 +35,9 @@ class CatalogUpserter
 
     /** @var list<array<string, mixed>> buffered card upsert rows */
     private array $cardBuffer = [];
+
+    /** @var list<array<string, mixed>> buffered deck upsert rows */
+    private array $deckBuffer = [];
 
     public function __construct(private readonly int $cardChunkSize = 500) {}
 
@@ -49,13 +59,34 @@ class CatalogUpserter
 
         $this->touchedProductIds[$productId] = true;
 
+        $number = (string) ($row['Number'] ?? '');
+        $condition = (string) ($row['Condition'] ?? '');
+
+        if ($this->isDeckRow($number, $condition)) {
+            $this->deckBuffer[] = [
+                'set_id' => $setId,
+                'tcgplayer_id' => $tcgplayerId,
+                'product_name' => (string) ($row['Product Name'] ?? ''),
+                'rarity' => (string) ($row['Rarity'] ?? ''),
+                'condition' => $condition,
+                'market_price' => CentsParser::parse($row['TCG Market Price'] ?? null),
+                'low_price' => CentsParser::parse($row['TCG Low Price'] ?? null),
+            ];
+
+            if (count($this->deckBuffer) >= $this->cardChunkSize) {
+                $this->flushDeckBuffer();
+            }
+
+            return;
+        }
+
         $this->cardBuffer[] = [
             'set_id' => $setId,
             'tcgplayer_id' => $tcgplayerId,
             'product_name' => (string) ($row['Product Name'] ?? ''),
-            'number' => (string) ($row['Number'] ?? ''),
+            'number' => $number,
             'rarity' => (string) ($row['Rarity'] ?? ''),
-            'condition' => (string) ($row['Condition'] ?? ''),
+            'condition' => $condition,
             'market_price' => CentsParser::parse($row['TCG Market Price'] ?? null),
             'low_price' => CentsParser::parse($row['TCG Low Price'] ?? null),
         ];
@@ -68,6 +99,7 @@ class CatalogUpserter
     public function flush(): void
     {
         $this->flushCardBuffer();
+        $this->flushDeckBuffer();
     }
 
     public function bumpPricedAt(): void
@@ -126,5 +158,29 @@ class CatalogUpserter
         );
 
         $this->cardBuffer = [];
+    }
+
+    private function flushDeckBuffer(): void
+    {
+        if ($this->deckBuffer === []) {
+            return;
+        }
+
+        Deck::upsert(
+            $this->deckBuffer,
+            ['tcgplayer_id'],
+            ['market_price', 'low_price'],
+        );
+
+        $this->deckBuffer = [];
+    }
+
+    private function isDeckRow(string $number, string $condition): bool
+    {
+        if (trim($number) !== '') {
+            return false;
+        }
+
+        return in_array(strtolower(trim($condition)), self::DECK_CONDITIONS, true);
     }
 }

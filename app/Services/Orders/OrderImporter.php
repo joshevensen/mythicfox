@@ -56,6 +56,27 @@ class OrderImporter
             $result->files[] = $pdfFile;
         }
 
+        return $this->parseAndUpsert($input, $result);
+    }
+
+    /**
+     * Variant of import() for batches whose files have already been persisted
+     * (for example, by the controller before queuing this work). The caller
+     * passes the existing File records and keeps responsibility for their
+     * storage paths; we only run the parse + upsert phases.
+     *
+     * @param  list<File>  $files
+     */
+    public function importPrePersisted(OrderImportInput $input, array $files): OrderImportResult
+    {
+        $result = new OrderImportResult;
+        $result->files = array_values($files);
+
+        return $this->parseAndUpsert($input, $result);
+    }
+
+    private function parseAndUpsert(OrderImportInput $input, OrderImportResult $result): OrderImportResult
+    {
         // Step 2: parse. OrderList failure is fatal; the rest are partial.
         try {
             $orderListRows = (new OrderListParser)->parse($input->orderListPath);

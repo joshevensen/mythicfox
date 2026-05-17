@@ -382,7 +382,7 @@ onUnmounted(stopPolling);
             <div class="flex justify-end gap-1" data-test="orders-row-actions">
                 <button
                     type="button"
-                    class="hover:text-mf-orange inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+                    class="inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                     aria-label="Print packing slip"
                     title="Print packing slip"
                     :data-test="`orders-print-${row.tcgplayer_order_number}`"
@@ -393,7 +393,7 @@ onUnmounted(stopPolling);
                 </button>
                 <button
                     type="button"
-                    class="hover:text-mf-orange inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+                    class="inline-flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-mf-orange"
                     aria-label="Open in TCGPlayer"
                     title="Open in TCGPlayer"
                     :data-test="`orders-tcgplayer-${row.tcgplayer_order_number}`"
@@ -492,7 +492,7 @@ onUnmounted(stopPolling);
                 <div class="flex justify-end gap-2">
                     <button
                         type="button"
-                        class="hover:border-mf-orange hover:text-mf-orange inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground"
+                        class="inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground hover:border-mf-orange hover:text-mf-orange"
                         aria-label="Print packing slip"
                         :data-test="`orders-card-print-${row.tcgplayer_order_number}`"
                         :data-href="printSlipUrl(row.tcgplayer_order_number)"
@@ -503,7 +503,7 @@ onUnmounted(stopPolling);
                     </button>
                     <button
                         type="button"
-                        class="hover:border-mf-orange hover:text-mf-orange inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground"
+                        class="inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-border px-3 text-sm text-foreground hover:border-mf-orange hover:text-mf-orange"
                         aria-label="Open in TCGPlayer"
                         :data-test="`orders-card-tcgplayer-${row.tcgplayer_order_number}`"
                         :data-href="tcgplayerUrl(row.tcgplayer_order_number)"

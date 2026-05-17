@@ -80,6 +80,12 @@ class PackingSlipPdfParser
     {
         $byY = [];
         foreach ($dataTm as $entry) {
+            // Skip standalone header/footer label entries so they never
+            // contaminate table rows that share the same y-coordinate.
+            if ($this->isHeaderLabel($entry[1])) {
+                continue;
+            }
+
             $y = round((float) $entry[0][5], 0);
             $byY[(string) $y][] = ['x' => (float) $entry[0][4], 'text' => $entry[1]];
         }
@@ -148,11 +154,14 @@ class PackingSlipPdfParser
                 $isAnotherLineItem = (bool) preg_match('/^\d+\s+.+\$\d+\.\d{2}\s+\$\d+\.\d{2}$/', $next);
                 $isTotal = (bool) preg_match('/^\d+\s+Total\s+\$/', $next);
                 if (! $isAnotherLineItem && ! $isTotal && trim($next) !== '') {
+                    // Strip any header labels that leaked into the
+                    // continuation via y-coordinate collision.
+                    $cleaned = $this->stripHeaderNoise($next);
                     // Heuristic: only treat it as a continuation if it doesn't
                     // contain a price and is reasonably short (a wrapped
                     // condition or product-name fragment).
-                    if (! str_contains($next, '$') && strlen($next) < 80) {
-                        $continuation = trim($next);
+                    if ($cleaned !== '' && ! str_contains($cleaned, '$') && strlen($cleaned) < 80) {
+                        $continuation = $cleaned;
                     }
                 }
             }
@@ -188,8 +197,16 @@ class PackingSlipPdfParser
         $description = preg_replace('/\s+/', ' ', $description) ?? $description;
         $description = preg_replace('/-\s+-/', '-', $description) ?? $description;
 
-        // Anchor on `#<number>`.
-        if (! preg_match('/^(.+?)\s+-\s+#([^\s]+)\s+-\s+(.+)$/', $description, $parts)) {
+        // Strip header/footer text that leaked into the description via
+        // y-coordinate collision (e.g. "...card - Shipping Address: Order Date: ...").
+        $description = $this->stripHeaderNoise($description);
+        if ($description === '') {
+            return null;
+        }
+
+        // Anchor on `#<number>`.  The number capture allows `//` for
+        // double-sided tokens (e.g. "#22 // 6").
+        if (! preg_match('/^(.+?)\s+-\s+#([\w\/]+(?:\s*\/\/\s*[\w\/]+)*)\s+-\s+(.+)$/', $description, $parts)) {
             Log::warning("PackingSlipPdfParser: page {$pageIndex} description does not match the 6-segment format: {$description}");
 
             return null;
@@ -229,5 +246,35 @@ class PackingSlipPdfParser
             unitPrice: $unitCents,
             totalPrice: $totalCents,
         );
+    }
+
+    /**
+     * Detect standalone header/footer label entries that smalot emits as
+     * individual dataTm text fragments (e.g. "Buyer Name:", "Order Date:").
+     */
+    private function isHeaderLabel(string $text): bool
+    {
+        $t = trim($text);
+
+        return (bool) preg_match(
+            '/^(Shipping Address|Order Date|Shipping Method|Buyer Name|Seller Name|Thank you for buying)\s*:?$/i',
+            $t
+        );
+    }
+
+    /**
+     * Strip header/footer label text that leaked into a table row via
+     * y-coordinate collision.  Removes from the first recognised marker
+     * through the end of the string.
+     */
+    private function stripHeaderNoise(string $text): string
+    {
+        $text = preg_replace(
+            '/\s*(Shipping Address|Order Date|Shipping Method|Buyer Name|Seller Name)\s*:.*$/i',
+            '',
+            $text
+        ) ?? $text;
+
+        return rtrim(trim($text), " \t\n\r\0\x0B-");
     }
 }

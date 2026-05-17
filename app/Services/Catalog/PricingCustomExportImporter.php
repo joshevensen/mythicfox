@@ -33,6 +33,25 @@ class PricingCustomExportImporter
             'uploaded_at' => Carbon::now(),
         ]);
 
+        return $this->parseInto($file, $sourcePath);
+    }
+
+    /**
+     * Run the importer against a CSV at $localPath whose audit `files` row
+     * has already been persisted by an upstream caller (e.g. an HTTP upload
+     * handler that wants to dispatch the import to a queue).
+     */
+    public function importPrePersisted(File $file, string $localPath): PricingCustomExportResult
+    {
+        if (! is_readable($localPath)) {
+            throw new RuntimeException("Cannot read source CSV at [{$localPath}]");
+        }
+
+        return $this->parseInto($file, $localPath);
+    }
+
+    private function parseInto(File $file, string $sourcePath): PricingCustomExportResult
+    {
         $rowsProcessed = 0;
 
         DB::transaction(function () use ($sourcePath, &$rowsProcessed) {
@@ -66,10 +85,13 @@ class PricingCustomExportImporter
             $this->upserter->bumpPricedAt();
         });
 
+        $touchedIds = $this->upserter->touchedProductIds();
+
         return new PricingCustomExportResult(
             file: $file,
             rowsProcessed: $rowsProcessed,
-            productsTouched: count($this->upserter->touchedProductIds()),
+            productsTouched: count($touchedIds),
+            productIds: $touchedIds,
         );
     }
 }

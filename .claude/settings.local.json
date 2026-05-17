@@ -92,7 +92,8 @@
       "Bash(php -v)",
       "Bash(php -m)",
       "Bash(node -v)",
-      "Bash(npm -v)"
+      "Bash(npm -v)",
+      "Bash(gh pr *)"
     ]
   }
 }

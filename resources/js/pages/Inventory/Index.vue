@@ -641,7 +641,7 @@ if (initialUrl.searchParams.get('export') === '1') {
     <MfPageHeader title="Inventory">
         <button
             type="button"
-            class="text-mf-orange hidden text-xs font-medium hover:underline sm:inline-block"
+            class="hidden text-xs font-medium text-mf-orange hover:underline sm:inline-block"
             data-test="inventory-override-count"
             @click="onOverrideCountClick"
         >
@@ -878,7 +878,7 @@ if (initialUrl.searchParams.get('export') === '1') {
         <template #mobile-row="{ row, selected, toggleSelect }">
             <div
                 class="flex flex-col gap-2 rounded-lg border border-border bg-card p-3"
-                :class="selected ? 'ring-mf-orange/40 ring-2' : null"
+                :class="selected ? 'ring-2 ring-mf-orange/40' : null"
                 :data-test="`inventory-card-${row.id}`"
             >
                 <div class="flex items-start justify-between gap-2">

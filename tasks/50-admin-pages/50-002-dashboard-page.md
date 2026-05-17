@@ -1,7 +1,7 @@
 ---
 id: "50-002"
 title: "Dashboard page at `/dashboard` — greeting + quick-action tiles"
-status: pending
+status: complete
 phase: "50-admin-pages"
 size: M
 depends_on: ["50-001", "phase:30-components"]
@@ -19,22 +19,22 @@ Post-login home. Intentionally minimal v1: a "Welcome back, {name}" greeting, a 
 
 ## Acceptance criteria
 
-- [ ] Route `GET /dashboard` registered under auth middleware, renders an Inertia page using `AdminLayout` from `50-001`.
-- [ ] Page header displays the greeting `"Welcome back, {first name from users.name}"` and subtitle `"Mythic Fox Games"`. No primary action button on the header — actions are in the tile grid.
-- [ ] Quick-actions section renders a 2×2 grid of `MfPageContainer`-styled tiles, each with an icon, label, and short description:
+- [x] Route `GET /dashboard` registered under auth middleware, renders an Inertia page using `AdminLayout` from `50-001`.
+- [x] Page header displays the greeting `"Welcome back, {first name from users.name}"` and subtitle `"Mythic Fox Games"`. No primary action button on the header — actions are in the tile grid.
+- [x] Quick-actions section renders a 2×2 grid of `MfPageContainer`-styled tiles, each with an icon, label, and short description:
   - **+ Add Cards** → `/add-cards` ("Add new cards to inventory")
   - **⬆ Import Orders** → `/orders?import=1` ("Print packing slips and import a fresh batch")
   - **📃 Catalog** → `/catalog`
   - **💲 Export Pricing** → `/inventory?export=1`
-- [ ] Tiles are tap-targets ≥ 44 × 44px, hover-accented on desktop, single column on mobile.
-- [ ] Below the tiles, render the muted line `"More dashboards coming soon as your workflow takes shape."`
-- [ ] First-name extraction: `users.name` may be a full name; render only the first whitespace-delimited token. If `users.name` is blank, fall back to the email's local part.
-- [ ] Pest feature test `tests/Feature/Admin/DashboardTest.php` covers:
+- [x] Tiles are tap-targets ≥ 44 × 44px, hover-accented on desktop, single column on mobile.
+- [x] Below the tiles, render the muted line `"More dashboards coming soon as your workflow takes shape."`
+- [x] First-name extraction: `users.name` may be a full name; render only the first whitespace-delimited token. If `users.name` is blank, fall back to the email's local part.
+- [x] Pest feature test `tests/Feature/Admin/DashboardTest.php` covers:
   - Anonymous request redirects to `/login`.
   - Authenticated request returns 200.
   - Response contains the greeting with the user's first name.
   - All four tile destinations are present in the rendered HTML (use the route names, asserted via Wayfinder helpers in the test).
-- [ ] `composer test` passes.
+- [x] `composer test` passes.
 
 ## Implementation notes
 
