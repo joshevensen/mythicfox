@@ -101,7 +101,7 @@ class ImportOrdersJob implements ShouldQueue
         }
     }
 
-    public function failed(?\Throwable $exception): void
+    public function failed(?Throwable $exception): void
     {
         Cache::forget(self::IN_FLIGHT_CACHE_KEY);
     }

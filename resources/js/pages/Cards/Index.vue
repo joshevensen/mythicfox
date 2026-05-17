@@ -388,10 +388,7 @@ const stalenessLabel = (entry: StaleEntry): string => {
         @update:sort="tableState.setSort"
     >
         <template #filters>
-            <MfFilterPanel
-                :filters="filters"
-                :endpoint="cardsIndex().url"
-            />
+            <MfFilterPanel :filters="filters" :endpoint="cardsIndex().url" />
         </template>
 
         <template #cell-product_name="{ row }">

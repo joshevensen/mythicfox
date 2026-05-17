@@ -681,10 +681,7 @@ if (initialUrl.searchParams.get('export') === '1') {
     </MfPageHeader>
 
     <div v-if="!meta.filters_complete" data-test="inventory-empty-filters">
-        <MfFilterPanel
-            :filters="filters"
-            :endpoint="inventoryIndex().url"
-        />
+        <MfFilterPanel :filters="filters" :endpoint="inventoryIndex().url" />
         <p class="mt-6 text-center text-base font-medium text-foreground">
             Pick a product, set, and condition to view inventory.
         </p>
