@@ -50,11 +50,13 @@ gh api graphql -F owner=<owner> -F repo=<repo> -F number=<num> -f query='
     repository(owner:$owner, name:$repo) {
       pullRequest(number:$number) {
         reviewThreads(first:100) {
+          pageInfo { hasNextPage }
           nodes {
             id
             isResolved
             isOutdated
             comments(first:50) {
+              pageInfo { hasNextPage }
               nodes { id databaseId body path line author { login } }
             }
           }
@@ -65,23 +67,25 @@ gh api graphql -F owner=<owner> -F repo=<repo> -F number=<num> -f query='
 '
 ```
 
+If `reviewThreads.pageInfo.hasNextPage` is `true`, or any `comments.pageInfo.hasNextPage` is `true`, stop and warn the user: "This PR has more review threads or comments per thread than this query can return — triage remaining threads manually before proceeding."
+
 Skip threads where `isResolved: true`. For each remaining thread, decide:
 
 - **fix** — suggestion is correct or an obvious improvement. Apply the edit.
 - **won't fix** — suggestion is wrong, conflicts with the spec, or duplicates a check CI already enforces (Pint, Prettier, ESLint, vue-tsc). State the reason.
 - **defer** — valid but out of scope for this phase (e.g. a refactor that belongs in a later task). Reference where it should land.
+- **leave open** — needs human judgment the agent can't make confidently. Do not resolve; surface in the final report under `### Open review threads`.
 
-In all three cases:
+For **won't fix**, **defer**, and **leave open** threads:
 
-1. If `fix`: edit the code. Don't stage or commit yet — batch all fixes at the end of the step.
-2. Reply on the thread with what you decided and why. Use the **first** comment's `databaseId` as the reply target:
+1. Reply on the thread with what you decided and why. Use the **first** comment's `databaseId` as the reply target:
 
    ```
    gh api -X POST repos/<owner>/<repo>/pulls/<num>/comments/<first_comment.databaseId>/replies \
      -f body="<reply>"
    ```
 
-3. Resolve the thread:
+2. For **won't fix** and **defer**: resolve immediately (no code changed, no risk):
 
    ```
    gh api graphql -F id=<thread.id> -f query='
@@ -89,11 +93,25 @@ In all three cases:
    '
    ```
 
-After all threads handled, if any code changed:
+   For **leave open**: do not resolve. It will surface in the final report.
 
-- Run `composer test` to confirm nothing regressed.
-- Commit with a focused message (e.g. `review: address Copilot feedback on MfTable types`). Group commits by concern; don't bundle unrelated fixes.
+For **fix** threads:
+
+1. Edit the code. Don't stage or commit yet — batch all fixes at the end of the step.
+2. Reply on the thread (same REST endpoint as above). **Do not resolve yet** — the fix is unverified.
+
+After all threads are handled, if any code changed:
+
+- Run `composer test` to confirm PHP tests pass. For any Vue/TS changes also run `npm run typecheck`.
+- If checks pass, commit with a focused message (e.g. `review: address Copilot feedback on MfTable types`). Group commits by concern; don't bundle unrelated fixes.
 - Push to the PR branch.
+- Now resolve each **fix** thread — only after the fix is verified and committed:
+
+   ```
+   gh api graphql -F id=<thread.id> -f query='
+     mutation($id:ID!) { resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } } }
+   '
+   ```
 
 Also pull PR-level (issue) comments via `gh pr view <num> --comments` for awareness, but don't auto-resolve those — they're conversational, not threaded. Note any actionable items in the final report.
 
@@ -139,7 +157,7 @@ For each commit whose message matches `^task\((\d{2}-\d{3})\): `:
 5. **Cross-check `AGENTS.md`** for project-specific conventions (Wayfinder routes, no hardcoded URLs, single-user assumptions, etc.). Flag violations.
 6. **Cross-check the system-level guidance:** no needless abstractions, no comments explaining what code does, no error handling for impossible cases, no `// removed` comments. Flag violations.
 
-For commits that don't match the `task(<id>):` pattern (merges, doc-only, fixups, `review:` commits from step 4), note them but don't grade against criteria — just check for scope concerns.
+For commits that don't match the `task(<id>):` pattern (merges, doc-only, fixups, `review:` commits from step 4), note them but don't grade against criteria — just check for scope concerns. Exception: if a `review:` commit touches files that were introduced or modified by a `task()` commit, re-verify that task's acceptance criteria against the **final branch state** (not just the original `git show <oid>`), since the review fix may have altered the behaviour the criteria describe.
 
 ### 8. Compose the review
 
@@ -159,7 +177,8 @@ Aggregate findings into a structured markdown body:
   - Fixed: <N>
   - Won't fix: <N> (with reasons)
   - Deferred: <N> (with target task/phase)
-- Threads left open: <N> (only when human judgment was needed)
+- Threads left open: (list each one — omit section if none)
+  - <thread link or short ID> — <file:line> — <why human judgment is needed>
 
 ### Per-task verification
 
@@ -183,7 +202,7 @@ Aggregate findings into a structured markdown body:
 
 The **recommendation** rule:
 
-- **`merge`** — every acceptance criterion verified, `composer test` green, CI green, no convention violations, no scope creep, every review thread either resolved or explicitly left open with a justified reason. Equivalent to a clean approval.
+- **`merge`** — every acceptance criterion verified, `composer test` green, CI green, no convention violations, no scope creep, every review thread resolved. Equivalent to a clean approval.
 - **`request-changes`** — any acceptance criterion fails, tests fail, or critical convention violation.
 - **`comment`** — the in-between: nits, minor scope creep, suggestions, or threads left open for human judgment. Don't block merge but surface for awareness.
 
