@@ -81,7 +81,7 @@ class PackingSlipController extends Controller
             ? $order->items->values()
             : $order->items()->get();
 
-        $groups     = (new PackingSlipSplitter)->split($items);
+        $groups = (new PackingSlipSplitter)->split($items);
         $sheetTotal = max(1, count($groups));
 
         $sheets = array_values(array_map(function (array $group, int $index) use ($sheetTotal): array {
