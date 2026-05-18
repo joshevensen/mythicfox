@@ -96,14 +96,15 @@ test('the homepage source renders the static hero, about, and feature copy verba
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
-        ->toContain('We buy &amp; sell trading card games.')
-        ->toContain('Shop on TCGPlayer →')
-        ->toContain('Mythic Fox Games is a TCGPlayer storefront.')
-        ->toContain('Pack-fresh inventory')
-        ->toContain('Honest condition')
-        ->toContain('Protective packaging')
-        ->toContain('Fast shipping')
-        ->toContain('TCGuardian shipping protectors');
+        ->toContain('We buy and')
+        ->toContain('TCG Cards')
+        ->toContain('Mythic Fox Games is your trusted source for buying and')
+        ->toContain('Great Prices')
+        ->toContain('Trusted & Secure')
+        ->toContain('Fast & Reliable')
+        ->toContain('Built for Collectors')
+        ->toContain('Collector Focused')
+        ->toContain('Fair & Honest Deals');
 });
 
 test('the homepage emits an Organization JSON-LD block', function () {
@@ -114,11 +115,13 @@ test('the homepage emits an Organization JSON-LD block', function () {
         ->toContain('application/ld+json');
 });
 
-test('the homepage star glyphs use PrimeIcons star-fill / star', function () {
+test('the homepage feature icons use PrimeIcons', function () {
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
-        ->toContain('pi pi-star-fill')
+        ->toContain('pi pi-tag')
+        ->toContain('pi pi-shield')
+        ->toContain('pi pi-truck')
         ->toContain('pi pi-star');
 });
 

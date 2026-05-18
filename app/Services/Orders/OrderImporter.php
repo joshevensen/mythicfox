@@ -16,6 +16,7 @@ use App\Services\Orders\Parsers\ShippingExportRow;
 use App\Support\FilePath;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -274,6 +275,32 @@ class OrderImporter
             $result->lineItemsCreated++;
             if ($pdfMatch === null) {
                 $result->lineItemsUnmatchedToPdf++;
+
+                // Find every PDF line that carries the same card number so we
+                // can tell immediately whether this is a parser failure (number
+                // never appeared in the PDF output) or a set-name mismatch.
+                $sameNumber = array_values(array_filter(
+                    $pdfLines,
+                    fn ($pdf) => $pdf->number === $pullItem->number
+                ));
+
+                Log::warning('OrderImporter: no PDF match for order item', [
+                    'order_item_id' => $item->id,
+                    'order' => $order->tcgplayer_order_number,
+                    'looking_for' => [
+                        'number' => $pullItem->number,
+                        'set_name' => $pullItem->setName,
+                    ],
+                    // Empty → parser never emitted a line with this number (parser failure).
+                    // Non-empty → number found but set_name didn't normalize-match (mismatch).
+                    'pdf_lines_with_same_number' => array_map(
+                        fn ($pdf) => [
+                            'set_name' => $pdf->setName,
+                            'set_name_normalized' => $this->normalize($pdf->setName),
+                        ],
+                        $sameNumber
+                    ),
+                ]);
             }
 
             $created[] = $item;
@@ -287,6 +314,7 @@ class OrderImporter
      */
     private function matchPdfLine(array $pdfLines, PullSheetLineItem $pullItem): ?PackingSlipLine
     {
+        // Primary: number + set name.
         foreach ($pdfLines as $pdf) {
             if (
                 $pdf->number === $pullItem->number
@@ -296,18 +324,33 @@ class OrderImporter
             }
         }
 
+        // Fallback for set names that contain " - " (e.g. "Blitz Deck: Monarch - Levia").
+        // The parser may split the set/product boundary differently, so compare the
+        // combined "set - product" segment against the pull sheet's combined value.
+        $pullCombined = $this->normalize($pullItem->setName.' - '.$pullItem->productName);
+        foreach ($pdfLines as $pdf) {
+            if (
+                $pdf->number === $pullItem->number
+                && $this->normalize($pdf->setName.' - '.$pdf->productName) === $pullCombined
+            ) {
+                return $pdf;
+            }
+        }
+
         return null;
     }
 
     /**
-     * Normalize for the PDF↔PullSheet match: collapse multiple spaces and
-     * remove any space-around-hyphen artifacts ("Free- For- All" vs
-     * "Free-For-All") that pdfparser introduces.
+     * Normalize for the PDF↔PullSheet match: collapse multiple spaces,
+     * strip spaces around hyphens ("Free- For- All" → "Free-For-All"),
+     * and strip spaces around colons ("Game Night : Free" / "Game Night:Free"
+     * → "Game Night:Free") since smalot mis-spaces both punctuation types.
      */
     private function normalize(string $value): string
     {
         $clean = preg_replace('/\s+/', ' ', $value) ?? $value;
         $clean = preg_replace('/\s*-\s*/', '-', $clean) ?? $clean;
+        $clean = preg_replace('/\s*:\s*/', ':', $clean) ?? $clean;
 
         return trim($clean);
     }

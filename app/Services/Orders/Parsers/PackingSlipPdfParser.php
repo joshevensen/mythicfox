@@ -6,22 +6,18 @@ use App\Services\Orders\SellerIdValidator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
-use Smalot\PdfParser\Parser;
+use Symfony\Component\Process\Process;
 
 /**
- * PDFs from TCGPlayer extract through smalot/pdfparser as glyphs without
- * inter-word spaces in the default getText() output. This parser reads
- * positioned text via Page::getDataTm() and reconstructs lines by
- * y-grouping + x-sorting, which preserves real spacing.
+ * Extracts line items from TCGPlayer packing-slip PDFs using pdftotext -layout.
+ * The -layout flag preserves column alignment so buyer address text (right column)
+ * never bleeds into item descriptions (left column).
  *
- * Description format expected:
- *   <ProductLine> - <Set> - <ProductName> - #<Number> - <Rarity> - <Condition>
+ * Expected line-item format (one or two visual lines):
+ *   {qty}  ProductLine - Set - ProductName - #Number - Rarity - Condition  $unit  $total
  *
- * The product name itself can contain ` - ` (e.g. "Calhoun - Marine Sergeant"),
- * so the parser anchors on the `#<Number>` segment: everything before that is
- * ProductLine + Set + ProductName (first two segments + the join of the rest);
- * everything after is Rarity (one segment) + Condition (the remainder, possibly
- * wrapped onto the next visual y-line).
+ * When a description wraps, the continuation appears on the very next line,
+ * indented more deeply with no price columns.
  */
 class PackingSlipPdfParser
 {
@@ -41,184 +37,124 @@ class PackingSlipPdfParser
             throw new RuntimeException("Cannot read PDF at [{$absolutePath}]");
         }
 
-        $pdf = (new Parser)->parseFile($absolutePath);
-        $lines = collect();
+        $process = new Process(['pdftotext', '-layout', $absolutePath, '-']);
+        $process->run();
 
-        foreach ($pdf->getPages() as $pageIndex => $page) {
-            $reconstructed = $this->reconstructLines($page->getDataTm());
-
-            $orderNumber = $this->findOrderNumber($reconstructed);
-            if ($orderNumber === null) {
-                Log::warning("PackingSlipPdfParser: page {$pageIndex} has no Order Number header; skipping.");
-
-                continue;
-            }
-
-            $this->sellerIdValidator->assertValid($orderNumber);
-
-            $lineItemRows = $this->extractLineItems($reconstructed, $pageIndex);
-
-            foreach ($lineItemRows as $lineItem) {
-                $parsed = $this->parseLineItem($lineItem, $orderNumber, $pageIndex);
-                if ($parsed !== null) {
-                    $lines->push($parsed);
-                }
-            }
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException('pdftotext failed: '.$process->getErrorOutput());
         }
 
-        return $lines;
+        return $this->parseText($process->getOutput());
     }
 
     /**
-     * Group dataTm entries by y-coordinate (with ±1.0 tolerance), sort each
-     * group by x ascending, and join with single spaces.
-     *
-     * @param  array<int, array{0: array, 1: string}>  $dataTm
-     * @return array<int, array{y: float, text: string}> ordered top-to-bottom
+     * @return Collection<int, PackingSlipLine>
      */
-    private function reconstructLines(array $dataTm): array
+    private function parseText(string $text): Collection
     {
-        $byY = [];
-        foreach ($dataTm as $entry) {
-            // Skip standalone header/footer label entries so they never
-            // contaminate table rows that share the same y-coordinate.
-            if ($this->isHeaderLabel($entry[1])) {
-                continue;
-            }
-
-            $y = round((float) $entry[0][5], 0);
-            $byY[(string) $y][] = ['x' => (float) $entry[0][4], 'text' => $entry[1]];
-        }
-
-        $lines = [];
-        foreach ($byY as $y => $entries) {
-            usort($entries, fn ($a, $b) => $a['x'] <=> $b['x']);
-            $lines[] = [
-                'y' => (float) $y,
-                'text' => implode(' ', array_column($entries, 'text')),
-            ];
-        }
-
-        usort($lines, fn ($a, $b) => $b['y'] <=> $a['y']);
-
-        return $lines;
-    }
-
-    /**
-     * @param  array<int, array{y: float, text: string}>  $lines
-     */
-    private function findOrderNumber(array $lines): ?string
-    {
-        // smalot splits the hex segments across separate dataTm entries, so the
-        // reconstructed line looks like "Order Number: 623394E9- 23CAFE- 565FC".
-        // Match liberally then strip the inserted spaces.
-        foreach ($lines as $line) {
-            if (preg_match('/Order\s*Number:\s*([A-Z0-9][A-Z0-9 -]*?)(?:\s{2,}|\s+Page|$)/i', $line['text'], $m)) {
-                $cleaned = preg_replace('/\s+/', '', $m[1]);
-                if ($cleaned !== null && $cleaned !== '') {
-                    return strtoupper($cleaned);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<int, array{y: float, text: string}>  $lines
-     * @return array<int, array{primary: string, continuation: ?string}>
-     */
-    private function extractLineItems(array $lines, int $pageIndex): array
-    {
+        $lines = explode("\n", $text);
+        $results = collect();
+        $currentOrderNumber = null;
+        $validated = [];
         $count = count($lines);
-        $items = [];
 
         for ($i = 0; $i < $count; $i++) {
-            $text = $lines[$i]['text'];
-            if (! preg_match('/^\d+\s+.+\$\d+\.\d{2}\s+\$\d+\.\d{2}$/', $text)) {
-                continue;
-            }
-            // Skip the per-page total line: "1 Total $6.90" has a single price
-            // and doesn't match the two-price pattern, so we shouldn't reach
-            // here for it — but a defensive check stays cheap.
-            if (preg_match('/^\d+\s+Total\s+\$/', $text)) {
+            $line = $lines[$i];
+
+            // Detect "Order Number: XXX" (appears at top and bottom of each page).
+            if (preg_match('/Order\s+Number:\s+([A-Z0-9][A-Z0-9-]+)/i', $line, $m)) {
+                $orderNumber = strtoupper(preg_replace('/[^A-Z0-9-]/', '', $m[1]));
+                if (! isset($validated[$orderNumber])) {
+                    $this->sellerIdValidator->assertValid($orderNumber);
+                    $validated[$orderNumber] = true;
+                }
+                $currentOrderNumber = $orderNumber;
+
                 continue;
             }
 
-            $continuation = null;
-            // The wrapped condition (or remainder) is the next y-line below,
-            // unless that next line itself is another line item or the
-            // page-total line.
+            if ($currentOrderNumber === null) {
+                continue;
+            }
+
+            // Primary line items: leading spaces (1–8) + qty (digits) + description + two prices.
+            if (! preg_match('/^\s{1,8}(\d+)\s+(.+?)\s+\$(\d+\.\d{2})\s+\$(\d+\.\d{2})\s*$/', $line, $m)) {
+                continue;
+            }
+
+            $quantity = (int) $m[1];
+            $description = $m[2];
+            $unitCents = (int) round(((float) $m[3]) * 100);
+            $totalCents = (int) round(((float) $m[4]) * 100);
+
+            // Skip the per-order "1  Total  $X.XX" summary line.
+            if (trim($description) === 'Total') {
+                continue;
+            }
+
+            // Continuation: a non-empty next line that has deep indentation,
+            // no price columns, and is not itself a primary line item.
             if (isset($lines[$i + 1])) {
-                $next = $lines[$i + 1]['text'];
-                $isAnotherLineItem = (bool) preg_match('/^\d+\s+.+\$\d+\.\d{2}\s+\$\d+\.\d{2}$/', $next);
-                $isTotal = (bool) preg_match('/^\d+\s+Total\s+\$/', $next);
-                if (! $isAnotherLineItem && ! $isTotal && trim($next) !== '') {
-                    // Strip any header labels that leaked into the
-                    // continuation via y-coordinate collision.
-                    $cleaned = $this->stripHeaderNoise($next);
-                    // Heuristic: only treat it as a continuation if it doesn't
-                    // contain a price and is reasonably short (a wrapped
-                    // condition or product-name fragment).
-                    if ($cleaned !== '' && ! str_contains($cleaned, '$') && strlen($cleaned) < 80) {
-                        $continuation = $cleaned;
-                    }
+                $next = $lines[$i + 1];
+                if (
+                    trim($next) !== ''
+                    && preg_match('/^\s{5,}/', $next)
+                    && ! str_contains($next, '$')
+                    && ! preg_match('/^\s{1,8}\d+\s+/', $next)
+                ) {
+                    $description .= ' '.trim($next);
+                    $i++;
                 }
             }
 
-            $items[] = ['primary' => $text, 'continuation' => $continuation];
+            $parsed = $this->parseDescription(trim($description), $currentOrderNumber, $quantity, $unitCents, $totalCents);
+            if ($parsed !== null) {
+                $results->push($parsed);
+            }
         }
 
-        return $items;
+        return $results;
     }
 
-    /**
-     * @param  array{primary: string, continuation: ?string}  $lineItem
-     */
-    private function parseLineItem(array $lineItem, string $orderNumber, int $pageIndex): ?PackingSlipLine
-    {
-        $primary = $lineItem['primary'];
-        if (! preg_match('/^(\d+)\s+(.+?)\s+\$(\d+\.\d{2})\s+\$(\d+\.\d{2})$/', $primary, $m)) {
-            Log::warning("PackingSlipPdfParser: page {$pageIndex} could not parse line: {$primary}");
-
-            return null;
-        }
-
-        $quantity = (int) $m[1];
-        $description = trim($m[2]);
-        $unitCents = (int) round(((float) $m[3]) * 100);
-        $totalCents = (int) round(((float) $m[4]) * 100);
-
-        if ($lineItem['continuation'] !== null) {
-            $description .= ' '.$lineItem['continuation'];
-        }
-        // Collapse any " - - " that resulted from a trailing dangling separator
-        // joining the continuation, and any double whitespace.
-        $description = preg_replace('/\s+/', ' ', $description) ?? $description;
-        $description = preg_replace('/-\s+-/', '-', $description) ?? $description;
-
-        // Strip header/footer text that leaked into the description via
-        // y-coordinate collision (e.g. "...card - Shipping Address: Order Date: ...").
-        $description = $this->stripHeaderNoise($description);
-        if ($description === '') {
-            return null;
-        }
-
-        // Anchor on `#<number>`.  The number capture allows `//` for
-        // double-sided tokens (e.g. "#22 // 6").
+    private function parseDescription(
+        string $description,
+        string $orderNumber,
+        int $quantity,
+        int $unitCents,
+        int $totalCents,
+    ): ?PackingSlipLine {
+        // Anchor on `#<Number>`. The number capture allows `//` for double-sided tokens.
         if (! preg_match('/^(.+?)\s+-\s+#([\w\/]+(?:\s*\/\/\s*[\w\/]+)*)\s+-\s+(.+)$/', $description, $parts)) {
-            Log::warning("PackingSlipPdfParser: page {$pageIndex} description does not match the 6-segment format: {$description}");
+            // Lenient fallback: number found but rarity/condition missing (e.g. wrapped off-page).
+            if (preg_match('/^(.+?)\s+-\s+#([\w\/]+(?:\s*\/\/\s*[\w\/]+)*)/', $description, $lenient)) {
+                $before = preg_split('/\s+-\s+/', trim($lenient[1])) ?: [];
+                if (count($before) >= 3) {
+                    $productLine = array_shift($before);
+                    $setName = array_shift($before);
+
+                    return new PackingSlipLine(
+                        tcgplayerOrderNumber: $orderNumber,
+                        quantity: $quantity,
+                        productLine: trim($productLine),
+                        setName: trim($setName),
+                        productName: trim(implode(' - ', $before)),
+                        number: trim($lenient[2]),
+                        rarity: '',
+                        condition: '',
+                        unitPrice: $unitCents,
+                        totalPrice: $totalCents,
+                    );
+                }
+            }
+
+            Log::warning("PackingSlipPdfParser: description does not match expected format: {$description}");
 
             return null;
         }
 
-        $beforeNumber = trim($parts[1]);
-        $number = trim($parts[2]);
-        $afterNumber = trim($parts[3]);
-
-        $beforeSegments = preg_split('/\s+-\s+/', $beforeNumber) ?: [];
+        $beforeSegments = preg_split('/\s+-\s+/', trim($parts[1])) ?: [];
         if (count($beforeSegments) < 3) {
-            Log::warning("PackingSlipPdfParser: page {$pageIndex} expected ProductLine - Set - ProductName: {$beforeNumber}");
+            Log::warning("PackingSlipPdfParser: expected ProductLine - Set - ProductName: {$parts[1]}");
 
             return null;
         }
@@ -227,9 +163,25 @@ class PackingSlipPdfParser
         $setName = array_shift($beforeSegments);
         $productName = implode(' - ', $beforeSegments);
 
-        $afterParts = preg_split('/\s+-\s+/', $afterNumber, 2) ?: [];
+        $afterParts = preg_split('/\s+-\s+/', trim($parts[3]), 2) ?: [];
         if (count($afterParts) !== 2) {
-            Log::warning("PackingSlipPdfParser: page {$pageIndex} expected Rarity - Condition: {$afterNumber}");
+            $singleRarity = trim($afterParts[0] ?? '');
+            if (preg_match('/^(Common|Uncommon|Rare|Mythic\s+Rare|Super\s+Rare|Majestic|Legendary|Fabled|Enchanted|Token|[MCLRUF])$/i', $singleRarity)) {
+                return new PackingSlipLine(
+                    tcgplayerOrderNumber: $orderNumber,
+                    quantity: $quantity,
+                    productLine: trim($productLine),
+                    setName: trim($setName),
+                    productName: trim($productName),
+                    number: trim($parts[2]),
+                    rarity: $singleRarity,
+                    condition: '',
+                    unitPrice: $unitCents,
+                    totalPrice: $totalCents,
+                );
+            }
+
+            Log::warning("PackingSlipPdfParser: expected Rarity - Condition: {$parts[3]}");
 
             return null;
         }
@@ -240,41 +192,11 @@ class PackingSlipPdfParser
             productLine: trim($productLine),
             setName: trim($setName),
             productName: trim($productName),
-            number: $number,
+            number: trim($parts[2]),
             rarity: trim($afterParts[0]),
             condition: trim($afterParts[1]),
             unitPrice: $unitCents,
             totalPrice: $totalCents,
         );
-    }
-
-    /**
-     * Detect standalone header/footer label entries that smalot emits as
-     * individual dataTm text fragments (e.g. "Buyer Name:", "Order Date:").
-     */
-    private function isHeaderLabel(string $text): bool
-    {
-        $t = trim($text);
-
-        return (bool) preg_match(
-            '/^(Shipping Address|Order Date|Shipping Method|Buyer Name|Seller Name|Thank you for buying)\s*:?$/i',
-            $t
-        );
-    }
-
-    /**
-     * Strip header/footer label text that leaked into a table row via
-     * y-coordinate collision.  Removes from the first recognised marker
-     * through the end of the string.
-     */
-    private function stripHeaderNoise(string $text): string
-    {
-        $text = preg_replace(
-            '/\s*(Shipping Address|Order Date|Shipping Method|Buyer Name|Seller Name)\s*:.*$/i',
-            '',
-            $text
-        ) ?? $text;
-
-        return rtrim(trim($text), " \t\n\r\0\x0B-");
     }
 }

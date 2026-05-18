@@ -65,12 +65,7 @@ test('decimal-to-cents conversion is exact', function () {
     expect($boltyn->totalPrice)->toBeInt()->toBe(690);
 });
 
-test('a malformed page does not abort parsing of subsequent pages', function () {
-    // Build a synthetic PDF on the fly by concatenating an empty page with the
-    // fixture's content; smalot tolerates a header-only page and just skips it.
-    // Easier alternative: copy the fixture and confirm that even if one page
-    // header is malformed (we simulate by feeding a non-PDF and checking for
-    // RuntimeException — covered by the explicit not-readable test below).
+test('parsing a valid fixture does not throw', function () {
     expect(fn () => (new PackingSlipPdfParser)->parse(packingSlipFixture()))
         ->not->toThrow(Throwable::class);
 });
