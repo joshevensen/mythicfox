@@ -61,17 +61,16 @@ function logoFor(game: string): string | null {
                 v-if="logoFor(stat.game)"
                 :src="logoFor(stat.game)!"
                 :alt="stat.game"
-                class="h-20 w-auto mx-auto mb-4 object-contain object-left"
+                class="mx-auto mb-4 h-20 w-auto object-contain object-left"
             />
-            <span
-                v-else
-                class="text-base font-semibold text-foreground"
-            >
+            <span v-else class="text-base font-semibold text-foreground">
                 {{ stat.game }}
             </span>
 
             <div class="flex flex-col gap-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Revenue
                 </p>
                 <p class="text-2xl font-bold text-foreground">
@@ -80,7 +79,9 @@ function logoFor(game: string): string | null {
             </div>
 
             <div class="flex flex-col gap-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Cards Sold
                 </p>
                 <p class="text-2xl font-bold text-foreground tabular-nums">
@@ -89,7 +90,9 @@ function logoFor(game: string): string | null {
             </div>
 
             <div class="flex flex-col gap-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Avg Price / Card
                 </p>
                 <p class="text-2xl font-bold text-foreground">
@@ -98,25 +101,31 @@ function logoFor(game: string): string | null {
             </div>
 
             <div class="flex flex-col gap-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Avg Cards / Order
                 </p>
-                <p class="text-2xl font-bold tabular-nums text-foreground">
+                <p class="text-2xl font-bold text-foreground tabular-nums">
                     {{ stat.avg_items_per_order ?? '—' }}
                 </p>
             </div>
 
             <div class="flex flex-col gap-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Max Cards / Order
                 </p>
-                <p class="text-2xl font-bold tabular-nums text-foreground">
+                <p class="text-2xl font-bold text-foreground tabular-nums">
                     {{ stat.max_items_per_order?.toLocaleString() ?? '—' }}
                 </p>
             </div>
 
             <div class="flex flex-col gap-2">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Top Sets
                 </p>
                 <ol class="flex flex-col gap-2">
@@ -125,13 +134,19 @@ function logoFor(game: string): string | null {
                         :key="set.name"
                         class="flex items-start gap-2"
                     >
-                        <span class="mt-0.5 w-4 shrink-0 text-xs tabular-nums text-muted-foreground">
+                        <span
+                            class="mt-0.5 w-4 shrink-0 text-xs text-muted-foreground tabular-nums"
+                        >
                             {{ i + 1 }}.
                         </span>
-                        <span class="min-w-0 flex-1 text-sm leading-snug text-foreground">
+                        <span
+                            class="min-w-0 flex-1 text-sm leading-snug text-foreground"
+                        >
                             {{ set.name }}
                         </span>
-                        <span class="shrink-0 text-sm tabular-nums text-muted-foreground">
+                        <span
+                            class="shrink-0 text-sm text-muted-foreground tabular-nums"
+                        >
                             <MfMoney :cents="set.revenue" align="right" />
                         </span>
                     </li>
@@ -139,7 +154,9 @@ function logoFor(game: string): string | null {
             </div>
 
             <div class="flex flex-col gap-2">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
                     Rarity Mix
                 </p>
                 <ul class="flex flex-col gap-1.5">
@@ -150,7 +167,7 @@ function logoFor(game: string): string | null {
                     >
                         <div class="flex justify-between text-xs">
                             <span class="text-foreground">{{ r.rarity }}</span>
-                            <span class="tabular-nums text-muted-foreground">
+                            <span class="text-muted-foreground tabular-nums">
                                 {{ r.pct }}%
                             </span>
                         </div>

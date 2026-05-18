@@ -211,19 +211,48 @@ function sheetTotalPrice(sheet: Sheet): string {
                     <p class="thank-you-heading">Thank you for your order</p>
                     <div class="footer-columns">
                         <div class="footer-col">
-                            <p class="footer-col-heading">For Any Questions About Your Order:</p>
+                            <p class="footer-col-heading">
+                                For Any Questions About Your Order:
+                            </p>
                             <ol>
-                                <li>Please contact the seller directly by logging into your account and navigating to the Order History page.</li>
-                                <li>Click the &ldquo;Contact Seller&rdquo; link to compose a message to the seller and let them know of the issue.</li>
-                                <li>If the seller does not respond to your message within 2 business days, or if they aren&rsquo;t able to assist you please contact TCGplayer customer service via <strong>help.tcgplayer.com</strong>.</li>
+                                <li>
+                                    Please contact the seller directly by
+                                    logging into your account and navigating to
+                                    the Order History page.
+                                </li>
+                                <li>
+                                    Click the &ldquo;Contact Seller&rdquo; link
+                                    to compose a message to the seller and let
+                                    them know of the issue.
+                                </li>
+                                <li>
+                                    If the seller does not respond to your
+                                    message within 2 business days, or if they
+                                    aren&rsquo;t able to assist you please
+                                    contact TCGplayer customer service via
+                                    <strong>help.tcgplayer.com</strong>.
+                                </li>
                             </ol>
                         </div>
                         <div class="footer-col">
-                            <p class="footer-col-heading">To Provide Feedback for This Order:</p>
-                            <p>If you have an issue with the order, it&rsquo;s best to contact the seller first using the steps on the left in order to give them an opportunity to correct the issue for you.</p>
+                            <p class="footer-col-heading">
+                                To Provide Feedback for This Order:
+                            </p>
+                            <p>
+                                If you have an issue with the order, it&rsquo;s
+                                best to contact the seller first using the steps
+                                on the left in order to give them an opportunity
+                                to correct the issue for you.
+                            </p>
                             <ol>
-                                <li>Log into your account to the Order History page.</li>
-                                <li>Click on the &ldquo;Rate Transaction&rdquo; button to leave feedback for your order.</li>
+                                <li>
+                                    Log into your account to the Order History
+                                    page.
+                                </li>
+                                <li>
+                                    Click on the &ldquo;Rate Transaction&rdquo;
+                                    button to leave feedback for your order.
+                                </li>
                             </ol>
                         </div>
                     </div>
@@ -246,7 +275,10 @@ function sheetTotalPrice(sheet: Sheet): string {
                         :data-test="`sheet-indicator-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
                     >
                         <span>{{ order.tcgplayer_order_number }}</span>
-                        <span>Sheet {{ sheet.sheet_index }} of {{ sheet.sheet_total }}</span>
+                        <span
+                            >Sheet {{ sheet.sheet_index }} of
+                            {{ sheet.sheet_total }}</span
+                        >
                     </div>
 
                     <table
@@ -277,10 +309,16 @@ function sheetTotalPrice(sheet: Sheet): string {
                                 </td>
                                 <td class="col-name">
                                     {{ item.product_name }}
-                                    <span class="cond-tag">[{{ abbreviateCondition(item.condition) }}]</span>
+                                    <span class="cond-tag"
+                                        >[{{
+                                            abbreviateCondition(item.condition)
+                                        }}]</span
+                                    >
                                 </td>
                                 <td class="col-num">{{ item.number }}</td>
-                                <td class="col-price">{{ formatCents(item.unit_price) }}</td>
+                                <td class="col-price">
+                                    {{ formatCents(item.unit_price) }}
+                                </td>
                                 <td class="col-qty">{{ item.quantity }}</td>
                             </tr>
                             <!-- Per-sheet total row -->
@@ -289,7 +327,9 @@ function sheetTotalPrice(sheet: Sheet): string {
                                 :data-test="`total-row-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
                             >
                                 <td colspan="4" class="total-label">TOTAL</td>
-                                <td class="col-price">{{ sheetTotalPrice(sheet) }}</td>
+                                <td class="col-price">
+                                    {{ sheetTotalPrice(sheet) }}
+                                </td>
                                 <td class="col-qty">{{ sheetQty(sheet) }}</td>
                             </tr>
                         </tbody>
