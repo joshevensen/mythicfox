@@ -95,6 +95,7 @@ class DashboardController extends Controller
                 'rarity',
                 DB::raw('SUM(quantity) as cards_sold'),
             ])
+            ->whereNotNull('total_price')
             ->groupBy('product_line', 'rarity')
             ->get()
             ->groupBy('product_line')
