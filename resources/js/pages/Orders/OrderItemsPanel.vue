@@ -26,8 +26,8 @@ onMounted(async () => {
         const res = await fetch(orderItemsRoutes.index.url(props.orderNumber));
 
         if (!res.ok) {
-throw new Error(`HTTP ${res.status}`);
-}
+            throw new Error(`HTTP ${res.status}`);
+        }
 
         const json = (await res.json()) as { data: OrderItem[] };
         items.value = json.data;
@@ -44,10 +44,7 @@ throw new Error(`HTTP ${res.status}`);
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
         <template v-else>
-            <div
-                v-if="loading"
-                class="flex flex-col gap-1"
-            >
+            <div v-if="loading" class="flex flex-col gap-1">
                 <div
                     v-for="n in 3"
                     :key="n"
@@ -62,19 +59,18 @@ throw new Error(`HTTP ${res.status}`);
                 No items found.
             </p>
 
-            <table
-                v-else
-                class="w-full text-sm"
-            >
+            <table v-else class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                        <th class="pb-1 pr-4">Product Line</th>
-                        <th class="pb-1 pr-4">Set</th>
-                        <th class="pb-1 pr-4">Card</th>
-                        <th class="pb-1 pr-4">#</th>
-                        <th class="pb-1 pr-4">Condition</th>
-                        <th class="pb-1 pr-4 text-right">Qty</th>
-                        <th class="pb-1 pr-4 text-right">Unit Price</th>
+                    <tr
+                        class="border-b border-border text-left text-xs font-medium text-muted-foreground"
+                    >
+                        <th class="pr-4 pb-1">Product Line</th>
+                        <th class="pr-4 pb-1">Set</th>
+                        <th class="pr-4 pb-1">Card</th>
+                        <th class="pr-4 pb-1">#</th>
+                        <th class="pr-4 pb-1">Condition</th>
+                        <th class="pr-4 pb-1 text-right">Qty</th>
+                        <th class="pr-4 pb-1 text-right">Unit Price</th>
                         <th class="pb-1 text-right">Total</th>
                     </tr>
                 </thead>
@@ -84,12 +80,22 @@ throw new Error(`HTTP ${res.status}`);
                         :key="item.id"
                         class="border-b border-border/50 last:border-0"
                     >
-                        <td class="py-1 pr-4 text-muted-foreground">{{ item.product_line ?? '—' }}</td>
+                        <td class="py-1 pr-4 text-muted-foreground">
+                            {{ item.product_line ?? '—' }}
+                        </td>
                         <td class="py-1 pr-4">{{ item.set_name ?? '—' }}</td>
-                        <td class="py-1 pr-4 font-medium">{{ item.product_name ?? '—' }}</td>
-                        <td class="py-1 pr-4 text-muted-foreground">{{ item.number ?? '—' }}</td>
-                        <td class="py-1 pr-4 text-muted-foreground">{{ item.condition ?? '—' }}</td>
-                        <td class="py-1 pr-4 text-right tabular-nums">{{ item.quantity }}</td>
+                        <td class="py-1 pr-4 font-medium">
+                            {{ item.product_name ?? '—' }}
+                        </td>
+                        <td class="py-1 pr-4 text-muted-foreground">
+                            {{ item.number ?? '—' }}
+                        </td>
+                        <td class="py-1 pr-4 text-muted-foreground">
+                            {{ item.condition ?? '—' }}
+                        </td>
+                        <td class="py-1 pr-4 text-right tabular-nums">
+                            {{ item.quantity }}
+                        </td>
                         <td class="py-1 pr-4 text-right">
                             <MfMoney :cents="item.unit_price" align="right" />
                         </td>

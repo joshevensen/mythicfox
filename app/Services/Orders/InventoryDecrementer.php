@@ -45,6 +45,7 @@ class InventoryDecrementer
 
             if ($cardId === null) {
                 $result->unmatched++;
+
                 continue;
             }
 

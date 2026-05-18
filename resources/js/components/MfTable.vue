@@ -134,19 +134,21 @@ const isRowExpanded = (row: TRow): boolean =>
 // PrimeVue 4 DataTable with dataKey set expects expandedRows as a dict
 // { [keyValue]: true }, not an array. Without dataKey it uses .some(),
 // but we always set dataKey, so we mirror the Set into an object.
-const expandedRowsMap = computed((): Record<string | number, boolean> | undefined => {
-    if (expandedKeys.value.size === 0) {
-return undefined;
-}
+const expandedRowsMap = computed(
+    (): Record<string | number, boolean> | undefined => {
+        if (expandedKeys.value.size === 0) {
+            return undefined;
+        }
 
-    const map: Record<string | number, boolean> = {};
+        const map: Record<string | number, boolean> = {};
 
-    for (const key of expandedKeys.value) {
-        map[key] = true;
-    }
+        for (const key of expandedKeys.value) {
+            map[key] = true;
+        }
 
-    return map;
-});
+        return map;
+    },
+);
 
 const onPage = (event: DataTablePageEvent | PageState): void => {
     const nextPage = (event.page ?? 0) + 1;
@@ -179,12 +181,12 @@ const onSort = (event: DataTableSortEvent): void => {
 
 const isTrackedVisit = (only: string[]): boolean => {
     if (!props.watchProps?.length) {
-return true;
-}
+        return true;
+    }
 
     if (!only.length) {
-return true;
-}
+        return true;
+    }
 
     return only.some((p) => props.watchProps!.includes(p));
 };

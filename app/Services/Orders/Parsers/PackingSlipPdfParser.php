@@ -69,6 +69,7 @@ class PackingSlipPdfParser
                     $validated[$orderNumber] = true;
                 }
                 $currentOrderNumber = $orderNumber;
+
                 continue;
             }
 
