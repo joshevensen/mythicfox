@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Decks\DecksController;
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\InventoryExportController;
+use App\Http\Controllers\Orders\OrderItemsController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
 use App\Http\Controllers\Orders\PackingSlipController;
@@ -62,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('orders/print', [PackingSlipController::class, 'bulk'])->name('orders.packing-slip.bulk');
     Route::get('orders/{order:tcgplayer_order_number}/packing-slip', [PackingSlipController::class, 'show'])
         ->name('orders.packing-slip.show');
+    Route::get('orders/{order:tcgplayer_order_number}/items', [OrderItemsController::class, 'index'])
+        ->name('orders.items.index');
 
     Route::get('cards', [CatalogController::class, 'index'])->name('cards.index');
     Route::post('cards/upload', [CatalogUploadController::class, 'store'])->name('cards.upload');

@@ -15,6 +15,7 @@ import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
+import OrderItemsPanel from '@/pages/Orders/OrderItemsPanel.vue';
 import { index as ordersIndex } from '@/routes/orders';
 import packingSlipRoutes from '@/routes/orders/packing-slip';
 
@@ -259,7 +260,9 @@ const onBulkPrint = (
         :sort="tableState.sort.value"
         row-key="tcgplayer_order_number"
         :selectable="true"
+        :expandable="true"
         :skeleton-rows="5"
+        :watch-props="['orders']"
         @update:page="tableState.setPage"
         @update:per-page="tableState.setPerPage"
         @update:sort="tableState.setSort"
@@ -301,6 +304,10 @@ const onBulkPrint = (
                 :status="row.tcgplayer_status"
                 :tracking-number="row.tracking_number"
             />
+        </template>
+
+        <template #expand-row="{ row }">
+            <OrderItemsPanel :order-number="row.tcgplayer_order_number" />
         </template>
 
         <template #cell-actions="{ row }">

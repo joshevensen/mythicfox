@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="TRow extends Record<string, unknown>">
+import type { GlobalEvent } from '@inertiajs/core';
 import { router } from '@inertiajs/vue3';
 import Checkbox from 'primevue/checkbox';
 import Column from 'primevue/column';
@@ -33,6 +34,13 @@ type Props = {
     rowAction?: RowAction;
     skeletonRows?: number;
     errorMessage?: string;
+    /**
+     * Inertia prop names this table depends on. When set, the loading skeleton
+     * only appears for visits whose `only` list intersects these names (or for
+     * full-page visits with no `only` restriction). Prevents the skeleton from
+     * flashing during unrelated partial reloads (e.g. a background status poll).
+     */
+    watchProps?: string[];
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -42,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
     rowAction: 'none',
     skeletonRows: 5,
     errorMessage: undefined,
+    watchProps: undefined,
 });
 
 const emit = defineEmits<{
@@ -50,7 +59,8 @@ const emit = defineEmits<{
     (e: 'update:sort', value: SortState): void;
 }>();
 
-const loading = ref(false);
+const loadingCount = ref(0);
+const loading = computed(() => loadingCount.value > 0);
 const fetchError = ref<string | null>(props.errorMessage ?? null);
 
 const selectedKeys = ref<Set<string | number>>(new Set());
@@ -121,11 +131,23 @@ const toggleExpand = (row: TRow): void => {
 const isRowExpanded = (row: TRow): boolean =>
     expandedKeys.value.has(rowKeyOf(row));
 
-// PrimeVue DataTable expects expandedRows as an array of row records.
-// We mirror the Set into an array so the chevron column and any external
-// trigger (e.g. clicking the parent row) keep state in sync.
-const expandedRowsArray = computed(() =>
-    props.rows.filter((row) => expandedKeys.value.has(rowKeyOf(row))),
+// PrimeVue 4 DataTable with dataKey set expects expandedRows as a dict
+// { [keyValue]: true }, not an array. Without dataKey it uses .some(),
+// but we always set dataKey, so we mirror the Set into an object.
+const expandedRowsMap = computed(
+    (): Record<string | number, boolean> | undefined => {
+        if (expandedKeys.value.size === 0) {
+            return undefined;
+        }
+
+        const map: Record<string | number, boolean> = {};
+
+        for (const key of expandedKeys.value) {
+            map[key] = true;
+        }
+
+        return map;
+    },
 );
 
 const onPage = (event: DataTablePageEvent | PageState): void => {
@@ -157,12 +179,28 @@ const onSort = (event: DataTableSortEvent): void => {
     });
 };
 
-const inertiaStartHandler = (): void => {
-    loading.value = true;
+const isTrackedVisit = (only: string[]): boolean => {
+    if (!props.watchProps?.length) {
+        return true;
+    }
+
+    if (!only.length) {
+        return true;
+    }
+
+    return only.some((p) => props.watchProps!.includes(p));
 };
 
-const inertiaFinishHandler = (): void => {
-    loading.value = false;
+const inertiaStartHandler = (event: GlobalEvent<'start'>): void => {
+    if (isTrackedVisit(event.detail.visit.only)) {
+        loadingCount.value++;
+    }
+};
+
+const inertiaFinishHandler = (event: GlobalEvent<'finish'>): void => {
+    if (isTrackedVisit(event.detail.visit.only)) {
+        loadingCount.value = Math.max(0, loadingCount.value - 1);
+    }
 };
 
 let removeStart: () => void;
@@ -292,7 +330,7 @@ const sortOrder = computed(() =>
                 :sort-order="sortOrder ?? undefined"
                 :data-key="rowKey"
                 :expanded-rows="
-                    expandable && !loading ? expandedRowsArray : undefined
+                    expandable && !loading ? expandedRowsMap : undefined
                 "
                 paginator-template=""
                 :paginator="false"

@@ -97,12 +97,15 @@ test('the homepage source renders the static hero, about, and feature copy verba
 
     expect($source)
         ->toContain('We buy and')
+        ->toContain('TCG Cards')
+        ->toContain('Mythic Fox Games is your trusted source for buying and')
         ->toContain('Browse Inventory →')
         ->toContain('Great Prices')
         ->toContain('Trusted & Secure')
         ->toContain('Fast & Reliable')
+        ->toContain('Built for Collectors')
         ->toContain('Collector Focused')
-        ->toContain('Built for Collectors,');
+        ->toContain('Fair & Honest Deals');
 });
 
 test('the homepage emits an Organization JSON-LD block', function () {
@@ -113,12 +116,14 @@ test('the homepage emits an Organization JSON-LD block', function () {
         ->toContain('application/ld+json');
 });
 
-test('the homepage uses PrimeIcons for feature icons', function () {
+test('the homepage feature icons use PrimeIcons', function () {
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
-        ->toContain('pi pi-star')
-        ->toContain('pi pi-tag');
+        ->toContain('pi pi-tag')
+        ->toContain('pi pi-shield')
+        ->toContain('pi pi-truck')
+        ->toContain('pi pi-star');
 });
 
 test('the homepage Vue component receives storefront URL via props (not hardcoded)', function () {

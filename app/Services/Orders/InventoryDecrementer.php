@@ -6,7 +6,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Decrements catalog inventory for newly-created order_items. The match key is
@@ -46,16 +45,6 @@ class InventoryDecrementer
 
             if ($cardId === null) {
                 $result->unmatched++;
-                Log::warning('InventoryDecrementer: no card match', [
-                    'order' => $order->tcgplayer_order_number,
-                    'snapshot' => [
-                        'product_line' => $item->product_line,
-                        'set_name' => $item->set_name,
-                        'product_name' => $item->product_name,
-                        'number' => $item->number,
-                        'condition' => $item->condition,
-                    ],
-                ]);
 
                 continue;
             }
@@ -67,10 +56,6 @@ class InventoryDecrementer
 
             if ($affected === 0) {
                 $result->unmatchedNoInventory++;
-                Log::warning('InventoryDecrementer: no inventory row for card', [
-                    'order' => $order->tcgplayer_order_number,
-                    'card_id' => $cardId,
-                ]);
 
                 continue;
             }

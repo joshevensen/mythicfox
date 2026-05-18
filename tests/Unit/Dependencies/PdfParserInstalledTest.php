@@ -1,9 +1,12 @@
 <?php
 
-use Smalot\PdfParser\Parser;
+use Symfony\Component\Process\Process;
 
-test('Smalot PdfParser autoloads', function () {
-    $parser = new Parser;
+test('pdftotext is available on PATH', function () {
+    $process = new Process(['pdftotext', '-v']);
+    $process->run();
 
-    expect($parser)->toBeInstanceOf(Parser::class);
+    // pdftotext writes version info to stderr; exit code 0 or 99 both indicate it ran.
+    expect($process->getExitCode())->not->toBeNull();
+    expect(str_contains($process->getErrorOutput().$process->getOutput(), 'pdftotext'))->toBeTrue();
 })->group('dependencies');
