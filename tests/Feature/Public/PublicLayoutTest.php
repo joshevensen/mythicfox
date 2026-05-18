@@ -26,7 +26,7 @@ test('the public Home stub page sets the spec page title and description via the
 
     expect($source)
         ->toContain('Mythic Fox Games — Buy & Sell Trading Card Games')
-        ->toContain('TCGPlayer storefront for Magic: The Gathering, Lorcana, and Flesh & Blood');
+        ->toContain('Mythic Fox Games is your trusted source for buying and selling TCG singles.');
 });
 
 test('PublicLayout includes the favicon link tags and theme color in the document head', function () {
