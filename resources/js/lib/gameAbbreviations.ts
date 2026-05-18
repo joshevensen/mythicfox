@@ -8,8 +8,12 @@ const GAME_RULES: GameRule[] = [
 
 export function abbreviateGame(name: string): string {
     const normalized = name.toLowerCase();
+
     for (const rule of GAME_RULES) {
-        if (rule.test(normalized)) return rule.abbr;
+        if (rule.test(normalized)) {
+return rule.abbr;
+}
     }
+
     return name.split(/\s+/)[0].slice(0, 4);
 }

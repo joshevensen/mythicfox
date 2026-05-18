@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TRow extends Record<string, unknown>">
-import { router } from '@inertiajs/vue3';
 import type { GlobalEvent } from '@inertiajs/core';
+import { router } from '@inertiajs/vue3';
 import Checkbox from 'primevue/checkbox';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
@@ -135,7 +135,9 @@ const isRowExpanded = (row: TRow): boolean =>
 // { [keyValue]: true }, not an array. Without dataKey it uses .some(),
 // but we always set dataKey, so we mirror the Set into an object.
 const expandedRowsMap = computed((): Record<string | number, boolean> | undefined => {
-    if (expandedKeys.value.size === 0) return undefined;
+    if (expandedKeys.value.size === 0) {
+return undefined;
+}
 
     const map: Record<string | number, boolean> = {};
 
@@ -176,8 +178,14 @@ const onSort = (event: DataTableSortEvent): void => {
 };
 
 const isTrackedVisit = (only: string[]): boolean => {
-    if (!props.watchProps?.length) return true;
-    if (!only.length) return true;
+    if (!props.watchProps?.length) {
+return true;
+}
+
+    if (!only.length) {
+return true;
+}
+
     return only.some((p) => props.watchProps!.includes(p));
 };
 

@@ -15,8 +15,8 @@ import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
-import { index as ordersIndex } from '@/routes/orders';
 import OrderItemsPanel from '@/pages/Orders/OrderItemsPanel.vue';
+import { index as ordersIndex } from '@/routes/orders';
 import packingSlipRoutes from '@/routes/orders/packing-slip';
 
 type OrderRow = {

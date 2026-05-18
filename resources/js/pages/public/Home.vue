@@ -22,7 +22,6 @@ defineProps<{
     showBuyersSay: boolean;
 }>();
 
-
 const mainFeatures = [
     {
         icon: 'pi pi-tag',
@@ -95,7 +94,11 @@ const organizationJsonLd = computed(() =>
 
             <!-- Logo -->
             <div class="relative z-10 flex justify-center pt-8 pb-4">
-                <img src="/logo.png" alt="Mythic Fox Games" class="h-14 w-auto" />
+                <img
+                    src="/logo.png"
+                    alt="Mythic Fox Games"
+                    class="h-14 w-auto"
+                />
             </div>
 
             <!-- Hero content -->
@@ -103,15 +106,20 @@ const organizationJsonLd = computed(() =>
                 class="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 pb-20 sm:px-10"
             >
                 <div class="max-w-xl">
-                    <h1 class="mb-6 text-5xl font-bold leading-tight sm:text-6xl">
+                    <h1
+                        class="mb-6 text-5xl leading-tight font-bold sm:text-6xl"
+                    >
                         We buy and<br />
                         Sell
                         <span class="text-[#F38B17]">TCG Cards</span>
                     </h1>
-                    <p class="mb-8 text-base leading-relaxed text-[#FCFAEF]/75 sm:text-lg">
-                        Mythic Fox Games is your trusted source for buying and selling TCG
-                        singles. We offer competitive prices, fast payments, and a seamless
-                        experience for collectors and players alike.
+                    <p
+                        class="mb-8 text-base leading-relaxed text-[#FCFAEF]/75 sm:text-lg"
+                    >
+                        Mythic Fox Games is your trusted source for buying and
+                        selling TCG singles. We offer competitive prices, fast
+                        payments, and a seamless experience for collectors and
+                        players alike.
                     </p>
                     <a
                         v-if="tcgplayerStorefrontUrl"
@@ -168,10 +176,11 @@ const organizationJsonLd = computed(() =>
                     Built for Collectors,<br />by Collectors
                 </h2>
                 <p class="mb-14 text-base leading-relaxed text-[#FCFAEF]/65">
-                    Mythic Fox Games was built by passionate collectors, for collectors. We
-                    believe in fair deals, honest communication, and helping the TCG
-                    community grow. Whether you're looking to sell your collection or find
-                    that missing piece, we're here to help.
+                    Mythic Fox Games was built by passionate collectors, for
+                    collectors. We believe in fair deals, honest communication,
+                    and helping the TCG community grow. Whether you're looking
+                    to sell your collection or find that missing piece, we're
+                    here to help.
                 </p>
             </div>
 
@@ -235,7 +244,9 @@ const organizationJsonLd = computed(() =>
             <p class="mb-3 text-xs text-[#FCFAEF]/35">
                 © 2024 Mythic Fox Games. All rights reserved.
             </p>
-            <div class="flex items-center justify-center gap-4 text-xs text-[#FCFAEF]/35">
+            <div
+                class="flex items-center justify-center gap-4 text-xs text-[#FCFAEF]/35"
+            >
                 <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
                     Terms of Service
                 </a>

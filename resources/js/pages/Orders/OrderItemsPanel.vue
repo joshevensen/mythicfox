@@ -25,7 +25,9 @@ onMounted(async () => {
     try {
         const res = await fetch(orderItemsRoutes.index.url(props.orderNumber));
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+throw new Error(`HTTP ${res.status}`);
+}
 
         const json = (await res.json()) as { data: OrderItem[] };
         items.value = json.data;
