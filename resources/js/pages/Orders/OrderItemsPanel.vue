@@ -15,13 +15,22 @@ type OrderItem = {
     total_price: number | null;
 };
 
+type CacheEntry = { items: OrderItem[]; error: string | null };
+
+const fetched = new Map<string, CacheEntry>();
+
 const props = defineProps<{ orderNumber: string }>();
 
-const loading = ref(true);
-const items = ref<OrderItem[]>([]);
-const error = ref<string | null>(null);
+const loading = ref(!fetched.has(props.orderNumber));
+const cached = fetched.get(props.orderNumber);
+const items = ref<OrderItem[]>(cached?.items ?? []);
+const error = ref<string | null>(cached?.error ?? null);
 
 onMounted(async () => {
+    if (fetched.has(props.orderNumber)) {
+        return;
+    }
+
     try {
         const res = await fetch(orderItemsRoutes.index.url(props.orderNumber));
 
@@ -31,8 +40,10 @@ onMounted(async () => {
 
         const json = (await res.json()) as { data: OrderItem[] };
         items.value = json.data;
+        fetched.set(props.orderNumber, { items: json.data, error: null });
     } catch {
         error.value = 'Failed to load items.';
+        fetched.set(props.orderNumber, { items: [], error: error.value });
     } finally {
         loading.value = false;
     }

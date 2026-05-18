@@ -274,6 +274,17 @@ const stalenessLabel = (entry: StaleEntry): string => {
                 {{ stalenessLabel(entry) }}
             </span>
         </div>
+        <Button
+            type="button"
+            :icon="
+                meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
+            "
+            :label="meta.import_in_flight ? 'Importing…' : 'Import catalog'"
+            :disabled="meta.import_in_flight"
+            class="fixed right-4 bottom-4 z-30 shadow-lg md:static md:right-auto md:bottom-auto md:shadow-none"
+            data-test="catalog-upload-button"
+            @click="onUploadClick"
+        />
     </MfPageHeader>
 
     <MfErrorBanner
