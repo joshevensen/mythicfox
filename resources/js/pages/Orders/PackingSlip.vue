@@ -49,31 +49,63 @@ const props = defineProps<{
 function recipientLines(order: OrderData): string[] {
     const lines: string[] = [];
 
-    if (order.buyer_name) lines.push(order.buyer_name);
-    if (order.address1) lines.push(order.address1);
-    if (order.address2) lines.push(order.address2);
+    if (order.buyer_name) {
+        lines.push(order.buyer_name);
+    }
+
+    if (order.address1) {
+        lines.push(order.address1);
+    }
+
+    if (order.address2) {
+        lines.push(order.address2);
+    }
 
     const cityLine = [order.city, order.state].filter(Boolean).join(', ');
     const cityPostal = [cityLine, order.postal_code].filter(Boolean).join(' ');
-    if (cityPostal) lines.push(cityPostal);
 
-    if (order.country && order.country !== 'US') lines.push(order.country);
+    if (cityPostal) {
+        lines.push(cityPostal);
+    }
+
+    if (order.country && order.country !== 'US') {
+        lines.push(order.country);
+    }
 
     return lines;
 }
 
 function abbreviateCondition(cond: string): string {
     const c = cond.toLowerCase();
-    if (c.startsWith('near mint')) return 'NM';
-    if (c.startsWith('lightly played')) return 'LP';
-    if (c.startsWith('moderately played')) return 'MP';
-    if (c.startsWith('heavily played')) return 'HP';
-    if (c.startsWith('damaged')) return 'D';
+
+    if (c.startsWith('near mint')) {
+        return 'NM';
+    }
+
+    if (c.startsWith('lightly played')) {
+        return 'LP';
+    }
+
+    if (c.startsWith('moderately played')) {
+        return 'MP';
+    }
+
+    if (c.startsWith('heavily played')) {
+        return 'HP';
+    }
+
+    if (c.startsWith('damaged')) {
+        return 'D';
+    }
+
     return cond.length <= 3 ? cond : cond.slice(0, 3);
 }
 
 function formatCents(cents: number | null): string {
-    if (cents == null) return '—';
+    if (cents == null) {
+        return '—';
+    }
+
     return '$' + (cents / 100).toFixed(2);
 }
 
@@ -83,6 +115,7 @@ function sheetQty(sheet: Sheet): number {
 
 function sheetTotalPrice(sheet: Sheet): string {
     const total = sheet.items.reduce((sum, i) => sum + (i.total_price ?? 0), 0);
+
     return formatCents(total);
 }
 </script>

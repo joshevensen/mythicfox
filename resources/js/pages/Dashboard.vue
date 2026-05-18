@@ -31,9 +31,19 @@ defineProps<{
 
 function logoFor(game: string): string | null {
     const g = game.toLowerCase();
-    if (g.includes('magic')) return '/mtg.webp';
-    if (g.includes('lorcana')) return '/lorcana.png';
-    if (g.includes('flesh')) return '/fab.png';
+
+    if (g.includes('magic')) {
+        return '/mtg.webp';
+    }
+
+    if (g.includes('lorcana')) {
+        return '/lorcana.png';
+    }
+
+    if (g.includes('flesh')) {
+        return '/fab.png';
+    }
+
     return null;
 }
 </script>
