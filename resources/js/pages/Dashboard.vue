@@ -1,100 +1,192 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import MfPageHeader from '@/components/MfPageHeader.vue';
-import { addCards } from '@/routes';
-import { index as cardsIndex } from '@/routes/cards';
-import { index as decksIndex } from '@/routes/decks';
-import { index as inventoryIndex } from '@/routes/inventory';
-import { index as ordersIndex } from '@/routes/orders';
+import { Head } from '@inertiajs/vue3';
+import MfMoney from '@/components/MfMoney.vue';
 
-defineProps<{
-    firstName: string;
-}>();
-
-type Tile = {
-    label: string;
-    icon: string;
-    description: string;
-    href: string;
-    testId: string;
+type SetStat = {
+    name: string;
+    cards_sold: number;
+    revenue: number;
 };
 
-const tiles: Tile[] = [
-    {
-        label: '+ Add Cards',
-        icon: 'pi pi-plus',
-        description: 'Add new cards to inventory',
-        href: addCards().url,
-        testId: 'tile-add-cards',
-    },
-    {
-        label: '⬆ Import Orders',
-        icon: 'pi pi-upload',
-        description: 'Print packing slips and import a fresh batch',
-        href: ordersIndex({ query: { import: 1 } }).url,
-        testId: 'tile-import-orders',
-    },
-    {
-        label: '📃 Cards',
-        icon: 'pi pi-list',
-        description: 'Browse the card catalog',
-        href: cardsIndex().url,
-        testId: 'tile-cards',
-    },
-    {
-        label: '🎴 Decks',
-        icon: 'pi pi-box',
-        description: 'Browse sealed decks',
-        href: decksIndex().url,
-        testId: 'tile-decks',
-    },
-    {
-        label: '💲 Export Pricing',
-        icon: 'pi pi-dollar',
-        description: 'Recompute and export prices to TCGPlayer',
-        href: inventoryIndex({ query: { export: 1 } }).url,
-        testId: 'tile-export-pricing',
-    },
-];
+type RarityStat = {
+    rarity: string;
+    cards_sold: number;
+    pct: number;
+};
+
+type GameStat = {
+    game: string;
+    total_revenue: number;
+    cards_sold: number;
+    avg_price_per_card: number | null;
+    top_sets: SetStat[];
+    rarity_mix: RarityStat[];
+    avg_items_per_order: number | null;
+    max_items_per_order: number | null;
+};
+
+defineProps<{
+    gameStats: GameStat[];
+}>();
+
+function logoFor(game: string): string | null {
+    const g = game.toLowerCase();
+
+    if (g.includes('magic')) {
+        return '/mtg.webp';
+    }
+
+    if (g.includes('lorcana')) {
+        return '/lorcana.png';
+    }
+
+    if (g.includes('flesh')) {
+        return '/fab.png';
+    }
+
+    return null;
+}
 </script>
 
 <template>
     <Head title="Dashboard" />
 
-    <div data-test="dashboard-greeting">
-        <MfPageHeader :title="`Welcome back, ${firstName}`" />
-        <p class="-mt-4 mb-6 text-sm text-muted-foreground">Mythic Fox Games</p>
-    </div>
-
-    <section
-        aria-label="Quick actions"
-        class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-        data-test="dashboard-tiles"
-    >
-        <Link
-            v-for="tile in tiles"
-            :key="tile.label"
-            :href="tile.href"
-            :data-test="tile.testId"
-            class="group flex min-h-30 flex-col gap-2 rounded-xl border border-border bg-card p-5 text-left transition-colors hover:border-mf-orange hover:bg-mf-orange/5 focus-visible:border-mf-orange focus-visible:outline-none"
+    <div class="flex h-[calc(100vh-8rem)] gap-4 overflow-x-auto pb-4">
+        <div
+            v-for="stat in gameStats"
+            :key="stat.game"
+            class="flex w-full shrink-0 flex-col gap-6 overflow-y-auto rounded-xl border border-border bg-card p-5 sm:w-90"
         >
-            <span
-                class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-mf-orange/10 text-mf-orange"
-            >
-                <i :class="`${tile.icon} text-lg`" />
+            <img
+                v-if="logoFor(stat.game)"
+                :src="logoFor(stat.game)!"
+                :alt="stat.game"
+                class="mx-auto mb-4 h-20 w-auto object-contain object-left"
+            />
+            <span v-else class="text-base font-semibold text-foreground">
+                {{ stat.game }}
             </span>
-            <span
-                class="text-base font-semibold text-foreground group-hover:text-mf-orange"
-            >
-                {{ tile.label }}
-            </span>
-            <span class="text-sm text-muted-foreground">
-                {{ tile.description }}
-            </span>
-        </Link>
-    </section>
 
-    <p class="mt-8 text-sm text-muted-foreground">
-        More dashboards coming soon as your workflow takes shape.
-    </p>
+            <div class="flex flex-col gap-1">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Revenue
+                </p>
+                <p class="text-2xl font-bold text-foreground">
+                    <MfMoney :cents="stat.total_revenue" align="left" />
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Cards Sold
+                </p>
+                <p class="text-2xl font-bold text-foreground tabular-nums">
+                    {{ stat.cards_sold.toLocaleString() }}
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Avg Price / Card
+                </p>
+                <p class="text-2xl font-bold text-foreground">
+                    <MfMoney :cents="stat.avg_price_per_card" align="left" />
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Avg Cards / Order
+                </p>
+                <p class="text-2xl font-bold text-foreground tabular-nums">
+                    {{ stat.avg_items_per_order ?? '—' }}
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Max Cards / Order
+                </p>
+                <p class="text-2xl font-bold text-foreground tabular-nums">
+                    {{ stat.max_items_per_order?.toLocaleString() ?? '—' }}
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Top Sets
+                </p>
+                <ol class="flex flex-col gap-2">
+                    <li
+                        v-for="(set, i) in stat.top_sets"
+                        :key="set.name"
+                        class="flex items-start gap-2"
+                    >
+                        <span
+                            class="mt-0.5 w-4 shrink-0 text-xs text-muted-foreground tabular-nums"
+                        >
+                            {{ i + 1 }}.
+                        </span>
+                        <span
+                            class="min-w-0 flex-1 text-sm leading-snug text-foreground"
+                        >
+                            {{ set.name }}
+                        </span>
+                        <span
+                            class="shrink-0 text-sm text-muted-foreground tabular-nums"
+                        >
+                            <MfMoney :cents="set.revenue" align="right" />
+                        </span>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <p
+                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                >
+                    Rarity Mix
+                </p>
+                <ul class="flex flex-col gap-1.5">
+                    <li
+                        v-for="r in stat.rarity_mix"
+                        :key="r.rarity"
+                        class="flex flex-col gap-1"
+                    >
+                        <div class="flex justify-between text-xs">
+                            <span class="text-foreground">{{ r.rarity }}</span>
+                            <span class="text-muted-foreground tabular-nums">
+                                {{ r.pct }}%
+                            </span>
+                        </div>
+                        <div class="h-1.5 w-full rounded-full bg-muted">
+                            <div
+                                class="h-1.5 rounded-full bg-mf-orange"
+                                :style="{ width: `${r.pct}%` }"
+                            />
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div
+            v-if="gameStats.length === 0"
+            class="flex items-center justify-center text-sm text-muted-foreground"
+        >
+            No order data yet.
+        </div>
+    </div>
 </template>

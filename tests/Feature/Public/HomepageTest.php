@@ -99,6 +99,7 @@ test('the homepage source renders the static hero, about, and feature copy verba
         ->toContain('We buy and')
         ->toContain('TCG Cards')
         ->toContain('Mythic Fox Games is your trusted source for buying and')
+        ->toContain('Browse Inventory →')
         ->toContain('Great Prices')
         ->toContain('Trusted & Secure')
         ->toContain('Fast & Reliable')
