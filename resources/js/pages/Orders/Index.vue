@@ -16,6 +16,7 @@ import { useMfConfirm } from '@/composables/useMfConfirm';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
 import { index as ordersIndex } from '@/routes/orders';
+import OrderItemsPanel from '@/pages/Orders/OrderItemsPanel.vue';
 import packingSlipRoutes from '@/routes/orders/packing-slip';
 
 type OrderRow = {
@@ -237,18 +238,7 @@ const onBulkPrint = (
 <template>
     <Head title="Orders" />
 
-    <MfPageHeader title="Orders">
-        <Button
-            type="button"
-            :icon="
-                meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
-            "
-            :label="meta.import_in_flight ? 'Importing…' : 'Import orders'"
-            :disabled="meta.import_in_flight"
-            data-test="orders-import-button"
-            @click="onImportClick"
-        />
-    </MfPageHeader>
+    <MfPageHeader title="Orders"/>
 
     <MfTable
         :columns="columns"
@@ -259,7 +249,9 @@ const onBulkPrint = (
         :sort="tableState.sort.value"
         row-key="tcgplayer_order_number"
         :selectable="true"
+        :expandable="true"
         :skeleton-rows="5"
+        :watch-props="['orders']"
         @update:page="tableState.setPage"
         @update:per-page="tableState.setPerPage"
         @update:sort="tableState.setSort"
@@ -301,6 +293,10 @@ const onBulkPrint = (
                 :status="row.tcgplayer_status"
                 :tracking-number="row.tracking_number"
             />
+        </template>
+
+        <template #expand-row="{ row }">
+            <OrderItemsPanel :order-number="row.tcgplayer_order_number" />
         </template>
 
         <template #cell-actions="{ row }">
