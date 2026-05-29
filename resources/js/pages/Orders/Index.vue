@@ -238,7 +238,7 @@ const onBulkPrint = (
 <template>
     <Head title="Orders" />
 
-    <MfPageHeader title="Orders"/>
+    <MfPageHeader title="Orders" />
 
     <MfTable
         :columns="columns"
