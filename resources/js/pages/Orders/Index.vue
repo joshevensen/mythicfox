@@ -238,18 +238,7 @@ const onBulkPrint = (
 <template>
     <Head title="Orders" />
 
-    <MfPageHeader title="Orders">
-        <Button
-            type="button"
-            :icon="
-                meta.import_in_flight ? 'pi pi-spin pi-spinner' : 'pi pi-upload'
-            "
-            :label="meta.import_in_flight ? 'Importing…' : 'Import orders'"
-            :disabled="meta.import_in_flight"
-            data-test="orders-import-button"
-            @click="onImportClick"
-        />
-    </MfPageHeader>
+    <MfPageHeader title="Orders"/>
 
     <MfTable
         :columns="columns"

@@ -1,12 +1,12 @@
 import { ref } from 'vue';
 
-export type GlobalImportTab = 'catalog' | 'orders';
+export type GlobalImportTab = 'orders' | 'catalog';
 
 const visible = ref(false);
-const activeTab = ref<GlobalImportTab>('catalog');
+const activeTab = ref<GlobalImportTab>('orders');
 
 export function useGlobalImportModal() {
-    const open = (tab: GlobalImportTab = 'catalog'): void => {
+    const open = (tab: GlobalImportTab = 'orders'): void => {
         activeTab.value = tab;
         visible.value = true;
     };
