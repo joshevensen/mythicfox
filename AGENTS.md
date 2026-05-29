@@ -219,3 +219,15 @@ Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
+
+## Pre-commit Gate
+
+composer lint
+npm run lint:check
+npm run format:check
+npm run types:check
+
+## Verification
+
+composer test
+npm run test:unit

@@ -31,32 +31,32 @@ type GlobalImports = {
 
 const ORDER_SLOTS: SlotDef[] = [
     {
-        key: 'orderlist',
-        label: 'OrderList',
-        accept: '.csv',
-        required: true,
-        hint: 'Source of truth for every order import.',
-    },
-    {
-        key: 'shipping_export',
-        label: 'ShippingExport',
-        accept: '.csv',
-        required: false,
-        hint: 'Adds addresses and tracking when available.',
-    },
-    {
         key: 'pull_sheet',
-        label: 'PullSheet',
+        label: 'Pull Sheet',
         accept: '.csv',
         required: false,
         hint: 'Adds order line items when available.',
     },
     {
         key: 'packing_slips',
-        label: 'PackingSlips',
+        label: 'Packing Slips',
         accept: '.pdf',
         required: false,
         hint: 'Adds line-item prices when available.',
+    },
+    {
+        key: 'orderlist',
+        label: 'Order List',
+        accept: '.csv',
+        required: true,
+        hint: 'Source of truth for every order import.',
+    },
+    {
+        key: 'shipping_export',
+        label: 'Shipping Export',
+        accept: '.csv',
+        required: false,
+        hint: 'Adds addresses and tracking when available.',
     },
 ];
 
@@ -246,21 +246,6 @@ watch(
                     type="button"
                     :class="[
                         'h-10 rounded-sm text-sm font-medium transition-colors',
-                        importModal.activeTab.value === 'catalog'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground',
-                    ]"
-                    role="tab"
-                    data-test="global-import-tab-catalog"
-                    :aria-selected="importModal.activeTab.value === 'catalog'"
-                    @click="importModal.activeTab.value = 'catalog'"
-                >
-                    Catalog
-                </button>
-                <button
-                    type="button"
-                    :class="[
-                        'h-10 rounded-sm text-sm font-medium transition-colors',
                         importModal.activeTab.value === 'orders'
                             ? 'bg-background text-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground',
@@ -271,6 +256,21 @@ watch(
                     @click="importModal.activeTab.value = 'orders'"
                 >
                     Orders
+                </button>
+                <button
+                    type="button"
+                    :class="[
+                        'h-10 rounded-sm text-sm font-medium transition-colors',
+                        importModal.activeTab.value === 'catalog'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                    ]"
+                    role="tab"
+                    data-test="global-import-tab-catalog"
+                    :aria-selected="importModal.activeTab.value === 'catalog'"
+                    @click="importModal.activeTab.value = 'catalog'"
+                >
+                    Catalog
                 </button>
             </div>
 
