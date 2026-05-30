@@ -18,7 +18,16 @@ describe('abbreviateCondition', () => {
         ['Moderately Played Foil', 'MP Foil'],
         ['Heavily Played Foil', 'HP Foil'],
         ['Damaged Foil', 'D Foil'],
-    ])('preserves foil suffix: %s → %s', (condition, expected) => {
+    ])('preserves standard foil suffix: %s → %s', (condition, expected) => {
+        expect(abbreviateCondition(condition)).toBe(expected);
+    });
+
+    it.each([
+        ['Near Mint Cold Foil', 'NM Cold Foil'],
+        ['Near Mint Rainbow Foil', 'NM Rainbow Foil'],
+        ['Near Mint Holofoil', 'NM Holofoil'],
+        ['Lightly Played Cold Foil', 'LP Cold Foil'],
+    ])('preserves specific foil type: %s → %s', (condition, expected) => {
         expect(abbreviateCondition(condition)).toBe(expected);
     });
 
