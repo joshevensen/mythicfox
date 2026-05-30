@@ -82,7 +82,7 @@ const organizationJsonLd = computed(() =>
                 <img
                     src="/forest-image.png"
                     alt=""
-                    class="h-full w-full object-cover object-center"
+                    class="h-full w-full object-cover object-top"
                 />
                 <div
                     class="absolute inset-0 bg-gradient-to-r from-[#12100C] via-[#12100C]/85 to-[#12100C]/25"
