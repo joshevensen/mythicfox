@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\SellerStats;
-use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('anonymous GET / returns 200 and renders the public Home Inertia page', function () {
@@ -22,90 +20,24 @@ test('the homepage exposes the TCGPlayer storefront URL via Inertia props', func
         );
 });
 
-test('the buyers-say section is hidden when no seller_stats row exists', function () {
-    $this->get(route('home'))
-        ->assertInertia(
-            fn (Assert $page) => $page
-                ->where('showBuyersSay', false)
-                ->where('sellerStats', null)
-        );
-});
-
-test('the buyers-say section is hidden when scraped_at is older than 14 days', function () {
-    SellerStats::factory()->stale()->create([
-        'rating' => 4.8,
-        'review_count' => 200,
-    ]);
-
-    $this->get(route('home'))
-        ->assertInertia(
-            fn (Assert $page) => $page
-                ->where('showBuyersSay', false)
-                ->where('sellerStats', null)
-        );
-});
-
-test('the buyers-say section renders rating and review count when fresh', function () {
-    SellerStats::factory()->fresh()->create([
-        'rating' => 4.9,
-        'review_count' => 312,
-        'feedback' => [],
-    ]);
-
-    $this->get(route('home'))
-        ->assertInertia(
-            fn (Assert $page) => $page
-                ->where('showBuyersSay', true)
-                ->where('sellerStats.rating', 4.9)
-                ->where('sellerStats.review_count', 312)
-                ->where('sellerStats.feedback', [])
-        );
-});
-
-test('the buyers-say section trims feedback to at most 3 quotes', function () {
-    SellerStats::factory()->fresh()->withFeedback()->create([
-        'feedback' => array_fill(0, 5, [
-            'text' => 'Great seller.',
-            'rating' => 5,
-            'author' => 'someone',
-            'date' => '2026-04-22',
-        ]),
-    ]);
-
-    $this->get(route('home'))
-        ->assertInertia(
-            fn (Assert $page) => $page
-                ->where('showBuyersSay', true)
-                ->has('sellerStats.feedback', 3)
-        );
-});
-
-test('the freshness boundary uses scraped_at, not last_attempt_at', function () {
-    SellerStats::factory()->create([
-        'rating' => 4.5,
-        'review_count' => 100,
-        'scraped_at' => Carbon::now()->subDays(15),
-        'last_attempt_at' => Carbon::now(),
-    ]);
-
-    $this->get(route('home'))
-        ->assertInertia(fn (Assert $page) => $page->where('showBuyersSay', false));
-});
-
 test('the homepage source renders the static hero, about, and feature copy verbatim', function () {
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
         ->toContain('We buy and')
         ->toContain('TCG Cards')
-        ->toContain('Mythic Fox Games is your trusted source for buying and')
+        ->toContain('Whether you\'re looking to buy singles or sell your')
         ->toContain('Browse Inventory →')
+        ->toContain('Sell Your Collection →')
         ->toContain('Great Prices')
         ->toContain('Trusted & Secure')
         ->toContain('Fast & Reliable')
         ->toContain('Built for Collectors')
         ->toContain('Collector Focused')
-        ->toContain('Fair & Honest Deals');
+        ->toContain('Fair & Honest Deals')
+        ->toContain('Sell Your Collection')
+        ->toContain('josh@mythicfoxgames.com')
+        ->toContain('Admin');
 });
 
 test('the homepage emits an Organization JSON-LD block', function () {

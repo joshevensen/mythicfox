@@ -3,23 +3,8 @@ import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { login } from '@/routes';
 
-type Feedback = {
-    text: string;
-    rating: number;
-    author: string;
-    date: string;
-};
-
-type SellerStats = {
-    rating: number;
-    review_count: number;
-    feedback: Feedback[];
-};
-
 defineProps<{
     tcgplayerStorefrontUrl: string | null;
-    sellerStats: SellerStats | null;
-    showBuyersSay: boolean;
 }>();
 
 const mainFeatures = [
@@ -45,6 +30,24 @@ const aboutFeatures = [
     { icon: 'pi pi-thumbs-up', title: 'Fair & Honest Deals' },
     { icon: 'pi pi-lock', title: 'Safe & Secure Payments' },
     { icon: 'pi pi-comments', title: 'Responsive Support' },
+];
+
+const sellSteps = [
+    {
+        number: '01',
+        title: 'Send Us Your List',
+        body: 'Email us a list of what you have — a spreadsheet, photos, or even a quick message works.',
+    },
+    {
+        number: '02',
+        title: 'We Make an Offer',
+        body: 'We review your cards and come back with a fair, transparent offer. No pressure, no games.',
+    },
+    {
+        number: '03',
+        title: 'You Get Paid',
+        body: 'Accept the offer and get paid fast. We make the process simple so you can move on.',
+    },
 ];
 
 const organizationJsonLd = computed(() =>
@@ -116,21 +119,30 @@ const organizationJsonLd = computed(() =>
                     <p
                         class="mb-8 text-base leading-relaxed text-[#FCFAEF]/75 sm:text-lg"
                     >
-                        Mythic Fox Games is your trusted source for buying and
-                        selling TCG singles. We offer competitive prices, fast
-                        payments, and a seamless experience for collectors and
+                        Whether you're looking to buy singles or sell your
+                        collection, Mythic Fox Games offers competitive prices,
+                        fast payments, and honest deals for collectors and
                         players alike.
                     </p>
-                    <a
-                        v-if="tcgplayerStorefrontUrl"
-                        :href="tcgplayerStorefrontUrl"
-                        target="_blank"
-                        rel="noopener"
-                        data-test="hero-shop-cta"
-                        class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
-                    >
-                        Browse Inventory →
-                    </a>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <a
+                            v-if="tcgplayerStorefrontUrl"
+                            :href="tcgplayerStorefrontUrl"
+                            target="_blank"
+                            rel="noopener"
+                            data-test="hero-shop-cta"
+                            class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
+                        >
+                            Browse Inventory →
+                        </a>
+                        <a
+                            href="#sell"
+                            data-test="hero-sell-cta"
+                            class="inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-semibold tracking-widest text-[#FCFAEF]/60 uppercase transition-colors hover:text-[#FCFAEF]"
+                        >
+                            Sell Your Collection →
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -145,7 +157,7 @@ const organizationJsonLd = computed(() =>
                         class="flex flex-col items-center gap-4 text-center"
                     >
                         <div
-                            class="flex h-16 w-16 items-center justify-center rounded-full border border-[#F38B17]/40 text-[#F38B17]"
+                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
                         >
                             <i :class="[feature.icon, 'text-2xl']" />
                         </div>
@@ -192,7 +204,7 @@ const organizationJsonLd = computed(() =>
                         class="flex flex-col items-center gap-3 text-center"
                     >
                         <div
-                            class="flex h-14 w-14 items-center justify-center rounded-full border border-[#F38B17]/30 text-[#F38B17]"
+                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
                         >
                             <i :class="[feat.icon, 'text-xl']" />
                         </div>
@@ -204,6 +216,63 @@ const organizationJsonLd = computed(() =>
             </div>
         </section>
 
+        <!-- SELL TO US -->
+        <section id="sell" class="px-6 py-16">
+            <div class="mx-auto max-w-3xl text-center">
+                <div class="mb-4 flex items-center justify-center gap-3">
+                    <div class="h-px w-10 bg-[#F38B17]/40" />
+                    <span
+                        class="text-xs font-semibold tracking-widest text-[#F38B17] uppercase"
+                    >
+                        Sell to Us
+                    </span>
+                    <div class="h-px w-10 bg-[#F38B17]/40" />
+                </div>
+                <h2 class="mb-6 text-3xl font-bold text-[#FCFAEF] sm:text-4xl">
+                    Sell Your Collection<br />the Easy Way
+                </h2>
+                <p class="mb-14 text-base leading-relaxed text-[#FCFAEF]/65">
+                    We buy singles, sets, and full collections. No haggling, no
+                    hassle — just a straightforward process from start to
+                    payment.
+                </p>
+            </div>
+
+            <div class="mx-auto mb-14 max-w-4xl">
+                <div class="grid grid-cols-1 gap-10 sm:grid-cols-3">
+                    <div
+                        v-for="step in sellSteps"
+                        :key="step.number"
+                        class="flex flex-col items-center gap-4 text-center"
+                    >
+                        <div
+                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
+                        >
+                            <span class="text-xl font-bold">{{
+                                step.number
+                            }}</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[#FCFAEF]">
+                            {{ step.title }}
+                        </h3>
+                        <p class="text-sm leading-relaxed text-[#FCFAEF]/55">
+                            {{ step.body }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <a
+                    href="mailto:josh@mythicfoxgames.com"
+                    data-test="sell-email-cta"
+                    class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
+                >
+                    Get in Touch →
+                </a>
+            </div>
+        </section>
+
         <!-- FOOTER -->
         <footer class="border-t border-[#FCFAEF]/10 px-6 py-12 text-center">
             <img
@@ -211,36 +280,6 @@ const organizationJsonLd = computed(() =>
                 alt="Mythic Fox Games"
                 class="mx-auto mb-6 h-10 w-auto"
             />
-            <div class="mb-6 flex items-center justify-center gap-5">
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Facebook"
-                >
-                    <i class="pi pi-facebook text-lg" />
-                </a>
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Twitter"
-                >
-                    <i class="pi pi-twitter text-lg" />
-                </a>
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Instagram"
-                >
-                    <i class="pi pi-instagram text-lg" />
-                </a>
-                <a
-                    href="mailto:contact@mythicfoxgames.com"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Email"
-                >
-                    <i class="pi pi-envelope text-lg" />
-                </a>
-            </div>
             <p class="mb-3 text-xs text-[#FCFAEF]/35">
                 © 2024 Mythic Fox Games. All rights reserved.
             </p>
@@ -259,7 +298,7 @@ const organizationJsonLd = computed(() =>
                     :href="login().url"
                     class="transition-colors hover:text-[#FCFAEF]/65"
                 >
-                    Login
+                    Admin
                 </Link>
             </div>
         </footer>
