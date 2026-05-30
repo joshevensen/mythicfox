@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { abbreviateCondition } from '@/lib/conditionAbbreviation';
 import { abbreviateGame } from '@/lib/gameAbbreviations';
 
 type OrderItem = {
@@ -73,32 +74,6 @@ function recipientLines(order: OrderData): string[] {
     }
 
     return lines;
-}
-
-function abbreviateCondition(cond: string): string {
-    const c = cond.toLowerCase();
-
-    if (c.startsWith('near mint')) {
-        return 'NM';
-    }
-
-    if (c.startsWith('lightly played')) {
-        return 'LP';
-    }
-
-    if (c.startsWith('moderately played')) {
-        return 'MP';
-    }
-
-    if (c.startsWith('heavily played')) {
-        return 'HP';
-    }
-
-    if (c.startsWith('damaged')) {
-        return 'D';
-    }
-
-    return cond.length <= 3 ? cond : cond.slice(0, 3);
 }
 
 function formatCents(cents: number | null): string {
