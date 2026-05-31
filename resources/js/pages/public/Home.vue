@@ -1,50 +1,44 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import {
+    Lock,
+    MessageSquare,
+    Shield,
+    Star,
+    Tag,
+    ThumbsUp,
+    Truck,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
-import { login } from '@/routes';
-
-type Feedback = {
-    text: string;
-    rating: number;
-    author: string;
-    date: string;
-};
-
-type SellerStats = {
-    rating: number;
-    review_count: number;
-    feedback: Feedback[];
-};
+import { sellToUs } from '@/routes';
 
 defineProps<{
     tcgplayerStorefrontUrl: string | null;
-    sellerStats: SellerStats | null;
-    showBuyersSay: boolean;
 }>();
 
 const mainFeatures = [
     {
-        icon: 'pi pi-tag',
+        icon: Tag,
         title: 'Great Prices',
         body: 'We offer some of the most competitive prices on the market for both buyers and sellers.',
     },
     {
-        icon: 'pi pi-shield',
+        icon: Shield,
         title: 'Trusted & Secure',
         body: 'Safe transactions, secure payments, and data protection you can count on.',
     },
     {
-        icon: 'pi pi-truck',
+        icon: Truck,
         title: 'Fast & Reliable',
         body: 'Quick shipping and fast payments so you can get back to what you love.',
     },
 ];
 
 const aboutFeatures = [
-    { icon: 'pi pi-star', title: 'Collector Focused' },
-    { icon: 'pi pi-thumbs-up', title: 'Fair & Honest Deals' },
-    { icon: 'pi pi-lock', title: 'Safe & Secure Payments' },
-    { icon: 'pi pi-comments', title: 'Responsive Support' },
+    { icon: Star, title: 'Collector Focused' },
+    { icon: ThumbsUp, title: 'Fair & Honest Deals' },
+    { icon: Lock, title: 'Safe & Secure Payments' },
+    { icon: MessageSquare, title: 'Responsive Support' },
 ];
 
 const organizationJsonLd = computed(() =>
@@ -74,7 +68,7 @@ const organizationJsonLd = computed(() =>
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
-    <div class="min-h-screen bg-[#12100C] font-sans text-[#FCFAEF]">
+    <div>
         <!-- HERO -->
         <section class="relative flex min-h-[85vh] flex-col">
             <!-- Background forest image with overlay -->
@@ -116,21 +110,30 @@ const organizationJsonLd = computed(() =>
                     <p
                         class="mb-8 text-base leading-relaxed text-[#FCFAEF]/75 sm:text-lg"
                     >
-                        Mythic Fox Games is your trusted source for buying and
-                        selling TCG singles. We offer competitive prices, fast
-                        payments, and a seamless experience for collectors and
+                        Whether you're looking to buy singles or sell your
+                        collection, Mythic Fox Games offers competitive prices,
+                        fast payments, and honest deals for collectors and
                         players alike.
                     </p>
-                    <a
-                        v-if="tcgplayerStorefrontUrl"
-                        :href="tcgplayerStorefrontUrl"
-                        target="_blank"
-                        rel="noopener"
-                        data-test="hero-shop-cta"
-                        class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
-                    >
-                        Browse Inventory →
-                    </a>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <a
+                            v-if="tcgplayerStorefrontUrl"
+                            :href="tcgplayerStorefrontUrl"
+                            target="_blank"
+                            rel="noopener"
+                            data-test="hero-shop-cta"
+                            class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
+                        >
+                            Browse Inventory →
+                        </a>
+                        <Link
+                            :href="sellToUs().url"
+                            data-test="hero-sell-cta"
+                            class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
+                        >
+                            Sell Your Collection →
+                        </Link>
+                    </div>
                 </div>
             </div>
         </section>
@@ -144,11 +147,11 @@ const organizationJsonLd = computed(() =>
                         :key="feature.title"
                         class="flex flex-col items-center gap-4 text-center"
                     >
-                        <div
-                            class="flex h-16 w-16 items-center justify-center rounded-full border border-[#F38B17]/40 text-[#F38B17]"
-                        >
-                            <i :class="[feature.icon, 'text-2xl']" />
-                        </div>
+                        <component
+                            :is="feature.icon"
+                            :size="64"
+                            class="text-[#F38B17]"
+                        />
                         <h3 class="text-lg font-semibold text-[#FCFAEF]">
                             {{ feature.title }}
                         </h3>
@@ -191,11 +194,11 @@ const organizationJsonLd = computed(() =>
                         :key="feat.title"
                         class="flex flex-col items-center gap-3 text-center"
                     >
-                        <div
-                            class="flex h-14 w-14 items-center justify-center rounded-full border border-[#F38B17]/30 text-[#F38B17]"
-                        >
-                            <i :class="[feat.icon, 'text-xl']" />
-                        </div>
+                        <component
+                            :is="feat.icon"
+                            :size="64"
+                            class="text-[#F38B17]"
+                        />
                         <p class="text-sm font-medium text-[#FCFAEF]/75">
                             {{ feat.title }}
                         </p>
@@ -203,65 +206,5 @@ const organizationJsonLd = computed(() =>
                 </div>
             </div>
         </section>
-
-        <!-- FOOTER -->
-        <footer class="border-t border-[#FCFAEF]/10 px-6 py-12 text-center">
-            <img
-                src="/logo.png"
-                alt="Mythic Fox Games"
-                class="mx-auto mb-6 h-10 w-auto"
-            />
-            <div class="mb-6 flex items-center justify-center gap-5">
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Facebook"
-                >
-                    <i class="pi pi-facebook text-lg" />
-                </a>
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Twitter"
-                >
-                    <i class="pi pi-twitter text-lg" />
-                </a>
-                <a
-                    href="#"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Instagram"
-                >
-                    <i class="pi pi-instagram text-lg" />
-                </a>
-                <a
-                    href="mailto:contact@mythicfoxgames.com"
-                    class="text-[#FCFAEF]/45 transition-colors hover:text-[#F38B17]"
-                    aria-label="Email"
-                >
-                    <i class="pi pi-envelope text-lg" />
-                </a>
-            </div>
-            <p class="mb-3 text-xs text-[#FCFAEF]/35">
-                © 2024 Mythic Fox Games. All rights reserved.
-            </p>
-            <div
-                class="flex items-center justify-center gap-4 text-xs text-[#FCFAEF]/35"
-            >
-                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
-                    Terms of Service
-                </a>
-                <span>·</span>
-                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
-                    Privacy Policy
-                </a>
-                <span>·</span>
-                <Link
-                    :href="login().url"
-                    class="transition-colors hover:text-[#FCFAEF]/65"
-                >
-                    Login
-                </Link>
-            </div>
-        </footer>
     </div>
 </template>

@@ -9,15 +9,26 @@ const yearLabel = computed(() => copyrightYearLabel(new Date().getFullYear()));
 
 <template>
     <footer
-        class="mt-12 border-t border-border px-4 py-6 text-center text-sm text-muted-foreground"
+        class="border-t border-[#FCFAEF]/10 px-6 py-12 text-center text-xs text-[#FCFAEF]/35"
     >
-        <span>© {{ yearLabel }} Mythic Fox Games</span>
-        <span aria-hidden="true" class="mx-2">·</span>
-        <Link
-            :href="login().url"
-            class="text-muted-foreground underline-offset-2 hover:underline"
-        >
-            Admin
-        </Link>
+        <p class="mb-3">
+            © {{ yearLabel }} Mythic Fox Games. All rights reserved.
+        </p>
+        <div class="flex items-center justify-center gap-4">
+            <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+                Terms of Service
+            </a>
+            <span>·</span>
+            <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+                Privacy Policy
+            </a>
+            <span>·</span>
+            <Link
+                :href="login().url"
+                class="transition-colors hover:text-[#FCFAEF]/65"
+            >
+                Admin
+            </Link>
+        </div>
     </footer>
 </template>

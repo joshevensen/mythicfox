@@ -10,7 +10,8 @@ test('GET /sitemap.xml returns a valid one-URL sitemap as application/xml', func
     expect($response->getContent())
         ->toContain('<?xml version="1.0" encoding="UTF-8"?>')
         ->toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-        ->toContain('<loc>'.route('home').'</loc>');
+        ->toContain('<loc>'.route('home').'</loc>')
+        ->toContain('<loc>'.route('sell-to-us').'</loc>');
 });
 
 test('the sitemap excludes admin and auth routes', function () {
