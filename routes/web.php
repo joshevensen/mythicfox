@@ -21,11 +21,15 @@ Route::get('/sell-to-us', PublicSellToUsController::class)->name('sell-to-us');
 
 Route::get('/sitemap.xml', function () {
     $homepage = route('home');
+    $sellToUs = route('sell-to-us');
     $body = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>{$homepage}</loc>
+    </url>
+    <url>
+        <loc>{$sellToUs}</loc>
     </url>
 </urlset>
 
