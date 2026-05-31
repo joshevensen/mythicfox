@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('high_price')->nullable();
             $table->integer('market_offset')->nullable();
             $table->integer('high_offset')->nullable();
+            $table->timestamp('cards_synced_at')->nullable();
             $table->timestamps();
 
             $table->unique(['product_id', 'name']);
