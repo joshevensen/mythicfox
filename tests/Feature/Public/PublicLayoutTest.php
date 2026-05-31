@@ -10,15 +10,14 @@ test('the homepage route renders the public Home Inertia page', function () {
         ->assertInertia(fn (Assert $page) => $page->component('public/Home'));
 });
 
-test('PublicLayout source wires per-page title and description into Inertia Head', function () {
+test('PublicLayout source provides the dark-brand shell and delegates Head to each page', function () {
     $source = file_get_contents(resource_path('js/layouts/PublicLayout.vue'));
 
     expect($source)
-        ->toContain("import { Head } from '@inertiajs/vue3'")
-        ->toContain('title: string')
-        ->toContain('description?: string')
-        ->toContain('<title>{{ title }}</title>')
-        ->toContain(':content="description"');
+        ->toContain('bg-[#12100C]')
+        ->toContain('<slot />')
+        ->not->toContain("import { Head } from '@inertiajs/vue3'")
+        ->not->toContain('title: string');
 });
 
 test('the public Home stub page sets the spec page title and description via the layout', function () {
