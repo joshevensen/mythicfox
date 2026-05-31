@@ -27,7 +27,7 @@ test('the homepage source renders the static hero, about, and feature copy verba
         ->toContain('We buy and')
         ->toContain('TCG Cards')
         ->toContain('Whether you\'re looking to buy singles or sell your')
-        ->toContain('Browse Inventory →')
+        ->toContain('Browse Singles →')
         ->toContain('Sell Your Collection →')
         ->toContain('Great Prices')
         ->toContain('Trusted & Secure')

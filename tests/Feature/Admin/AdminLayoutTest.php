@@ -64,7 +64,6 @@ test('admin layout exposes global import status props', function () {
             'success' => true,
             'orders_inserted' => 2,
             'orders_updated' => 1,
-            'line_items_unmatched_to_inventory' => 0,
             'completed_at' => '2026-05-05T01:00:00+00:00',
         ],
         now()->addHour(),

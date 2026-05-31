@@ -21,7 +21,6 @@ type OrdersImportResult =
           success: true;
           orders_inserted: number;
           orders_updated: number;
-          line_items_unmatched_to_inventory: number;
           completed_at: string;
       }
     | {
@@ -108,15 +107,8 @@ const ordersSuccessMessage = (
 ): string => {
     const total = last.orders_inserted + last.orders_updated;
     const orderWord = total === 1 ? 'order' : 'orders';
-    let message = `Imported ${total} ${orderWord} (${last.orders_inserted} new, ${last.orders_updated} updated).`;
 
-    if (last.line_items_unmatched_to_inventory > 0) {
-        const itemWord =
-            last.line_items_unmatched_to_inventory === 1 ? 'item' : 'items';
-        message += ` ${last.line_items_unmatched_to_inventory} ${itemWord} could not be matched to inventory.`;
-    }
-
-    return message;
+    return `Imported ${total} ${orderWord} (${last.orders_inserted} new, ${last.orders_updated} updated).`;
 };
 
 watch(

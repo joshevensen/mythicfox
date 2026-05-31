@@ -59,10 +59,10 @@ class OrderItemFactory extends Factory
         return $this->state(fn () => [
             'product_line' => $card->set->product->name,
             'set_name' => $card->set->name,
-            'product_name' => $card->product_name,
+            'product_name' => $card->name,
             'number' => $card->number,
             'rarity' => $card->rarity,
-            'condition' => $card->condition,
+            'condition' => 'Near Mint',
         ]);
     }
 }

@@ -17,13 +17,13 @@ import { index as cardsIndex } from '@/routes/cards';
 
 type CardRow = {
     key: string;
+    id: number;
     set_id: number;
     product_id: number;
-    product_name: string;
+    name: string;
     number: string;
     set_name: string;
     rarity: string;
-    total_qty: number;
 };
 
 type CardsPayload = {
@@ -36,9 +36,10 @@ type CardsPayload = {
 };
 
 type Variant = {
-    condition: string;
-    quantity: number;
-    tcgplayer_id: number;
+    finish: string;
+    tcgplayer_id: number | null;
+    market_price: number | null;
+    low_price: number | null;
 };
 
 type StaleEntry = {
@@ -79,8 +80,8 @@ const importModal = useGlobalImportModal();
 
 const tableState = useTableState({
     endpoint: cardsIndex().url,
-    filterKeys: ['product', 'sets', 'in_stock'],
-    defaultSort: { field: 'product_name', dir: 'asc' },
+    filterKeys: ['product', 'sets'],
+    defaultSort: { field: 'name', dir: 'asc' },
     inertiaOnly: ['cards', 'variants', 'meta'],
 });
 const { hasActiveFilters, clearFilters: clearAllFilters } = tableState;
@@ -109,11 +110,6 @@ const filters = computed<FilterDef[]>(() => [
         key: 'sets',
         label: 'Set',
         options: setOptions.value,
-    },
-    {
-        kind: 'boolean',
-        key: 'in_stock',
-        label: 'In stock',
     },
 ]);
 
@@ -180,7 +176,7 @@ watch(
 
 const columns: ColumnDef<CardRow>[] = [
     {
-        key: 'product_name',
+        key: 'name',
         label: 'Card Name',
         sortable: true,
     },
@@ -198,12 +194,6 @@ const columns: ColumnDef<CardRow>[] = [
         key: 'rarity',
         label: 'Rarity',
         sortable: true,
-    },
-    {
-        key: 'total_qty',
-        label: 'Total Qty',
-        sortable: true,
-        align: 'right',
     },
 ];
 
@@ -302,16 +292,12 @@ const stalenessLabel = (entry: StaleEntry): string => {
             <MfFilterPanel :filters="filters" :endpoint="cardsIndex().url" />
         </template>
 
-        <template #cell-product_name="{ row }">
-            <span class="font-medium">{{ row.product_name }}</span>
+        <template #cell-name="{ row }">
+            <span class="font-medium">{{ row.name }}</span>
         </template>
 
         <template #cell-number="{ row }">
             <MfMonospaceId :value="row.number" />
-        </template>
-
-        <template #cell-total_qty="{ row }">
-            <span class="tabular-nums">{{ row.total_qty }}</span>
         </template>
 
         <template #expand-row="{ row }">
@@ -368,7 +354,7 @@ const stalenessLabel = (entry: StaleEntry): string => {
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex flex-col">
                         <span class="text-sm font-medium text-foreground">
-                            {{ row.product_name }}
+                            {{ row.name }}
                         </span>
                         <span
                             class="text-xs text-muted-foreground"
@@ -387,12 +373,6 @@ const stalenessLabel = (entry: StaleEntry): string => {
                         ]"
                         aria-hidden="true"
                     />
-                </div>
-                <div class="text-sm text-muted-foreground">
-                    Total Qty:
-                    <span class="text-foreground tabular-nums">{{
-                        row.total_qty
-                    }}</span>
                 </div>
                 <div v-if="expanded" class="-mx-3 mt-1 -mb-3">
                     <RowExpand :variants="variants[row.key] ?? []" />

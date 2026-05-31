@@ -117,7 +117,6 @@ class ImportOrdersJob implements ShouldQueue
             'orders_updated' => $result->ordersUpdated,
             'line_items_created' => $result->lineItemsCreated,
             'line_items_unmatched_to_pdf' => $result->lineItemsUnmatchedToPdf,
-            'line_items_unmatched_to_inventory' => $result->lineItemsUnmatchedToInventory,
             'errors' => $result->errors,
             'warnings' => $result->warnings,
             'completed_at' => now()->toIso8601String(),

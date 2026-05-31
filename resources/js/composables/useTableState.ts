@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import type { ComputedRef } from 'vue';
 
 /**
- * Shared URL-driven state for the Orders, Catalog, and Inventory tables.
+ * Shared URL-driven state for the Orders and Catalog tables.
  *
  * Single source of truth for the table-owned query keys (`page`, `per_page`,
  * `sort`, `dir`, plus per-page `filterKeys`). Reads the current Inertia page
@@ -32,7 +32,7 @@ export type SortState = {
 } | null;
 
 export type UseTableStateOptions = {
-    /** Inertia route URL (e.g. `inventoryIndex().url`). */
+    /** Inertia route URL (e.g. a Wayfinder `.url` value). */
     endpoint: string;
     /** Query keys this page treats as filters. */
     filterKeys: readonly string[];
@@ -42,7 +42,7 @@ export type UseTableStateOptions = {
     defaultSort?: { field: string; dir: SortDirection };
     /**
      * Optional client-side mirror of the controller's "filters complete"
-     * predicate. Used by the Inventory page's required-filter contract.
+     * predicate. Used by pages that require a minimum filter set.
      */
     filtersComplete?: (raw: Readonly<Record<string, string>>) => boolean;
     /**

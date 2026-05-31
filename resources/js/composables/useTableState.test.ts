@@ -296,41 +296,35 @@ describe('useTableState — pagination + sort writers', () => {
 
 describe('useTableState — filtersComplete predicate', () => {
     it('returns true by default when no predicate is supplied', () => {
-        setPageUrl('/inventory');
+        setPageUrl('/cards');
 
         const ts = useTableState({
-            endpoint: '/inventory',
-            filterKeys: ['product', 'sets', 'conditions'],
+            endpoint: '/cards',
+            filterKeys: ['product', 'sets'],
         });
 
         expect(ts.filtersComplete.value).toBe(true);
     });
 
     it('runs the supplied predicate against the URL filter state', () => {
-        setPageUrl('/inventory?product=1&sets=2&conditions=Near%20Mint');
+        setPageUrl('/cards?product=1&sets=2');
 
         const ts = useTableState({
-            endpoint: '/inventory',
-            filterKeys: ['product', 'sets', 'conditions'],
-            filtersComplete: (raw) =>
-                Boolean(raw.product) &&
-                Boolean(raw.sets) &&
-                Boolean(raw.conditions),
+            endpoint: '/cards',
+            filterKeys: ['product', 'sets'],
+            filtersComplete: (raw) => Boolean(raw.product) && Boolean(raw.sets),
         });
 
         expect(ts.filtersComplete.value).toBe(true);
     });
 
     it('returns false when the predicate fails', () => {
-        setPageUrl('/inventory?product=1');
+        setPageUrl('/cards?product=1');
 
         const ts = useTableState({
-            endpoint: '/inventory',
-            filterKeys: ['product', 'sets', 'conditions'],
-            filtersComplete: (raw) =>
-                Boolean(raw.product) &&
-                Boolean(raw.sets) &&
-                Boolean(raw.conditions),
+            endpoint: '/cards',
+            filterKeys: ['product', 'sets'],
+            filtersComplete: (raw) => Boolean(raw.product) && Boolean(raw.sets),
         });
 
         expect(ts.filtersComplete.value).toBe(false);

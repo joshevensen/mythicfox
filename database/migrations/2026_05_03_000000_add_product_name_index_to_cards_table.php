@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cards', function (Blueprint $table) {
-            $table->index('product_name');
+            $table->index('name');
         });
     }
 
     public function down(): void
     {
         Schema::table('cards', function (Blueprint $table) {
-            $table->dropIndex(['product_name']);
+            $table->dropIndex(['name']);
         });
     }
 };

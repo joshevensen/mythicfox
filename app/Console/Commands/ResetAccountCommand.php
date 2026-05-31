@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Card;
 use App\Models\File;
-use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -30,7 +29,6 @@ class ResetAccountCommand extends Command
 
         $orders = Order::count();
         $items = OrderItem::count();
-        $inventory = Inventory::count();
         $products = Product::count();
         $sets = Set::count();
         $cards = Card::count();
@@ -44,7 +42,7 @@ class ResetAccountCommand extends Command
             $storageFiles += count($disk->allFiles($prefix));
         }
 
-        if ($orders + $items + $inventory + $products + $sets + $cards + $sellerStats + $files + $storageFiles === 0) {
+        if ($orders + $items + $products + $sets + $cards + $sellerStats + $files + $storageFiles === 0) {
             $this->info('Nothing to reset.');
 
             return self::SUCCESS;
@@ -57,8 +55,7 @@ class ResetAccountCommand extends Command
         }
 
         DB::statement('TRUNCATE TABLE order_items, orders RESTART IDENTITY CASCADE');
-        DB::statement('TRUNCATE TABLE inventory RESTART IDENTITY');
-        DB::statement('TRUNCATE TABLE cards, sets, products RESTART IDENTITY CASCADE');
+        DB::statement('TRUNCATE TABLE printings, cards, sets, products RESTART IDENTITY CASCADE');
         DB::statement('TRUNCATE TABLE seller_stats RESTART IDENTITY');
         DB::statement('TRUNCATE TABLE files RESTART IDENTITY');
 

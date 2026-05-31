@@ -3,26 +3,22 @@
 namespace App\Services\Catalog;
 
 use App\Models\Card;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\Set;
 use App\Services\Catalog\Support\CentsParser;
 use Illuminate\Support\Carbon;
 
 /**
- * Upserts catalog rows from a single PricingCustomExport / MyPricing CSV row.
+ * Upserts catalog rows from a single PricingCustomExport CSV row.
  *
- * Shared by PricingCustomExportImporter (10-005) and MyPricingImporter (10-006).
- * Identity protection: on update, never overwrites product_name / number / rarity / condition.
+ * Shared by PricingCustomExportImporter and catalog-style pricing imports.
+ * Cards are canonical identities; per-finish provider IDs and prices live on
+ * printings.
  * Pricing rule fields on products and sets are never touched on update.
  */
 class CatalogUpserter
 {
-    /**
-     * Sealed-product condition strings that mark a CSV row as a former deck
-     * row. Matched case-insensitively and skipped until Printing absorbs them.
-     */
-    private const SKIPPED_SEALED_PRODUCT_CONDITIONS = ['unopened', 'opened'];
-
     /** @var array<string, int> name → product id */
     private array $productCache = [];
 
@@ -32,10 +28,13 @@ class CatalogUpserter
     /** @var array<int, true> product ids touched in this run */
     private array $touchedProductIds = [];
 
-    /** @var list<array<string, mixed>> buffered card upsert rows */
+    /** @var array<string, array<string, mixed>> buffered card upsert rows keyed by canonical identity */
     private array $cardBuffer = [];
 
-    public function __construct(private readonly int $cardChunkSize = 500) {}
+    /** @var array<string, array<string, mixed>> buffered printing upsert rows keyed by card identity + finish */
+    private array $printingBuffer = [];
+
+    public function __construct(private readonly int $chunkSize = 500) {}
 
     /**
      * @param  array<string, string|null>  $row  raw CSV row keyed by header
@@ -44,9 +43,11 @@ class CatalogUpserter
     {
         $productLine = trim((string) ($row['Product Line'] ?? ''));
         $setName = trim((string) ($row['Set Name'] ?? ''));
+        $productName = trim((string) ($row['Product Name'] ?? ''));
+        $number = trim((string) ($row['Number'] ?? ''));
         $tcgplayerId = (int) ($row['TCGplayer Id'] ?? 0);
 
-        if ($productLine === '' || $setName === '' || $tcgplayerId === 0) {
+        if ($productLine === '' || $setName === '' || $productName === '' || $number === '' || $tcgplayerId === 0) {
             return;
         }
 
@@ -55,32 +56,36 @@ class CatalogUpserter
 
         $this->touchedProductIds[$productId] = true;
 
-        $number = (string) ($row['Number'] ?? '');
         $condition = (string) ($row['Condition'] ?? '');
+        $identityKey = $this->identityKey($setId, $productName, $number);
 
-        if ($this->isSkippedSealedProductRow($number, $condition)) {
-            return;
-        }
-
-        $this->cardBuffer[] = [
+        $this->cardBuffer[$identityKey] = [
             'set_id' => $setId,
-            'tcgplayer_id' => $tcgplayerId,
-            'product_name' => (string) ($row['Product Name'] ?? ''),
+            'name' => $productName,
             'number' => $number,
             'rarity' => (string) ($row['Rarity'] ?? ''),
-            'condition' => $condition,
+        ];
+
+        $finish = $this->finishFromCondition($condition);
+        $this->printingBuffer[$identityKey."\0".$finish] = [
+            'identity_key' => $identityKey,
+            'finish' => $finish,
+            'tcgplayer_id' => $tcgplayerId,
+            'justtcg_id' => null,
+            'other_ids' => null,
+            'image_url' => $this->nullableString($row['Photo URL'] ?? null),
             'market_price' => CentsParser::parse($row['TCG Market Price'] ?? null),
             'low_price' => CentsParser::parse($row['TCG Low Price'] ?? null),
         ];
 
-        if (count($this->cardBuffer) >= $this->cardChunkSize) {
-            $this->flushCardBuffer();
+        if (count($this->printingBuffer) >= $this->chunkSize) {
+            $this->flushBuffers();
         }
     }
 
     public function flush(): void
     {
-        $this->flushCardBuffer();
+        $this->flushBuffers();
     }
 
     public function bumpPricedAt(): void
@@ -124,29 +129,105 @@ class CatalogUpserter
         return $this->setCache[$key] = $set->id;
     }
 
-    private function flushCardBuffer(): void
+    private function flushBuffers(): void
     {
         if ($this->cardBuffer === []) {
             return;
         }
 
-        // Identity columns (product_name, number, rarity, condition) are inserted but never
-        // overwritten on conflict; only market_price and low_price refresh.
         Card::upsert(
-            $this->cardBuffer,
-            ['tcgplayer_id'],
-            ['market_price', 'low_price'],
+            array_values($this->cardBuffer),
+            ['set_id', 'name', 'number'],
+            ['rarity'],
         );
 
-        $this->cardBuffer = [];
-    }
+        $cardIds = $this->loadCardIds($this->cardBuffer);
+        $printings = [];
 
-    private function isSkippedSealedProductRow(string $number, string $condition): bool
-    {
-        if (trim($number) !== '') {
-            return false;
+        foreach ($this->printingBuffer as $printing) {
+            $cardId = $cardIds[$printing['identity_key']] ?? null;
+
+            if ($cardId === null) {
+                continue;
+            }
+
+            unset($printing['identity_key']);
+            $printings[] = ['card_id' => $cardId, ...$printing];
         }
 
-        return in_array(strtolower(trim($condition)), self::SKIPPED_SEALED_PRODUCT_CONDITIONS, true);
+        if ($printings !== []) {
+            foreach ($printings as $printing) {
+                if ($printing['tcgplayer_id'] === null) {
+                    continue;
+                }
+
+                Printing::query()
+                    ->where('tcgplayer_id', $printing['tcgplayer_id'])
+                    ->where(function ($query) use ($printing) {
+                        $query->where('card_id', '!=', $printing['card_id'])
+                            ->orWhere('finish', '!=', $printing['finish']);
+                    })
+                    ->delete();
+            }
+
+            Printing::upsert(
+                $printings,
+                ['card_id', 'finish'],
+                ['tcgplayer_id', 'justtcg_id', 'other_ids', 'image_url', 'market_price', 'low_price'],
+            );
+        }
+
+        $this->cardBuffer = [];
+        $this->printingBuffer = [];
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $cards
+     * @return array<string, int>
+     */
+    private function loadCardIds(array $cards): array
+    {
+        $rows = Card::query()
+            ->where(function ($query) use ($cards) {
+                foreach ($cards as $card) {
+                    $query->orWhere(function ($query) use ($card) {
+                        $query->where('set_id', $card['set_id'])
+                            ->where('name', $card['name'])
+                            ->where('number', $card['number']);
+                    });
+                }
+            })
+            ->get(['id', 'set_id', 'name', 'number']);
+
+        return $rows->mapWithKeys(fn (Card $card) => [
+            $this->identityKey((int) $card->set_id, (string) $card->name, (string) $card->number) => (int) $card->id,
+        ])->all();
+    }
+
+    private function identityKey(int $setId, string $name, string $number): string
+    {
+        return $setId."\0".$name."\0".$number;
+    }
+
+    private function finishFromCondition(string $condition): string
+    {
+        $normalized = strtolower($condition);
+
+        if (str_contains($normalized, 'etched')) {
+            return 'etched';
+        }
+
+        if (str_contains($normalized, 'foil')) {
+            return 'foil';
+        }
+
+        return 'non-foil';
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        $string = trim((string) $value);
+
+        return $string === '' ? null : $string;
     }
 }

@@ -1,11 +1,8 @@
 <?php
 
-use App\Http\Controllers\AddCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
 use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Inventory\InventoryController;
-use App\Http\Controllers\Inventory\InventoryExportController;
 use App\Http\Controllers\Orders\OrderItemsController;
 use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
@@ -58,8 +55,6 @@ Disallow: /login
 Disallow: /dashboard
 Disallow: /orders
 Disallow: /cards
-Disallow: /inventory
-Disallow: /add-cards
 Disallow: /settings
 Sitemap: {$sitemap}
 
@@ -71,9 +66,6 @@ TXT;
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    Route::get('add-cards', [AddCardsController::class, 'show'])->name('add-cards');
-    Route::post('add-cards', [AddCardsController::class, 'store'])->name('add-cards.store');
-
     Route::get('orders', [OrdersController::class, 'index'])->name('orders.index');
     Route::post('orders/import', [OrdersImportController::class, 'store'])->name('orders.import');
     Route::get('orders/print', [PackingSlipController::class, 'bulk'])->name('orders.packing-slip.bulk');
@@ -84,20 +76,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('cards', [CatalogController::class, 'index'])->name('cards.index');
     Route::post('cards/upload', [CatalogUploadController::class, 'store'])->name('cards.upload');
-
-    Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
-    Route::patch('inventory/{inventory}', [InventoryController::class, 'update'])->name('inventory.update');
-    Route::delete('inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
-    Route::post('inventory/bulk/clear-overrides', [InventoryController::class, 'bulkClearOverrides'])
-        ->name('inventory.bulk.clear-overrides');
-    Route::post('inventory/bulk/mark-out-of-stock', [InventoryController::class, 'bulkMarkOutOfStock'])
-        ->name('inventory.bulk.mark-out-of-stock');
-    Route::post('inventory/export/recompute', [InventoryExportController::class, 'recompute'])
-        ->name('inventory.export.recompute');
-    Route::get('inventory/export/preview', [InventoryExportController::class, 'preview'])
-        ->name('inventory.export.preview');
-    Route::post('inventory/export/download', [InventoryExportController::class, 'download'])
-        ->name('inventory.export.download');
 });
 
 require __DIR__.'/settings.php';

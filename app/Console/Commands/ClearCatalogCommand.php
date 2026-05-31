@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Card;
-use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Set;
 use Illuminate\Console\Command;
@@ -13,16 +12,10 @@ class ClearCatalogCommand extends Command
 {
     protected $signature = 'catalog:clear {--force : Skip confirmation prompt}';
 
-    protected $description = 'Delete all products, sets, and cards. Refuses if inventory still references cards — run inventory:clear first.';
+    protected $description = 'Delete all products, sets, cards, and printings.';
 
     public function handle(): int
     {
-        if (Inventory::query()->exists()) {
-            $this->error('Inventory rows still reference cards. Run `inventory:clear` first.');
-
-            return self::FAILURE;
-        }
-
         $products = Product::count();
         $sets = Set::count();
         $cards = Card::count();
@@ -41,7 +34,7 @@ class ClearCatalogCommand extends Command
             return self::FAILURE;
         }
 
-        DB::statement('TRUNCATE TABLE cards, sets, products RESTART IDENTITY CASCADE');
+        DB::statement('TRUNCATE TABLE printings, cards, sets, products RESTART IDENTITY CASCADE');
 
         $this->info("Cleared {$products} product(s), {$sets} set(s), and {$cards} card(s).");
 
