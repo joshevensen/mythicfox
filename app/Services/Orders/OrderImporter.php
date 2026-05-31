@@ -22,13 +22,6 @@ use Throwable;
 
 class OrderImporter
 {
-    private readonly InventoryDecrementer $decrementer;
-
-    public function __construct(?InventoryDecrementer $decrementer = null)
-    {
-        $this->decrementer = $decrementer ?? new InventoryDecrementer;
-    }
-
     public function import(OrderImportInput $input): OrderImportResult
     {
         $result = new OrderImportResult;
@@ -154,17 +147,12 @@ class OrderImporter
                 $order = $this->insertNew($row, $shipping);
                 $result->ordersInserted++;
 
-                $newItems = $this->createOrderItems(
+                $this->createOrderItems(
                     $order,
                     $pullSheetByOrder[$row->tcgplayerOrderNumber] ?? [],
                     $pdfByOrder[$row->tcgplayerOrderNumber] ?? [],
                     $result,
                 );
-
-                if ($newItems !== []) {
-                    $decrement = $this->decrementer->decrement($order, collect($newItems));
-                    $result->lineItemsUnmatchedToInventory += $decrement->totalUnmatched();
-                }
             }
         });
 
@@ -245,15 +233,12 @@ class OrderImporter
     /**
      * @param  list<PullSheetLineItem>  $pullSheetItems
      * @param  list<PackingSlipLine>  $pdfLines
-     * @return list<OrderItem>
      */
-    private function createOrderItems(Order $order, array $pullSheetItems, array $pdfLines, OrderImportResult $result): array
+    private function createOrderItems(Order $order, array $pullSheetItems, array $pdfLines, OrderImportResult $result): void
     {
         if ($pullSheetItems === []) {
-            return [];
+            return;
         }
-
-        $created = [];
 
         foreach ($pullSheetItems as $pullItem) {
             $pdfMatch = $this->matchPdfLine($pdfLines, $pullItem);
@@ -302,11 +287,7 @@ class OrderImporter
                     ),
                 ]);
             }
-
-            $created[] = $item;
         }
-
-        return $created;
     }
 
     /**

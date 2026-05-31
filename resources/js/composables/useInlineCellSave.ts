@@ -8,7 +8,7 @@ import { reactive } from 'vue';
  * parallel; concurrent writes to the same cell collapse to last-write-wins
  * via abort + re-dispatch.
  *
- * Pattern documented in docs/ux/inventory.md#save-semantics-inline-edits.
+ * Pattern for optimistic inline table edits.
  */
 
 export type CellState = {

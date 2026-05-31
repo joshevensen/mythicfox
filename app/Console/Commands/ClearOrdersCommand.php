@@ -15,7 +15,7 @@ class ClearOrdersCommand extends Command
 
     protected $signature = 'orders:clear {--force : Skip confirmation prompt}';
 
-    protected $description = 'Delete all orders, order items, and order import files. Does not touch users, catalog, or inventory.';
+    protected $description = 'Delete all orders, order items, and order import files. Does not touch users or catalog.';
 
     public function handle(): int
     {

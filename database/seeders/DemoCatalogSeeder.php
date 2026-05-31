@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Card;
-use App\Models\Inventory;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\Set;
 use Illuminate\Database\Seeder;
@@ -47,7 +47,6 @@ class DemoCatalogSeeder extends Seeder
     private function seedProduct(Product $product, array $sets, int $tcgplayerSeed): void
     {
         $offset = 0;
-        $perProductInventory = 0;
 
         foreach ($sets as $setSpec) {
             $set = Set::factory()->create([
@@ -58,24 +57,18 @@ class DemoCatalogSeeder extends Seeder
             for ($i = 1; $i <= 20; $i++) {
                 $card = Card::factory()->create([
                     'set_id' => $set->id,
-                    'tcgplayer_id' => $tcgplayerSeed + $offset++,
-                    'product_name' => "Demo Card {$set->name} {$i}",
+                    'name' => "Demo Card {$set->name} {$i}",
                     'number' => ($setSpec['numbers'])($i),
                     'rarity' => $setSpec['rarities'][$i % count($setSpec['rarities'])],
-                    'condition' => $i % 5 === 0 ? 'Near Mint Foil' : 'Near Mint',
+                ]);
+
+                Printing::factory()->create([
+                    'card_id' => $card->id,
+                    'tcgplayer_id' => $tcgplayerSeed + $offset++,
+                    'finish' => $i % 5 === 0 ? 'foil' : 'non-foil',
                     'market_price' => $i % 7 === 0 ? null : ($i * 50),
                     'low_price' => $i % 7 === 0 ? null : ($i * 45),
                 ]);
-
-                if ($perProductInventory < 10) {
-                    Inventory::factory()->create([
-                        'card_id' => $card->id,
-                        'quantity' => $perProductInventory === 0 ? 0 : fake()->numberBetween(1, 8),
-                        'override_price' => $perProductInventory === 1 ? 999 : null,
-                        'calculated_price' => $perProductInventory === 2 ? null : ($card->market_price ?? null),
-                    ]);
-                    $perProductInventory++;
-                }
             }
         }
     }

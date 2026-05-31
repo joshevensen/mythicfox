@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('tcgplayer_sku_id')->nullable();
             $table->timestamps();
 
-            // Match key for the PDF-line join (20-008) and inventory decrement (20-009).
+            // Match key for the PDF-line join.
             // Postgres permits the wider seven-field index; if growth pushes it past
             // 8 KB, narrow to (order_id, product_name, number, condition) and let the
             // importer scan within that bucket.

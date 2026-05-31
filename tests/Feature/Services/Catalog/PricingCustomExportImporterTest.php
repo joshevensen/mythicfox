@@ -2,6 +2,7 @@
 
 use App\Models\Card;
 use App\Models\File;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\Set;
 use App\Services\Catalog\CatalogUpserter;
@@ -23,7 +24,7 @@ function importFixture(?string $sourcePath = null): void
     $importer->import($sourcePath ?? fixturePath());
 }
 
-test('first import creates products, sets, and cards with parsed prices', function () {
+test('first import creates products, sets, canonical cards, and printings with parsed prices', function () {
     importFixture();
 
     expect(Product::count())->toBe(2);
@@ -31,18 +32,23 @@ test('first import creates products, sets, and cards with parsed prices', functi
     expect(Product::where('name', 'Magic')->exists())->toBeTrue();
 
     expect(Set::count())->toBe(3);
+    expect(Card::count())->toBe(5);
+    expect(Printing::count())->toBe(6);
 
-    expect(Card::count())->toBe(7);
-
-    $boltyn = Card::where('tcgplayer_id', 4941700)->firstOrFail();
-    expect($boltyn->product_name)->toBe('Boltyn');
-    expect($boltyn->number)->toBe('BOL001');
+    $boltyn = Card::where('name', 'Boltyn')->where('number', 'BOL001')->firstOrFail();
     expect($boltyn->rarity)->toBe('Majestic');
-    expect($boltyn->condition)->toBe('Near Mint');
-    expect($boltyn->market_price)->toBe(1250);
-    expect($boltyn->low_price)->toBe(1175);
 
-    $emptyLow = Card::where('tcgplayer_id', 5012346)->firstOrFail();
+    $nonFoil = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
+    expect($nonFoil->card_id)->toBe($boltyn->id);
+    expect($nonFoil->finish)->toBe('non-foil');
+    expect($nonFoil->market_price)->toBe(1250);
+    expect($nonFoil->low_price)->toBe(1175);
+
+    $foil = Printing::where('tcgplayer_id', 4941701)->firstOrFail();
+    expect($foil->card_id)->toBe($boltyn->id);
+    expect($foil->finish)->toBe('foil');
+
+    $emptyLow = Printing::where('tcgplayer_id', 5012346)->firstOrFail();
     expect($emptyLow->market_price)->toBe(210);
     expect($emptyLow->low_price)->toBeNull();
 });
@@ -69,24 +75,25 @@ test('priced_at is bumped on every product touched', function () {
 test('re-running the same file produces zero logical changes', function () {
     importFixture();
     $cardCountAfterFirst = Card::count();
-    $boltyn = Card::where('tcgplayer_id', 4941700)->firstOrFail();
-    $marketBefore = $boltyn->market_price;
-    $lowBefore = $boltyn->low_price;
-    $productBefore = $boltyn->product_name;
+    $printingCountAfterFirst = Printing::count();
+    $boltyn = Card::where('name', 'Boltyn')->where('number', 'BOL001')->firstOrFail();
+    $nonFoil = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
+    $marketBefore = $nonFoil->market_price;
 
     importFixture();
 
     expect(Card::count())->toBe($cardCountAfterFirst);
+    expect(Printing::count())->toBe($printingCountAfterFirst);
     expect(Product::count())->toBe(2);
     expect(Set::count())->toBe(3);
 
     $boltyn->refresh();
-    expect($boltyn->market_price)->toBe($marketBefore);
-    expect($boltyn->low_price)->toBe($lowBefore);
-    expect($boltyn->product_name)->toBe($productBefore);
+    $nonFoil->refresh();
+    expect($boltyn->name)->toBe('Boltyn');
+    expect($nonFoil->market_price)->toBe($marketBefore);
 });
 
-test('second import refreshes market and low price but not identity', function () {
+test('second import creates a new canonical identity when name or number changes', function () {
     importFixture();
 
     $modified = sys_get_temp_dir().'/pricing-custom-export-modified.csv';
@@ -98,18 +105,16 @@ test('second import refreshes market and low price but not identity', function (
 
     importFixture($modified);
 
-    $boltyn = Card::where('tcgplayer_id', 4941700)->firstOrFail();
-    expect($boltyn->market_price)->toBe(9999);
-    expect($boltyn->low_price)->toBe(9800);
-    expect($boltyn->product_name)->toBe('Boltyn');
-    expect($boltyn->number)->toBe('BOL001');
-    expect($boltyn->rarity)->toBe('Majestic');
-    expect($boltyn->condition)->toBe('Near Mint');
+    $renamed = Card::where('name', 'RENAMED Boltyn')->where('number', 'RENAMED-001')->firstOrFail();
+    $printing = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
+    expect($printing->card_id)->toBe($renamed->id);
+    expect($printing->market_price)->toBe(9999);
+    expect($printing->low_price)->toBe(9800);
 
     @unlink($modified);
 });
 
-test('rows with empty Number and condition Unopened/Opened are skipped (case-insensitive)', function () {
+test('rows with empty Number are skipped', function () {
     $tmp = sys_get_temp_dir().'/pricing-with-sealed-products.csv';
     file_put_contents($tmp, <<<'CSV'
 TCGplayer Id,Product Line,Set Name,Product Name,Title,Number,Rarity,Condition,TCG Market Price,TCG Direct Low,TCG Low Price With Shipping,TCG Low Price,Total Quantity,Add to Quantity,TCG Marketplace Price,Photo URL
@@ -120,23 +125,26 @@ CSV);
 
     importFixture($tmp);
 
-    expect(Card::where('tcgplayer_id', 7000003)->exists())->toBeTrue();
-    expect(Card::where('tcgplayer_id', 7000001)->exists())->toBeFalse();
-    expect(Card::where('tcgplayer_id', 7000002)->exists())->toBeFalse();
+    expect(Printing::where('tcgplayer_id', 7000003)->exists())->toBeTrue();
+    expect(Printing::where('tcgplayer_id', 7000001)->exists())->toBeFalse();
+    expect(Printing::where('tcgplayer_id', 7000002)->exists())->toBeFalse();
 
     @unlink($tmp);
 });
 
-test('a row with empty Number but a non-sealed condition stays in cards (rule requires both)', function () {
-    $tmp = sys_get_temp_dir().'/pricing-empty-number-non-sealed.csv';
+test('finish is derived from condition text', function () {
+    $tmp = sys_get_temp_dir().'/pricing-finishes.csv';
     file_put_contents($tmp, <<<'CSV'
 TCGplayer Id,Product Line,Set Name,Product Name,Title,Number,Rarity,Condition,TCG Market Price,TCG Direct Low,TCG Low Price With Shipping,TCG Low Price,Total Quantity,Add to Quantity,TCG Marketplace Price,Photo URL
-"8000001","Magic","Wilds of Eldraine","Mystery No-Number","","","R","Near Mint","1.00","","","0.90","0","0","1.00",""
+"8000001","Magic","Wilds of Eldraine","Mystery","","1","R","Near Mint","1.00","","","0.90","0","0","1.00",""
+"8000002","Magic","Wilds of Eldraine","Mystery","","1","R","Near Mint Foil","2.00","","","1.90","0","0","2.00",""
+"8000003","Magic","Wilds of Eldraine","Mystery","","1","R","Near Mint Etched Foil","3.00","","","2.90","0","0","3.00",""
 CSV);
 
     importFixture($tmp);
 
-    expect(Card::where('tcgplayer_id', 8000001)->exists())->toBeTrue();
+    expect(Printing::orderBy('finish')->pluck('finish')->all())
+        ->toBe(['etched', 'foil', 'non-foil']);
 
     @unlink($tmp);
 });

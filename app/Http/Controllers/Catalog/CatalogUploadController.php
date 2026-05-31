@@ -18,7 +18,7 @@ class CatalogUploadController extends Controller
     private const MAX_FILE_BYTES = 200 * 1024 * 1024;
 
     /**
-     * The non-pricing PricingCustomExport / MyPricing columns we require for a
+     * The non-pricing PricingCustomExport columns we require for a
      * file to be a recognisable catalog import. The full 16-column header is
      * documented in docs/catalog-schema.md#column---field-map; checking the
      * identity columns is enough to catch obvious mis-uploads.

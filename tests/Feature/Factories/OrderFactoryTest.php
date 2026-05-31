@@ -68,10 +68,9 @@ test('OrderItemFactory::forCard copies catalog fields into the snapshot', functi
     $set = Set::factory()->forProduct($product)->create(['name' => 'Wilds of Eldraine']);
     $card = Card::factory()->create([
         'set_id' => $set->id,
-        'product_name' => 'Edgewall Innkeeper',
+        'name' => 'Edgewall Innkeeper',
         'number' => '97/204',
         'rarity' => 'R',
-        'condition' => 'Near Mint',
     ]);
 
     $item = OrderItem::factory()->forCard($card)->create();

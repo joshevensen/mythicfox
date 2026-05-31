@@ -46,7 +46,6 @@ type ImportResult =
           orders_updated: number;
           line_items_created: number;
           line_items_unmatched_to_pdf: number;
-          line_items_unmatched_to_inventory: number;
           errors: string[];
           warnings: string[];
           completed_at: string;

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Card;
-use App\Models\Inventory;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\Set;
 use Database\Seeders\CatalogSeeder;
@@ -29,14 +29,14 @@ test('DemoCatalogSeeder produces expected row counts and resolves all FKs', func
 
     expect(Product::count())->toBe(3);
     expect(Set::count())->toBe(6);
-    expect(Card::count())->toBe(120); // 3 products × 2 sets × 20 cards
-    expect(Inventory::count())->toBe(30); // ~10 per product
+    expect(Card::count())->toBe(120);
+    expect(Printing::count())->toBe(120);
 
     $orphanCards = Card::whereNotIn('set_id', Set::pluck('id'))->count();
     expect($orphanCards)->toBe(0);
 
-    $orphanInventory = Inventory::whereNotIn('card_id', Card::pluck('id'))->count();
-    expect($orphanInventory)->toBe(0);
+    $orphanPrintings = Printing::whereNotIn('card_id', Card::pluck('id'))->count();
+    expect($orphanPrintings)->toBe(0);
 });
 
 test('DemoCatalogSeeder produces game-specific rarity vocabulary', function () {
@@ -51,12 +51,13 @@ test('DemoCatalogSeeder produces game-specific rarity vocabulary', function () {
     expect($fabRarities)->toContain('Majestic');
 });
 
-test('DemoCatalogSeeder produces edge-case inventory rows', function () {
+test('DemoCatalogSeeder produces finish and pricing edge cases', function () {
     $this->seed(DemoCatalogSeeder::class);
 
-    expect(Inventory::where('quantity', 0)->exists())->toBeTrue();
-    expect(Inventory::whereNotNull('override_price')->exists())->toBeTrue();
-    expect(Inventory::whereNull('calculated_price')->exists())->toBeTrue();
+    expect(Printing::where('finish', 'foil')->exists())->toBeTrue();
+    expect(Printing::where('finish', 'non-foil')->exists())->toBeTrue();
+    expect(Printing::whereNull('market_price')->exists())->toBeTrue();
+    expect(Printing::whereNull('low_price')->exists())->toBeTrue();
 });
 
 test('factory states are wired up', function () {
@@ -72,19 +73,10 @@ test('factory states are wired up', function () {
     $set = Set::factory()->forProduct($magic)->create();
     expect($set->product_id)->toBe($magic->id);
 
-    $foil = Card::factory()->nearMintFoil()->create();
-    expect($foil->condition)->toBe('Near Mint Foil');
+    $foil = Printing::factory()->foil()->create();
+    expect($foil->finish)->toBe('foil');
 
-    $custom = Card::factory()->withMarketAndLow(1234, 999)->create();
+    $custom = Printing::factory()->withPricing(1234, 999)->create();
     expect($custom->market_price)->toBe(1234);
     expect($custom->low_price)->toBe(999);
-
-    $override = Inventory::factory()->withOverride(500)->create();
-    expect($override->override_price)->toBe(500);
-
-    $calculated = Inventory::factory()->withCalculated(750)->create();
-    expect($calculated->calculated_price)->toBe(750);
-
-    $exported = Inventory::factory()->lastExported(800)->create();
-    expect($exported->last_exported_price)->toBe(800);
 });

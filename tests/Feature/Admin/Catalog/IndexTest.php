@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Card;
-use App\Models\Inventory;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\Set;
 use App\Models\User;
@@ -20,8 +20,9 @@ test('unauthenticated visit redirects to login', function () {
 test('authenticated visit returns 200 and renders Catalog/Index with paginator shape', function () {
     $product = Product::factory()->magic()->create();
     $set = Set::factory()->forProduct($product)->create(['name' => 'Welcome to Rathe']);
-    Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
-        'product_name' => 'Boltyn',
+    Card::factory()->create([
+        'set_id' => $set->id,
+        'name' => 'Boltyn',
         'number' => 'BOL001',
         'rarity' => 'Rare',
     ]);
@@ -32,11 +33,10 @@ test('authenticated visit returns 200 and renders Catalog/Index with paginator s
             fn ($page) => $page
                 ->component('Cards/Index')
                 ->has('cards.data', 1)
-                ->where('cards.data.0.product_name', 'Boltyn')
+                ->where('cards.data.0.name', 'Boltyn')
                 ->where('cards.data.0.number', 'BOL001')
                 ->where('cards.data.0.set_name', 'Welcome to Rathe')
                 ->where('cards.data.0.rarity', 'Rare')
-                ->where('cards.data.0.total_qty', 0)
                 ->where('cards.meta.per_page', 50)
                 ->where('cards.meta.current_page', 1)
                 ->where('cards.meta.total', 1)
@@ -45,54 +45,29 @@ test('authenticated visit returns 200 and renders Catalog/Index with paginator s
         );
 });
 
-test('parent-row aggregation sums quantity across condition variants', function () {
-    $product = Product::factory()->magic()->create();
-    $set = Set::factory()->forProduct($product)->create();
-
-    $nm = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
-        'product_name' => 'Black Lotus',
-        'number' => '1',
-        'rarity' => 'M',
-    ]);
-    $foil = Card::factory()->state(['set_id' => $set->id])->nearMintFoil()->create([
-        'product_name' => 'Black Lotus',
-        'number' => '1',
-        'rarity' => 'M',
-    ]);
-
-    Inventory::factory()->state(['card_id' => $nm->id, 'quantity' => 3])->create();
-    Inventory::factory()->state(['card_id' => $foil->id, 'quantity' => 2])->create();
-
-    $this->get(route('cards.index'))->assertInertia(
-        fn ($page) => $page
-            ->has('cards.data', 1)
-            ->where('cards.data.0.total_qty', 5)
-    );
-});
-
 test('filtering by Product narrows results', function () {
     $magic = Product::factory()->magic()->create();
     $lorcana = Product::factory()->lorcana()->create();
     $magicSet = Set::factory()->forProduct($magic)->create();
     $lorcanaSet = Set::factory()->forProduct($lorcana)->create();
 
-    Card::factory()->state(['set_id' => $magicSet->id])->create(['product_name' => 'Lightning Bolt', 'number' => '1']);
-    Card::factory()->state(['set_id' => $lorcanaSet->id])->create(['product_name' => 'Mickey', 'number' => '1']);
+    Card::factory()->create(['set_id' => $magicSet->id, 'name' => 'Lightning Bolt', 'number' => '1']);
+    Card::factory()->create(['set_id' => $lorcanaSet->id, 'name' => 'Mickey', 'number' => '1']);
 
     $this->get(route('cards.index', ['product' => $magic->id]))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
-            ->where('cards.data.0.product_name', 'Lightning Bolt')
+            ->where('cards.data.0.name', 'Lightning Bolt')
     );
 });
 
-test('filtering by Set requires a Product to drive option list (chained behavior)', function () {
+test('filtering by Set requires a Product to drive option list', function () {
     $magic = Product::factory()->magic()->create();
     $setA = Set::factory()->forProduct($magic)->create(['name' => 'Alpha']);
     $setB = Set::factory()->forProduct($magic)->create(['name' => 'Beta']);
 
-    Card::factory()->state(['set_id' => $setA->id])->create(['product_name' => 'Card A', 'number' => '1']);
-    Card::factory()->state(['set_id' => $setB->id])->create(['product_name' => 'Card B', 'number' => '1']);
+    Card::factory()->create(['set_id' => $setA->id, 'name' => 'Card A', 'number' => '1']);
+    Card::factory()->create(['set_id' => $setB->id, 'name' => 'Card B', 'number' => '1']);
 
     $this->get(route('cards.index', [
         'product' => $magic->id,
@@ -100,47 +75,25 @@ test('filtering by Set requires a Product to drive option list (chained behavior
     ]))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
-            ->where('cards.data.0.product_name', 'Card A')
+            ->where('cards.data.0.name', 'Card A')
     );
 
-    // Chained: meta.sets_by_product carries the per-product set list so the
-    // page can validate selections client-side when Product changes.
     $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page->has('meta.sets_by_product.'.$magic->id, 2)
     );
 });
 
-test('In stock toggle excludes cards where every condition variant has zero quantity', function () {
+test('sort by name orders results', function () {
     $product = Product::factory()->magic()->create();
     $set = Set::factory()->forProduct($product)->create();
 
-    $stocked = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Stocked', 'number' => '1']);
-    $unstocked = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Unstocked', 'number' => '2']);
+    Card::factory()->create(['set_id' => $set->id, 'name' => 'Low', 'number' => '1']);
+    Card::factory()->create(['set_id' => $set->id, 'name' => 'High', 'number' => '2']);
 
-    Inventory::factory()->state(['card_id' => $stocked->id, 'quantity' => 4])->create();
-    Inventory::factory()->state(['card_id' => $unstocked->id, 'quantity' => 0])->create();
-
-    $this->get(route('cards.index', ['in_stock' => '1']))->assertInertia(
+    $this->get(route('cards.index', ['sort' => 'name', 'dir' => 'asc']))->assertInertia(
         fn ($page) => $page
-            ->has('cards.data', 1)
-            ->where('cards.data.0.product_name', 'Stocked')
-    );
-});
-
-test('sort by total_qty desc orders results', function () {
-    $product = Product::factory()->magic()->create();
-    $set = Set::factory()->forProduct($product)->create();
-
-    $low = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Low', 'number' => '1']);
-    $high = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'High', 'number' => '2']);
-
-    Inventory::factory()->state(['card_id' => $low->id, 'quantity' => 1])->create();
-    Inventory::factory()->state(['card_id' => $high->id, 'quantity' => 99])->create();
-
-    $this->get(route('cards.index', ['sort' => 'total_qty', 'dir' => 'desc']))->assertInertia(
-        fn ($page) => $page
-            ->where('cards.data.0.product_name', 'High')
-            ->where('cards.data.1.product_name', 'Low')
+            ->where('cards.data.0.name', 'High')
+            ->where('cards.data.1.name', 'Low')
     );
 });
 
@@ -179,35 +132,39 @@ test('stale-data indicator data is present in page props with the correct shape'
     );
 });
 
-test('expand-row variants are eager-loaded into props keyed by parent row key', function () {
+test('expand-row variants are eager-loaded into props keyed by card row key', function () {
     $product = Product::factory()->magic()->create();
     $set = Set::factory()->forProduct($product)->create();
 
-    $nm = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
-        'product_name' => 'Boltyn',
+    $card = Card::factory()->create([
+        'set_id' => $set->id,
+        'name' => 'Boltyn',
         'number' => 'BOL001',
         'rarity' => 'Rare',
+    ]);
+    Printing::factory()->create([
+        'card_id' => $card->id,
+        'finish' => 'non-foil',
         'tcgplayer_id' => 4941474,
+        'market_price' => 150,
+        'low_price' => 120,
     ]);
-    $foil = Card::factory()->state(['set_id' => $set->id])->nearMintFoil()->create([
-        'product_name' => 'Boltyn',
-        'number' => 'BOL001',
-        'rarity' => 'Rare',
+    Printing::factory()->foil()->create([
+        'card_id' => $card->id,
         'tcgplayer_id' => 4941566,
+        'market_price' => 250,
+        'low_price' => 200,
     ]);
 
-    Inventory::factory()->state(['card_id' => $nm->id, 'quantity' => 2])->create();
-    Inventory::factory()->state(['card_id' => $foil->id, 'quantity' => 1])->create();
-
-    $expectedKey = sprintf('%d|Boltyn|BOL001', $set->id);
+    $expectedKey = (string) $card->id;
 
     $this->get(route('cards.index'))->assertInertia(
         fn ($page) => $page
             ->where('cards.data.0.key', $expectedKey)
             ->has('variants.'.$expectedKey, 2)
-            ->where('variants.'.$expectedKey.'.0.condition', 'Near Mint')
-            ->where('variants.'.$expectedKey.'.0.quantity', 2)
-            ->where('variants.'.$expectedKey.'.1.condition', 'Near Mint Foil')
-            ->where('variants.'.$expectedKey.'.1.quantity', 1)
+            ->where('variants.'.$expectedKey.'.0.finish', 'foil')
+            ->where('variants.'.$expectedKey.'.0.tcgplayer_id', 4941566)
+            ->where('variants.'.$expectedKey.'.1.finish', 'non-foil')
+            ->where('variants.'.$expectedKey.'.1.market_price', 150)
     );
 });

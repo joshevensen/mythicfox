@@ -3,6 +3,7 @@
 use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\Card;
 use App\Models\File;
+use App\Models\Printing;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Catalog\PricingCustomExportImporter;
@@ -142,6 +143,7 @@ test('the job materializes persisted files and runs the importer end-to-end', fu
     );
 
     expect(Card::query()->count())->toBe(1)
+        ->and(Printing::query()->count())->toBe(1)
         ->and(Product::query()->where('name', 'Magic')->exists())->toBeTrue()
         ->and(Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY))->toBeFalse();
 

@@ -15,11 +15,10 @@ type Section = {
 };
 
 // TODO(phase-50/60): swap placeholder URLs for Wayfinder helpers once
-// orders/catalog/inventory routes exist.
+// orders/catalog routes exist.
 const SECTIONS: Section[] = [
     { label: 'Dashboard', href: dashboard().url, matchPrefix: '/dashboard' },
     { label: 'Orders', href: '/orders', matchPrefix: '/orders' },
-    { label: 'Inventory', href: '/inventory', matchPrefix: '/inventory' },
     { label: 'Cards', href: '/cards', matchPrefix: '/cards' },
     { label: 'Settings', href: editProfile().url, matchPrefix: '/settings' },
 ];

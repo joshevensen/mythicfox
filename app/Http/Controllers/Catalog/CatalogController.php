@@ -72,8 +72,7 @@ class CatalogController extends Controller
         $filters = [
             'product_id' => $this->intOrNull($request->query('product')),
             'set_ids' => $this->csvIds($request->query('sets')),
-            'in_stock' => $request->query('in_stock') === '1',
-            'sort' => (string) $request->query('sort', 'product_name'),
+            'sort' => (string) $request->query('sort', 'name'),
             'dir' => $request->query('dir') === 'desc' ? 'desc' : 'asc',
             'per_page' => $this->resolvePerPage($request),
             'page' => max(1, (int) $request->query('page', 1)),
@@ -85,24 +84,20 @@ class CatalogController extends Controller
         $variants = [];
 
         foreach ($paginator->items() as $row) {
-            $key = sprintf('%d|%s|%s', $row->set_id, $row->product_name, $row->number);
+            $key = (string) $row->id;
 
             $rows[] = [
                 'key' => $key,
+                'id' => (int) $row->id,
                 'set_id' => (int) $row->set_id,
                 'product_id' => (int) $row->product_id,
-                'product_name' => (string) $row->product_name,
+                'name' => (string) $row->name,
                 'number' => (string) $row->number,
                 'set_name' => (string) $row->set_name,
                 'rarity' => (string) $row->rarity,
-                'total_qty' => (int) $row->total_qty,
             ];
 
-            $variants[$key] = $this->browse->variantsFor(
-                (int) $row->set_id,
-                (string) $row->product_name,
-                (string) $row->number,
-            );
+            $variants[$key] = $this->browse->variantsFor((int) $row->id);
         }
 
         return [$paginator, $rows, $variants];

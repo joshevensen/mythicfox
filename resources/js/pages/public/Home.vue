@@ -124,7 +124,7 @@ const organizationJsonLd = computed(() =>
                             data-test="hero-shop-cta"
                             class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
                         >
-                            Browse Inventory →
+                            Browse Singles →
                         </a>
                         <Link
                             :href="sellToUs().url"

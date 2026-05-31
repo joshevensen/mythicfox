@@ -168,17 +168,14 @@ test('every uploaded file produces a files row at imports/orders/...', function 
     }
 });
 
-test('OrderImportResult::summaryLine reports inserted, updated, and unmatched-inventory counts', function () {
+test('OrderImportResult::summaryLine reports inserted and updated counts', function () {
     $result = new OrderImportResult(
         ordersInserted: 5,
         ordersUpdated: 2,
         lineItemsCreated: 12,
-        lineItemsUnmatchedToInventory: 3,
     );
 
-    expect($result->summaryLine())->toBe(
-        "Imported 7 orders (5 new, 2 updated). 3 line items couldn't be matched to inventory and were not decremented."
-    );
+    expect($result->summaryLine())->toBe('Imported 7 orders (5 new, 2 updated).');
 });
 
 test('OrderImportResult::summaryLine handles the only-new case without unmatched suffix', function () {

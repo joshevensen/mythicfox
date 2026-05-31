@@ -9,8 +9,7 @@ use Illuminate\Database\Seeder;
 /**
  * Development-only seed data for the orders domain. About 25 orders across the
  * last 90 days, mostly Completed - Paid with a few Canceled and a few shipped.
- * Each order gets 1–4 line items. NO inventory decrement runs from this
- * seeder — it's data-only for manual UI exploration.
+ * Each order gets 1–4 line items. It is data-only for manual UI exploration.
  *
  * Tests don't run this; tests build orders directly via the factories.
  */
