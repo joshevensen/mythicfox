@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import {
+    Lock,
+    MessageSquare,
+    Shield,
+    Star,
+    Tag,
+    ThumbsUp,
+    Truck,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { login, sellToUs } from '@/routes';
 
@@ -9,27 +18,27 @@ defineProps<{
 
 const mainFeatures = [
     {
-        icon: 'pi pi-tag',
+        icon: Tag,
         title: 'Great Prices',
         body: 'We offer some of the most competitive prices on the market for both buyers and sellers.',
     },
     {
-        icon: 'pi pi-shield',
+        icon: Shield,
         title: 'Trusted & Secure',
         body: 'Safe transactions, secure payments, and data protection you can count on.',
     },
     {
-        icon: 'pi pi-truck',
+        icon: Truck,
         title: 'Fast & Reliable',
         body: 'Quick shipping and fast payments so you can get back to what you love.',
     },
 ];
 
 const aboutFeatures = [
-    { icon: 'pi pi-star', title: 'Collector Focused' },
-    { icon: 'pi pi-thumbs-up', title: 'Fair & Honest Deals' },
-    { icon: 'pi pi-lock', title: 'Safe & Secure Payments' },
-    { icon: 'pi pi-comments', title: 'Responsive Support' },
+    { icon: Star, title: 'Collector Focused' },
+    { icon: ThumbsUp, title: 'Fair & Honest Deals' },
+    { icon: Lock, title: 'Safe & Secure Payments' },
+    { icon: MessageSquare, title: 'Responsive Support' },
 ];
 
 const organizationJsonLd = computed(() =>
@@ -138,11 +147,11 @@ const organizationJsonLd = computed(() =>
                         :key="feature.title"
                         class="flex flex-col items-center gap-4 text-center"
                     >
-                        <div
-                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
-                        >
-                            <i :class="[feature.icon, 'text-2xl']" />
-                        </div>
+                        <component
+                            :is="feature.icon"
+                            :size="64"
+                            class="text-[#F38B17]"
+                        />
                         <h3 class="text-lg font-semibold text-[#FCFAEF]">
                             {{ feature.title }}
                         </h3>
@@ -185,11 +194,11 @@ const organizationJsonLd = computed(() =>
                         :key="feat.title"
                         class="flex flex-col items-center gap-3 text-center"
                     >
-                        <div
-                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
-                        >
-                            <i :class="[feat.icon, 'text-xl']" />
-                        </div>
+                        <component
+                            :is="feat.icon"
+                            :size="64"
+                            class="text-[#F38B17]"
+                        />
                         <p class="text-sm font-medium text-[#FCFAEF]/75">
                             {{ feat.title }}
                         </p>

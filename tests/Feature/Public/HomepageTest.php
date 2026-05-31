@@ -48,14 +48,15 @@ test('the homepage emits an Organization JSON-LD block', function () {
         ->toContain('application/ld+json');
 });
 
-test('the homepage feature icons use PrimeIcons', function () {
+test('the homepage feature icons use Lucide', function () {
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
-        ->toContain('pi pi-tag')
-        ->toContain('pi pi-shield')
-        ->toContain('pi pi-truck')
-        ->toContain('pi pi-star');
+        ->toContain('lucide-vue-next')
+        ->toContain('Tag')
+        ->toContain('Shield')
+        ->toContain('Truck')
+        ->toContain('Star');
 });
 
 test('the homepage Vue component receives storefront URL via props (not hardcoded)', function () {
