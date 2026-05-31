@@ -12,16 +12,22 @@ use App\Http\Controllers\Orders\OrdersController;
 use App\Http\Controllers\Orders\OrdersImportController;
 use App\Http\Controllers\Orders\PackingSlipController;
 use App\Http\Controllers\PublicHomepageController;
+use App\Http\Controllers\PublicPrivacyController;
 use App\Http\Controllers\PublicSellToUsController;
+use App\Http\Controllers\PublicTermsController;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', PublicHomepageController::class)->name('home');
 Route::get('/sell-to-us', PublicSellToUsController::class)->name('sell-to-us');
+Route::get('/terms', PublicTermsController::class)->name('terms');
+Route::get('/privacy', PublicPrivacyController::class)->name('privacy');
 
 Route::get('/sitemap.xml', function () {
     $homepage = route('home');
     $sellToUs = route('sell-to-us');
+    $terms = route('terms');
+    $privacy = route('privacy');
     $body = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -30,6 +36,12 @@ Route::get('/sitemap.xml', function () {
     </url>
     <url>
         <loc>{$sellToUs}</loc>
+    </url>
+    <url>
+        <loc>{$terms}</loc>
+    </url>
+    <url>
+        <loc>{$privacy}</loc>
     </url>
 </urlset>
 
