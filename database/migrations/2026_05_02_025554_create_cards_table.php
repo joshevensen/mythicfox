@@ -17,6 +17,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['set_id', 'name', 'number']);
+            $table->index('name');
         });
     }
 
