@@ -12,7 +12,7 @@ test('factory creates a card attached to a set', function () {
     expect($card->name)->toBeString();
 });
 
-test('canonical card uniqueness is enforced per set name and number', function () {
+test('canonical card uniqueness is enforced per set id, name, and number', function () {
     $set = Set::factory()->create();
     Card::factory()->create(['set_id' => $set->id, 'name' => 'Black Lotus', 'number' => '1']);
 
