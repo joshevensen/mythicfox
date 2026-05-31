@@ -187,16 +187,14 @@ class CatalogUpserter
      */
     private function loadCardIds(array $cards): array
     {
+        $setIds = array_unique(array_column($cards, 'set_id'));
+        $names = array_unique(array_column($cards, 'name'));
+        $numbers = array_unique(array_column($cards, 'number'));
+
         $rows = Card::query()
-            ->where(function ($query) use ($cards) {
-                foreach ($cards as $card) {
-                    $query->orWhere(function ($query) use ($card) {
-                        $query->where('set_id', $card['set_id'])
-                            ->where('name', $card['name'])
-                            ->where('number', $card['number']);
-                    });
-                }
-            })
+            ->whereIn('set_id', $setIds)
+            ->whereIn('name', $names)
+            ->whereIn('number', $numbers)
             ->get(['id', 'set_id', 'name', 'number']);
 
         return $rows->mapWithKeys(fn (Card $card) => [
