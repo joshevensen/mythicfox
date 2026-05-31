@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { login } from '@/routes';
+import { login, sellToUs } from '@/routes';
 
 defineProps<{
     tcgplayerStorefrontUrl: string | null;
@@ -30,24 +30,6 @@ const aboutFeatures = [
     { icon: 'pi pi-thumbs-up', title: 'Fair & Honest Deals' },
     { icon: 'pi pi-lock', title: 'Safe & Secure Payments' },
     { icon: 'pi pi-comments', title: 'Responsive Support' },
-];
-
-const sellSteps = [
-    {
-        number: '01',
-        title: 'Send Us Your List',
-        body: 'Email us a list of what you have — a spreadsheet, photos, or even a quick message works.',
-    },
-    {
-        number: '02',
-        title: 'We Make an Offer',
-        body: 'We review your cards and come back with a fair, transparent offer. No pressure, no games.',
-    },
-    {
-        number: '03',
-        title: 'You Get Paid',
-        body: 'Accept the offer and get paid fast. We make the process simple so you can move on.',
-    },
 ];
 
 const organizationJsonLd = computed(() =>
@@ -135,13 +117,13 @@ const organizationJsonLd = computed(() =>
                         >
                             Browse Inventory →
                         </a>
-                        <a
-                            href="#sell"
+                        <Link
+                            :href="sellToUs().url"
                             data-test="hero-sell-cta"
-                            class="inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-semibold tracking-widest text-[#FCFAEF]/60 uppercase transition-colors hover:text-[#FCFAEF]"
+                            class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
                         >
                             Sell Your Collection →
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -213,63 +195,6 @@ const organizationJsonLd = computed(() =>
                         </p>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- SELL TO US -->
-        <section id="sell" class="px-6 py-16">
-            <div class="mx-auto max-w-3xl text-center">
-                <div class="mb-4 flex items-center justify-center gap-3">
-                    <div class="h-px w-10 bg-[#F38B17]/40" />
-                    <span
-                        class="text-xs font-semibold tracking-widest text-[#F38B17] uppercase"
-                    >
-                        Sell to Us
-                    </span>
-                    <div class="h-px w-10 bg-[#F38B17]/40" />
-                </div>
-                <h2 class="mb-6 text-3xl font-bold text-[#FCFAEF] sm:text-4xl">
-                    Sell Your Collection<br />the Easy Way
-                </h2>
-                <p class="mb-14 text-base leading-relaxed text-[#FCFAEF]/65">
-                    We buy singles, sets, and full collections. No haggling, no
-                    hassle — just a straightforward process from start to
-                    payment.
-                </p>
-            </div>
-
-            <div class="mx-auto mb-14 max-w-4xl">
-                <div class="grid grid-cols-1 gap-10 sm:grid-cols-3">
-                    <div
-                        v-for="step in sellSteps"
-                        :key="step.number"
-                        class="flex flex-col items-center gap-4 text-center"
-                    >
-                        <div
-                            class="flex h-16 w-16 items-center justify-center rounded-full text-[#F38B17]"
-                        >
-                            <span class="text-xl font-bold">{{
-                                step.number
-                            }}</span>
-                        </div>
-                        <h3 class="text-lg font-semibold text-[#FCFAEF]">
-                            {{ step.title }}
-                        </h3>
-                        <p class="text-sm leading-relaxed text-[#FCFAEF]/55">
-                            {{ step.body }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-center">
-                <a
-                    href="mailto:josh@mythicfoxgames.com"
-                    data-test="sell-email-cta"
-                    class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
-                >
-                    Get in Touch →
-                </a>
             </div>
         </section>
 

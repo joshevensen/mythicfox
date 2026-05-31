@@ -36,7 +36,7 @@ test('the homepage source renders the static hero, about, and feature copy verba
         ->toContain('Collector Focused')
         ->toContain('Fair & Honest Deals')
         ->toContain('Sell Your Collection')
-        ->toContain('josh@mythicfoxgames.com')
+        ->toContain('sellToUs')
         ->toContain('Admin');
 });
 
