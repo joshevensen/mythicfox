@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Decks;
 
 use App\Http\Controllers\Controller;
-use App\Models\CardSet;
 use App\Models\Deck;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -115,7 +115,7 @@ class DecksController extends Controller
      */
     private function setsByProduct(): array
     {
-        $sets = CardSet::query()
+        $sets = Set::query()
             ->whereIn('id', function ($sub) {
                 $sub->from('decks')->select('set_id');
             })

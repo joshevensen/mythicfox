@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Database\Seeder;
 
 /**
@@ -50,7 +50,7 @@ class DemoCatalogSeeder extends Seeder
         $perProductInventory = 0;
 
         foreach ($sets as $setSpec) {
-            $set = CardSet::factory()->create([
+            $set = Set::factory()->create([
                 'product_id' => $product->id,
                 'name' => $setSpec['name'],
             ]);

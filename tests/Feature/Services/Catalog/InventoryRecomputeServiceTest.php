@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Catalog\InventoryRecomputeService;
 use Illuminate\Support\Carbon;
 
@@ -14,7 +14,7 @@ test('recompute fills calculated_price using product rules from the example tabl
         'market_offset' => 0,
         'high_offset' => 15,
     ]);
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
 
     $cases = [
         ['market' => 10, 'low' => 5, 'expected' => 25],
@@ -47,8 +47,8 @@ test('recompute fills calculated_price using product rules from the example tabl
 
 test('set-level overrides shadow product fields per-row', function () {
     $product = Product::factory()->create(['base_price' => 25, 'high_price' => 1000, 'market_offset' => 0, 'high_offset' => 15]);
-    $productSet = CardSet::factory()->create(['product_id' => $product->id]);
-    $overrideSet = CardSet::factory()->create(['product_id' => $product->id, 'base_price' => 200]);
+    $productSet = Set::factory()->create(['product_id' => $product->id]);
+    $overrideSet = Set::factory()->create(['product_id' => $product->id, 'base_price' => 200]);
 
     $cardA = Card::factory()->create(['set_id' => $productSet->id, 'market_price' => 50, 'low_price' => 50]);
     $cardB = Card::factory()->create(['set_id' => $overrideSet->id, 'market_price' => 50, 'low_price' => 50]);
@@ -63,7 +63,7 @@ test('set-level overrides shadow product fields per-row', function () {
 
 test('calculated_price becomes null when both market and low are null', function () {
     $product = Product::factory()->create();
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
     $card = Card::factory()->create(['set_id' => $set->id, 'market_price' => null, 'low_price' => null]);
     Inventory::factory()->create(['card_id' => $card->id, 'calculated_price' => 999]);
 
@@ -75,7 +75,7 @@ test('calculated_price becomes null when both market and low are null', function
 
 test('recompute does not touch override_price', function () {
     $product = Product::factory()->create();
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
     $card = Card::factory()->create(['set_id' => $set->id, 'market_price' => 500, 'low_price' => 400]);
     $inventory = Inventory::factory()->create([
         'card_id' => $card->id,
@@ -93,7 +93,7 @@ test('recompute does not touch override_price', function () {
 
 test('recompute is idempotent', function () {
     $product = Product::factory()->create();
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
     $card = Card::factory()->create(['set_id' => $set->id, 'market_price' => 500, 'low_price' => 400]);
     Inventory::factory()->create(['card_id' => $card->id]);
 
@@ -111,7 +111,7 @@ test('stale checker buckets stale and fresh products', function () {
     $missing = Product::factory()->create(['priced_at' => null]);
 
     foreach ([$stale, $fresh, $missing] as $p) {
-        $set = CardSet::factory()->create(['product_id' => $p->id]);
+        $set = Set::factory()->create(['product_id' => $p->id]);
         $card = Card::factory()->create(['set_id' => $set->id]);
         Inventory::factory()->create(['card_id' => $card->id]);
     }

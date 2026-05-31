@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 beforeEach(function () {
@@ -21,8 +21,8 @@ test('authenticated visit returns 200 and exposes products with their inline rul
         'market_offset' => 5,
         'high_offset' => 25,
     ]);
-    CardSet::factory()->forProduct($product)->create(['name' => 'Alpha Set']);
-    CardSet::factory()->forProduct($product)->create([
+    Set::factory()->forProduct($product)->create(['name' => 'Alpha Set']);
+    Set::factory()->forProduct($product)->create([
         'name' => 'Beta Set',
         'base_price' => 75,
     ]);
@@ -86,7 +86,7 @@ test('updating set pricing rules with all-null fields clears overrides and remov
         'base_price' => 25,
         'high_price' => 1000,
     ]);
-    $set = CardSet::factory()->forProduct($product)->create([
+    $set = Set::factory()->forProduct($product)->create([
         'name' => 'Overridden Set',
         'base_price' => 100,
         'high_price' => 2000,
@@ -122,7 +122,7 @@ test('updating set pricing rules rejects base_price greater than effective high_
         'base_price' => 25,
         'high_price' => 1000,
     ]);
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     // base_price overrides to 5000 while high_price inherits 1000 → invalid.
     $this->patch(

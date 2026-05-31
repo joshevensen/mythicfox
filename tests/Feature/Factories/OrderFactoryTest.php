@@ -1,11 +1,11 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Set;
 
 test('Order factory produces a fully populated row with seller-id-prefixed order number', function () {
     config(['services.tcgplayer.seller_id' => '623394e9']);
@@ -65,7 +65,7 @@ test('OrderItemFactory::withoutPrice nulls unit_price and total_price', function
 
 test('OrderItemFactory::forCard copies catalog fields into the snapshot', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Wilds of Eldraine']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Wilds of Eldraine']);
     $card = Card::factory()->create([
         'set_id' => $set->id,
         'product_name' => 'Edgewall Innkeeper',

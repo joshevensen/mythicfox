@@ -3,9 +3,9 @@
 namespace App\Services\Catalog;
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Deck;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Catalog\Support\CentsParser;
 use Illuminate\Support\Carbon;
 
@@ -138,7 +138,7 @@ class CatalogUpserter
             return $this->setCache[$key];
         }
 
-        $set = CardSet::firstOrCreate(['product_id' => $productId, 'name' => $name]);
+        $set = Set::firstOrCreate(['product_id' => $productId, 'name' => $name]);
 
         return $this->setCache[$key] = $set->id;
     }

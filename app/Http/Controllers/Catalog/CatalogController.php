@@ -6,8 +6,8 @@ use App\Catalog\Queries\BrowseCardsQuery;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -113,7 +113,7 @@ class CatalogController extends Controller
      */
     private function setsByProduct(): array
     {
-        $sets = CardSet::query()
+        $sets = Set::query()
             ->orderBy('product_id')
             ->orderBy('name')
             ->get(['id', 'product_id', 'name']);

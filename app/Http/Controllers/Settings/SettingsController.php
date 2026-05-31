@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\RefreshSellerStats;
-use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Product;
 use App\Models\SellerStats;
+use App\Models\Set;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -31,7 +31,7 @@ class SettingsController extends Controller
                 'high_price' => $product->high_price,
                 'market_offset' => $product->market_offset,
                 'high_offset' => $product->high_offset,
-                'sets' => $product->sets->map(fn (CardSet $set) => [
+                'sets' => $product->sets->map(fn (Set $set) => [
                     'id' => $set->id,
                     'name' => $set->name,
                     'base_price' => $set->base_price,

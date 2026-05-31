@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 beforeEach(function () {
@@ -30,7 +30,7 @@ test('authenticated visit returns 200 and renders the placeholder when no scope 
 
 test('scoped query returns the alphabetical card list for a (set, condition) pair', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Beta Card',
         'number' => '002',
@@ -58,7 +58,7 @@ test('scoped query returns the alphabetical card list for a (set, condition) pai
 
 test('save endpoint additively increments existing inventory rows', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $cardWithStock = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
     Inventory::factory()->create([
         'card_id' => $cardWithStock->id,
@@ -83,7 +83,7 @@ test('save endpoint additively increments existing inventory rows', function () 
 
 test('save endpoint rejects negative qty values with 422', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $this->post(route('add-cards.store'), [
@@ -98,7 +98,7 @@ test('save endpoint rejects negative qty values with 422', function () {
 
 test('save response flash includes the total count saved (used by the success toast)', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card1 = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
     $card2 = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
@@ -117,7 +117,7 @@ test('save response flash includes the total count saved (used by the success to
 
 test('zero-qty entries are skipped silently and create no inventory rows', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $this->post(route('add-cards.store'), [

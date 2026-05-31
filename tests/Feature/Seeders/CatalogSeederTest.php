@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use Database\Seeders\CatalogSeeder;
 use Database\Seeders\DemoCatalogSeeder;
 
@@ -28,11 +28,11 @@ test('DemoCatalogSeeder produces expected row counts and resolves all FKs', func
     $this->seed(DemoCatalogSeeder::class);
 
     expect(Product::count())->toBe(3);
-    expect(CardSet::count())->toBe(6);
+    expect(Set::count())->toBe(6);
     expect(Card::count())->toBe(120); // 3 products × 2 sets × 20 cards
     expect(Inventory::count())->toBe(30); // ~10 per product
 
-    $orphanCards = Card::whereNotIn('set_id', CardSet::pluck('id'))->count();
+    $orphanCards = Card::whereNotIn('set_id', Set::pluck('id'))->count();
     expect($orphanCards)->toBe(0);
 
     $orphanInventory = Inventory::whereNotIn('card_id', Card::pluck('id'))->count();
@@ -42,11 +42,11 @@ test('DemoCatalogSeeder produces expected row counts and resolves all FKs', func
 test('DemoCatalogSeeder produces game-specific rarity vocabulary', function () {
     $this->seed(DemoCatalogSeeder::class);
 
-    $magicSet = CardSet::whereHas('product', fn ($q) => $q->where('name', 'Magic'))->firstOrFail();
+    $magicSet = Set::whereHas('product', fn ($q) => $q->where('name', 'Magic'))->firstOrFail();
     $magicRarities = Card::where('set_id', $magicSet->id)->pluck('rarity')->unique();
     expect($magicRarities)->toContain('R');
 
-    $fabSet = CardSet::whereHas('product', fn ($q) => $q->where('name', 'Flesh & Blood TCG'))->firstOrFail();
+    $fabSet = Set::whereHas('product', fn ($q) => $q->where('name', 'Flesh & Blood TCG'))->firstOrFail();
     $fabRarities = Card::where('set_id', $fabSet->id)->pluck('rarity')->unique();
     expect($fabRarities)->toContain('Majestic');
 });
@@ -69,7 +69,7 @@ test('factory states are wired up', function () {
     $fab = Product::factory()->fleshAndBlood()->create();
     expect($fab->name)->toBe('Flesh & Blood TCG');
 
-    $set = CardSet::factory()->forProduct($magic)->create();
+    $set = Set::factory()->forProduct($magic)->create();
     expect($set->product_id)->toBe($magic->id);
 
     $foil = Card::factory()->nearMintFoil()->create();

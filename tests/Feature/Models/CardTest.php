@@ -1,13 +1,13 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
+use App\Models\Set;
 use Illuminate\Database\QueryException;
 
 test('factory creates a card attached to a set', function () {
     $card = Card::factory()->create();
 
-    expect($card->set)->toBeInstanceOf(CardSet::class);
+    expect($card->set)->toBeInstanceOf(Set::class);
     expect($card->market_price)->toBeInt();
     expect($card->low_price)->toBeInt();
 });
@@ -38,7 +38,7 @@ test('condition string round-trips verbatim with case and spaces preserved', fun
 });
 
 test('set hasMany cards relation resolves', function () {
-    $set = CardSet::factory()->create();
+    $set = Set::factory()->create();
     Card::factory()->count(3)->create(['set_id' => $set->id]);
 
     expect($set->cards()->count())->toBe(3);

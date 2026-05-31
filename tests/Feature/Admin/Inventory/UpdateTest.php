@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 beforeEach(function () {
@@ -12,7 +12,7 @@ beforeEach(function () {
 
 test('PATCH updates quantity for a single inventory row', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()->state(['card_id' => $card->id, 'quantity' => 5])->create();
@@ -27,7 +27,7 @@ test('PATCH updates quantity for a single inventory row', function () {
 
 test('PATCH with empty override_price clears it to null', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()
@@ -44,7 +44,7 @@ test('PATCH with empty override_price clears it to null', function () {
 
 test('PATCH sets override_price to a numeric value', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()->state(['card_id' => $card->id])->create();
@@ -58,7 +58,7 @@ test('PATCH sets override_price to a numeric value', function () {
 
 test('PATCH rejects negative quantity', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()->state(['card_id' => $card->id])->create();
@@ -69,7 +69,7 @@ test('PATCH rejects negative quantity', function () {
 
 test('DELETE soft-removes the row (qty=0, override=null) without hard-deleting', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()
@@ -91,7 +91,7 @@ test('DELETE soft-removes the row (qty=0, override=null) without hard-deleting',
 
 test('PATCH does not require both quantity and override_price', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
     $inv = Inventory::factory()

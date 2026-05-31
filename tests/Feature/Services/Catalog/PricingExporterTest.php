@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Catalog\PricingExporter;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,7 +22,7 @@ function readExportedRows(string $path): array
 function seedExportFixture(): array
 {
     $product = Product::factory()->create(['name' => 'Magic']);
-    $set = CardSet::factory()->create(['product_id' => $product->id, 'name' => 'Wilds of Eldraine']);
+    $set = Set::factory()->create(['product_id' => $product->id, 'name' => 'Wilds of Eldraine']);
 
     $cardA = Card::factory()->create([
         'set_id' => $set->id,

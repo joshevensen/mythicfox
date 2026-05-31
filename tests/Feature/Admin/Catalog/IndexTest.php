@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
@@ -19,7 +19,7 @@ test('unauthenticated visit redirects to login', function () {
 
 test('authenticated visit returns 200 and renders Catalog/Index with paginator shape', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Welcome to Rathe']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Welcome to Rathe']);
     Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Boltyn',
         'number' => 'BOL001',
@@ -47,7 +47,7 @@ test('authenticated visit returns 200 and renders Catalog/Index with paginator s
 
 test('parent-row aggregation sums quantity across condition variants', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $nm = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Black Lotus',
@@ -73,8 +73,8 @@ test('parent-row aggregation sums quantity across condition variants', function 
 test('filtering by Product narrows results', function () {
     $magic = Product::factory()->magic()->create();
     $lorcana = Product::factory()->lorcana()->create();
-    $magicSet = CardSet::factory()->forProduct($magic)->create();
-    $lorcanaSet = CardSet::factory()->forProduct($lorcana)->create();
+    $magicSet = Set::factory()->forProduct($magic)->create();
+    $lorcanaSet = Set::factory()->forProduct($lorcana)->create();
 
     Card::factory()->state(['set_id' => $magicSet->id])->create(['product_name' => 'Lightning Bolt', 'number' => '1']);
     Card::factory()->state(['set_id' => $lorcanaSet->id])->create(['product_name' => 'Mickey', 'number' => '1']);
@@ -88,8 +88,8 @@ test('filtering by Product narrows results', function () {
 
 test('filtering by Set requires a Product to drive option list (chained behavior)', function () {
     $magic = Product::factory()->magic()->create();
-    $setA = CardSet::factory()->forProduct($magic)->create(['name' => 'Alpha']);
-    $setB = CardSet::factory()->forProduct($magic)->create(['name' => 'Beta']);
+    $setA = Set::factory()->forProduct($magic)->create(['name' => 'Alpha']);
+    $setB = Set::factory()->forProduct($magic)->create(['name' => 'Beta']);
 
     Card::factory()->state(['set_id' => $setA->id])->create(['product_name' => 'Card A', 'number' => '1']);
     Card::factory()->state(['set_id' => $setB->id])->create(['product_name' => 'Card B', 'number' => '1']);
@@ -112,7 +112,7 @@ test('filtering by Set requires a Product to drive option list (chained behavior
 
 test('In stock toggle excludes cards where every condition variant has zero quantity', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $stocked = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Stocked', 'number' => '1']);
     $unstocked = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Unstocked', 'number' => '2']);
@@ -129,7 +129,7 @@ test('In stock toggle excludes cards where every condition variant has zero quan
 
 test('sort by total_qty desc orders results', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $low = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'Low', 'number' => '1']);
     $high = Card::factory()->state(['set_id' => $set->id])->create(['product_name' => 'High', 'number' => '2']);
@@ -181,7 +181,7 @@ test('stale-data indicator data is present in page props with the correct shape'
 
 test('expand-row variants are eager-loaded into props keyed by parent row key', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $nm = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Boltyn',

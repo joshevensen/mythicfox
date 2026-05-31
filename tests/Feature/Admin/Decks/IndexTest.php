@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\CardSet;
 use App\Models\Deck;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 beforeEach(function () {
@@ -17,7 +17,7 @@ test('unauthenticated visit redirects to login', function () {
 
 test('authenticated visit returns 200 and renders Decks/Index with paginator shape', function () {
     $product = Product::factory()->create(['name' => 'Flesh & Blood TCG']);
-    $set = CardSet::factory()->forProduct($product)->create([
+    $set = Set::factory()->forProduct($product)->create([
         'name' => 'Blitz Deck: Monarch - Boltyn',
     ]);
     Deck::factory()->state(['set_id' => $set->id])->unopened()->create([
@@ -46,8 +46,8 @@ test('authenticated visit returns 200 and renders Decks/Index with paginator sha
 test('product filter narrows results', function () {
     $magic = Product::factory()->create(['name' => 'Magic']);
     $fab = Product::factory()->create(['name' => 'Flesh & Blood TCG']);
-    $magicSet = CardSet::factory()->forProduct($magic)->create();
-    $fabSet = CardSet::factory()->forProduct($fab)->create();
+    $magicSet = Set::factory()->forProduct($magic)->create();
+    $fabSet = Set::factory()->forProduct($fab)->create();
 
     Deck::factory()->state(['set_id' => $magicSet->id])->create(['product_name' => 'Magic Deck']);
     Deck::factory()->state(['set_id' => $fabSet->id])->create(['product_name' => 'FAB Deck']);
@@ -62,7 +62,7 @@ test('product filter narrows results', function () {
 test('meta.products only includes products that have decks', function () {
     $hasDecks = Product::factory()->create(['name' => 'Has Decks']);
     Product::factory()->create(['name' => 'No Decks']);
-    $set = CardSet::factory()->forProduct($hasDecks)->create();
+    $set = Set::factory()->forProduct($hasDecks)->create();
     Deck::factory()->state(['set_id' => $set->id])->create();
 
     $this->get(route('decks.index'))->assertInertia(

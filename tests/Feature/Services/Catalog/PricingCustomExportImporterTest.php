@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Deck;
 use App\Models\File;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Catalog\CatalogUpserter;
 use App\Services\Catalog\PricingCustomExportImporter;
 use Illuminate\Support\Facades\Storage;
@@ -31,7 +31,7 @@ test('first import creates products, sets, and cards with parsed prices', functi
     expect(Product::where('name', 'Flesh & Blood TCG')->exists())->toBeTrue();
     expect(Product::where('name', 'Magic')->exists())->toBeTrue();
 
-    expect(CardSet::count())->toBe(3);
+    expect(Set::count())->toBe(3);
 
     expect(Card::count())->toBe(7);
 
@@ -79,7 +79,7 @@ test('re-running the same file produces zero logical changes', function () {
 
     expect(Card::count())->toBe($cardCountAfterFirst);
     expect(Product::count())->toBe(2);
-    expect(CardSet::count())->toBe(3);
+    expect(Set::count())->toBe(3);
 
     $boltyn->refresh();
     expect($boltyn->market_price)->toBe($marketBefore);

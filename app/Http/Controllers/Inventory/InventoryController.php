@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Inventory\Queries\InventoryListQuery;
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -282,7 +282,7 @@ class InventoryController extends Controller
      */
     private function setsByProduct(): array
     {
-        $sets = CardSet::query()
+        $sets = Set::query()
             ->orderBy('product_id')
             ->orderBy('name')
             ->get(['id', 'product_id', 'name']);

@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 
@@ -13,7 +13,7 @@ beforeEach(function () {
 
 test('bulk clear-overrides clears override_price on the supplied IDs', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $cards = Card::factory()
         ->count(3)
@@ -43,7 +43,7 @@ test('bulk clear-overrides clears override_price on the supplied IDs', function 
 
 test('bulk mark-out-of-stock zeroes quantity but preserves override_price', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $a = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'A', 'number' => '1',
@@ -83,8 +83,8 @@ test('bulk endpoint rejects more than 1000 IDs at the validation layer', functio
 
 test('bulk select-all uses filter signature and only mutates matching rows', function () {
     $product = Product::factory()->magic()->create();
-    $setA = CardSet::factory()->forProduct($product)->create(['name' => 'Alpha']);
-    $setB = CardSet::factory()->forProduct($product)->create(['name' => 'Beta']);
+    $setA = Set::factory()->forProduct($product)->create(['name' => 'Alpha']);
+    $setB = Set::factory()->forProduct($product)->create(['name' => 'Beta']);
 
     $cardA = Card::factory()->state(['set_id' => $setA->id])->nearMint()->create([
         'product_name' => 'A', 'number' => '1',
