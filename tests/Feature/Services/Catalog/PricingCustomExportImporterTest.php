@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Card;
-use App\Models\Deck;
 use App\Models\File;
 use App\Models\Product;
 use App\Models\Set;
@@ -92,8 +91,8 @@ test('second import refreshes market and low price but not identity', function (
 
     $modified = sys_get_temp_dir().'/pricing-custom-export-modified.csv';
     file_put_contents($modified, str_replace(
-        '"4941700","Flesh & Blood TCG","Blitz Deck: Monarch - Boltyn","Boltyn","","BOL001","Majestic","Near Mint","12.50","","13.5000","11.7500"',
-        '"4941700","Flesh & Blood TCG","Blitz Deck: Monarch - Boltyn","RENAMED Boltyn","","RENAMED-001","Common","Lightly Played","99.99","","100.0000","98.0000"',
+        '"4941700","Flesh & Blood TCG","Monarch - Boltyn","Boltyn","","BOL001","Majestic","Near Mint","12.50","","13.5000","11.7500"',
+        '"4941700","Flesh & Blood TCG","Monarch - Boltyn","RENAMED Boltyn","","RENAMED-001","Common","Lightly Played","99.99","","100.0000","98.0000"',
         file_get_contents(fixturePath())
     ));
 
@@ -110,36 +109,26 @@ test('second import refreshes market and low price but not identity', function (
     @unlink($modified);
 });
 
-test('rows with empty Number and condition Unopened/Opened are routed to decks (case-insensitive)', function () {
-    $tmp = sys_get_temp_dir().'/pricing-with-decks.csv';
+test('rows with empty Number and condition Unopened/Opened are skipped (case-insensitive)', function () {
+    $tmp = sys_get_temp_dir().'/pricing-with-sealed-products.csv';
     file_put_contents($tmp, <<<'CSV'
 TCGplayer Id,Product Line,Set Name,Product Name,Title,Number,Rarity,Condition,TCG Market Price,TCG Direct Low,TCG Low Price With Shipping,TCG Low Price,Total Quantity,Add to Quantity,TCG Marketplace Price,Photo URL
-"7000001","Flesh & Blood TCG","Blitz Deck: Monarch - Boltyn","Monarch Boltyn Deck","","","Deck","Unopened","20.00","","","19.00","0","0","20.00",""
-"7000002","Flesh & Blood TCG","Blitz Deck: Monarch - Boltyn","Monarch Boltyn Deck","","","Deck","opened","15.00","","","14.00","0","0","15.00",""
-"7000003","Flesh & Blood TCG","Blitz Deck: Monarch - Boltyn","Real Card","","BOL050","Common","Near Mint","0.50","","","0.45","0","0","0.50",""
+"7000001","Flesh & Blood TCG","Monarch - Boltyn","Monarch Boltyn Sealed","","","Sealed","Unopened","20.00","","","19.00","0","0","20.00",""
+"7000002","Flesh & Blood TCG","Monarch - Boltyn","Monarch Boltyn Sealed","","","Sealed","opened","15.00","","","14.00","0","0","15.00",""
+"7000003","Flesh & Blood TCG","Monarch - Boltyn","Real Card","","BOL050","Common","Near Mint","0.50","","","0.45","0","0","0.50",""
 CSV);
 
     importFixture($tmp);
 
-    expect(Deck::count())->toBe(2);
     expect(Card::where('tcgplayer_id', 7000003)->exists())->toBeTrue();
     expect(Card::where('tcgplayer_id', 7000001)->exists())->toBeFalse();
-
-    $unopened = Deck::where('tcgplayer_id', 7000001)->firstOrFail();
-    expect($unopened->product_name)->toBe('Monarch Boltyn Deck');
-    expect($unopened->condition)->toBe('Unopened');
-    expect($unopened->market_price)->toBe(2000);
-    expect($unopened->low_price)->toBe(1900);
-
-    // Case-insensitive match: lowercase 'opened' still routes to decks.
-    $opened = Deck::where('tcgplayer_id', 7000002)->firstOrFail();
-    expect($opened->condition)->toBe('opened');
+    expect(Card::where('tcgplayer_id', 7000002)->exists())->toBeFalse();
 
     @unlink($tmp);
 });
 
-test('a row with empty Number but a non-deck condition stays in cards (rule requires both)', function () {
-    $tmp = sys_get_temp_dir().'/pricing-empty-number-non-deck.csv';
+test('a row with empty Number but a non-sealed condition stays in cards (rule requires both)', function () {
+    $tmp = sys_get_temp_dir().'/pricing-empty-number-non-sealed.csv';
     file_put_contents($tmp, <<<'CSV'
 TCGplayer Id,Product Line,Set Name,Product Name,Title,Number,Rarity,Condition,TCG Market Price,TCG Direct Low,TCG Low Price With Shipping,TCG Low Price,Total Quantity,Add to Quantity,TCG Marketplace Price,Photo URL
 "8000001","Magic","Wilds of Eldraine","Mystery No-Number","","","R","Near Mint","1.00","","","0.90","0","0","1.00",""
@@ -147,7 +136,6 @@ CSV);
 
     importFixture($tmp);
 
-    expect(Deck::count())->toBe(0);
     expect(Card::where('tcgplayer_id', 8000001)->exists())->toBeTrue();
 
     @unlink($tmp);
