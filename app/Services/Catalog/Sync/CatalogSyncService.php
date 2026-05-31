@@ -3,8 +3,8 @@
 namespace App\Services\Catalog\Sync;
 
 use App\Models\Product;
-use App\Models\Set;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class CatalogSyncService
 {
@@ -44,8 +44,12 @@ class CatalogSyncService
                 $cardsSynced += $source->syncCardsForSet($set);
                 $set->update(['cards_synced_at' => Carbon::now()]);
                 $setsSynced++;
-            } catch (\Throwable) {
-                // One failed set should not abort the run
+            } catch (\Throwable $e) {
+                Log::warning("catalog:sync failed for set [{$set->name}]", [
+                    'set_id' => $set->id,
+                    'game' => $game,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
