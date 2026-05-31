@@ -14,7 +14,7 @@ beforeEach(function () {
 test('unauthenticated visit redirects to login', function () {
     auth()->logout();
 
-    $this->get(route('cards.index'))->assertRedirect(route('login'));
+    $this->get(route('catalog.index'))->assertRedirect(route('login'));
 });
 
 test('authenticated visit returns 200 and renders Catalog/Index with paginator shape', function () {
@@ -27,11 +27,11 @@ test('authenticated visit returns 200 and renders Catalog/Index with paginator s
         'rarity' => 'Rare',
     ]);
 
-    $this->get(route('cards.index'))
+    $this->get(route('catalog.index'))
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->component('Cards/Index')
+                ->component('Catalog/Index')
                 ->has('cards.data', 1)
                 ->where('cards.data.0.name', 'Boltyn')
                 ->where('cards.data.0.number', 'BOL001')
@@ -54,7 +54,7 @@ test('filtering by Product narrows results', function () {
     Card::factory()->create(['set_id' => $magicSet->id, 'name' => 'Lightning Bolt', 'number' => '1']);
     Card::factory()->create(['set_id' => $lorcanaSet->id, 'name' => 'Mickey', 'number' => '1']);
 
-    $this->get(route('cards.index', ['product' => $magic->id]))->assertInertia(
+    $this->get(route('catalog.index', ['product' => $magic->id]))->assertInertia(
         fn ($page) => $page
             ->has('cards.data', 1)
             ->where('cards.data.0.name', 'Lightning Bolt')
@@ -69,7 +69,7 @@ test('filtering by Set requires a Product to drive option list', function () {
     Card::factory()->create(['set_id' => $setA->id, 'name' => 'Card A', 'number' => '1']);
     Card::factory()->create(['set_id' => $setB->id, 'name' => 'Card B', 'number' => '1']);
 
-    $this->get(route('cards.index', [
+    $this->get(route('catalog.index', [
         'product' => $magic->id,
         'sets' => (string) $setA->id,
     ]))->assertInertia(
@@ -78,7 +78,7 @@ test('filtering by Set requires a Product to drive option list', function () {
             ->where('cards.data.0.name', 'Card A')
     );
 
-    $this->get(route('cards.index'))->assertInertia(
+    $this->get(route('catalog.index'))->assertInertia(
         fn ($page) => $page->has('meta.sets_by_product.'.$magic->id, 2)
     );
 });
@@ -90,7 +90,7 @@ test('sort by name orders results', function () {
     Card::factory()->create(['set_id' => $set->id, 'name' => 'Low', 'number' => '1']);
     Card::factory()->create(['set_id' => $set->id, 'name' => 'High', 'number' => '2']);
 
-    $this->get(route('cards.index', ['sort' => 'name', 'dir' => 'asc']))->assertInertia(
+    $this->get(route('catalog.index', ['sort' => 'name', 'dir' => 'asc']))->assertInertia(
         fn ($page) => $page
             ->where('cards.data.0.name', 'High')
             ->where('cards.data.1.name', 'Low')
@@ -111,7 +111,7 @@ test('stale-data indicator data is present in page props with the correct shape'
         'priced_at' => null,
     ]);
 
-    $this->get(route('cards.index'))->assertInertia(
+    $this->get(route('catalog.index'))->assertInertia(
         fn ($page) => $page
             ->has('meta.products_priced_at', 3, fn ($entry) => $entry
                 ->has('id')
@@ -121,7 +121,7 @@ test('stale-data indicator data is present in page props with the correct shape'
             )
     );
 
-    $this->get(route('cards.index'))->assertInertia(
+    $this->get(route('catalog.index'))->assertInertia(
         fn ($page) => $page
             ->where('meta.products_priced_at.0.name', 'Flesh & Blood TCG')
             ->where('meta.products_priced_at.0.is_stale', true)
@@ -158,7 +158,7 @@ test('expand-row variants are eager-loaded into props keyed by card row key', fu
 
     $expectedKey = (string) $card->id;
 
-    $this->get(route('cards.index'))->assertInertia(
+    $this->get(route('catalog.index'))->assertInertia(
         fn ($page) => $page
             ->where('cards.data.0.key', $expectedKey)
             ->has('variants.'.$expectedKey, 2)

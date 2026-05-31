@@ -42,7 +42,7 @@ class CatalogController extends Controller
         $setsByProduct = $this->setsByProduct();
         $stale = $this->stalenessSummary($products);
 
-        return Inertia::render('Cards/Index', [
+        return Inertia::render('Catalog/Index', [
             'cards' => [
                 'data' => $rows,
                 'meta' => [

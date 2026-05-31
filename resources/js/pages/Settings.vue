@@ -7,7 +7,7 @@ import EditProductRulesModal from '@/components/settings/EditProductRulesModal.v
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
 import FileHistorySection from '@/components/settings/FileHistorySection.vue';
 import SellerStatsSection from '@/components/settings/SellerStatsSection.vue';
-import { index as cardsIndex } from '@/routes/cards';
+import { index as cardsIndex } from '@/routes/catalog';
 
 type FileRow = {
     id: number;
