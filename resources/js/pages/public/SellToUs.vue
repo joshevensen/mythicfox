@@ -13,7 +13,7 @@ import { home } from '@/routes';
     </Head>
 
     <div
-        class="flex min-h-screen flex-col items-center justify-center bg-[#12100C] px-6 text-center font-sans text-[#FCFAEF]"
+        class="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center"
     >
         <Link :href="home().url" class="mb-10 block">
             <img src="/logo.png" alt="Mythic Fox Games" class="h-14 w-auto" />

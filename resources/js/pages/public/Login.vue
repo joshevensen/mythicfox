@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { Form, router, usePage } from '@inertiajs/vue3';
+import { Form, Head, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import MfFormField from '@/components/MfFormField.vue';
 import { store } from '@/routes/login';
-
-defineOptions({
-    layout: {
-        title: 'Sign in — Mythic Fox Games',
-        description: 'Sign in to the Mythic Fox Games admin.',
-    },
-});
 
 const page = usePage<{ errors: Record<string, string> }>();
 
@@ -98,6 +91,14 @@ const banner = computed<Banner | null>(() => {
 </script>
 
 <template>
+    <Head>
+        <title>Sign in — Mythic Fox Games</title>
+        <meta
+            name="description"
+            content="Sign in to the Mythic Fox Games admin."
+        />
+    </Head>
+
     <div class="flex min-h-[80vh] items-center justify-center px-4 py-12">
         <div
             class="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-sm"

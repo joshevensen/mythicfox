@@ -36,8 +36,7 @@ test('the homepage source renders the static hero, about, and feature copy verba
         ->toContain('Collector Focused')
         ->toContain('Fair & Honest Deals')
         ->toContain('Sell Your Collection')
-        ->toContain('sellToUs')
-        ->toContain('Admin');
+        ->toContain('sellToUs');
 });
 
 test('the homepage emits an Organization JSON-LD block', function () {

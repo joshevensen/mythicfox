@@ -10,7 +10,7 @@ import {
     Truck,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { login, sellToUs } from '@/routes';
+import { sellToUs } from '@/routes';
 
 defineProps<{
     tcgplayerStorefrontUrl: string | null;
@@ -68,7 +68,7 @@ const organizationJsonLd = computed(() =>
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
-    <div class="min-h-screen bg-[#12100C] font-sans text-[#FCFAEF]">
+    <div>
         <!-- HERO -->
         <section class="relative flex min-h-[85vh] flex-col">
             <!-- Background forest image with overlay -->
@@ -206,35 +206,5 @@ const organizationJsonLd = computed(() =>
                 </div>
             </div>
         </section>
-
-        <!-- FOOTER -->
-        <footer class="border-t border-[#FCFAEF]/10 px-6 py-12 text-center">
-            <img
-                src="/logo.png"
-                alt="Mythic Fox Games"
-                class="mx-auto mb-6 h-10 w-auto"
-            />
-            <p class="mb-3 text-xs text-[#FCFAEF]/35">
-                © 2024 Mythic Fox Games. All rights reserved.
-            </p>
-            <div
-                class="flex items-center justify-center gap-4 text-xs text-[#FCFAEF]/35"
-            >
-                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
-                    Terms of Service
-                </a>
-                <span>·</span>
-                <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
-                    Privacy Policy
-                </a>
-                <span>·</span>
-                <Link
-                    :href="login().url"
-                    class="transition-colors hover:text-[#FCFAEF]/65"
-                >
-                    Admin
-                </Link>
-            </div>
-        </footer>
     </div>
 </template>
