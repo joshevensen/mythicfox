@@ -39,13 +39,16 @@ test('the homepage source renders the static hero, about, and feature copy verba
         ->toContain('sellToUs');
 });
 
-test('the homepage hero overlay is lightened by 10 percentage points', function () {
+test('the homepage hero overlay is lightened by 20 percentage points', function () {
     $source = file_get_contents(resource_path('js/pages/public/Home.vue'));
 
     expect($source)
-        ->toContain('from-[#12100C]/90')
-        ->toContain('via-[#12100C]/75')
-        ->toContain('to-[#12100C]/15')
+        ->toContain('from-[#12100C]/80')
+        ->toContain('via-[#12100C]/65')
+        ->toContain('to-[#12100C]/5')
+        ->not->toContain('from-[#12100C]/90')
+        ->not->toContain('via-[#12100C]/75')
+        ->not->toContain('to-[#12100C]/15')
         ->not->toContain('via-[#12100C]/85')
         ->not->toContain('to-[#12100C]/25');
 });
