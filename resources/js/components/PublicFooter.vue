@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { copyrightYearLabel } from '@/lib/copyrightYear';
-import { login } from '@/routes';
+import { login, privacy, terms } from '@/routes';
 
 const yearLabel = computed(() => copyrightYearLabel(new Date().getFullYear()));
 </script>
@@ -15,13 +15,19 @@ const yearLabel = computed(() => copyrightYearLabel(new Date().getFullYear()));
             © {{ yearLabel }} Mythic Fox Games. All rights reserved.
         </p>
         <div class="flex items-center justify-center gap-4">
-            <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+            <Link
+                :href="terms().url"
+                class="transition-colors hover:text-[#FCFAEF]/65"
+            >
                 Terms of Service
-            </a>
+            </Link>
             <span>·</span>
-            <a href="#" class="transition-colors hover:text-[#FCFAEF]/65">
+            <Link
+                :href="privacy().url"
+                class="transition-colors hover:text-[#FCFAEF]/65"
+            >
                 Privacy Policy
-            </a>
+            </Link>
             <span>·</span>
             <Link
                 :href="login().url"

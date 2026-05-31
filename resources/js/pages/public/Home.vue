@@ -79,7 +79,7 @@ const organizationJsonLd = computed(() =>
                     class="h-full w-full object-cover object-top"
                 />
                 <div
-                    class="absolute inset-0 bg-gradient-to-r from-[#12100C] via-[#12100C]/85 to-[#12100C]/25"
+                    class="absolute inset-0 bg-gradient-to-r from-[#12100C]/90 via-[#12100C]/75 to-[#12100C]/15"
                 />
                 <div
                     class="absolute right-0 bottom-0 left-0 h-40 bg-gradient-to-t from-[#12100C] to-transparent"

@@ -1,6 +1,6 @@
 <?php
 
-test('GET /sitemap.xml returns a valid one-URL sitemap as application/xml', function () {
+test('GET /sitemap.xml returns a valid public sitemap as application/xml', function () {
     $response = $this->get('/sitemap.xml');
 
     $response
@@ -11,7 +11,9 @@ test('GET /sitemap.xml returns a valid one-URL sitemap as application/xml', func
         ->toContain('<?xml version="1.0" encoding="UTF-8"?>')
         ->toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
         ->toContain('<loc>'.route('home').'</loc>')
-        ->toContain('<loc>'.route('sell-to-us').'</loc>');
+        ->toContain('<loc>'.route('sell-to-us').'</loc>')
+        ->toContain('<loc>'.route('terms').'</loc>')
+        ->toContain('<loc>'.route('privacy').'</loc>');
 });
 
 test('the sitemap excludes admin and auth routes', function () {
@@ -49,7 +51,9 @@ test('PublicFooter component renders the copyright string and a Wayfinder Admin 
 
     expect($source)
         ->toContain('Mythic Fox Games')
-        ->toContain("import { login } from '@/routes'")
+        ->toContain("import { login, privacy, terms } from '@/routes'")
+        ->toContain('terms().url')
+        ->toContain('privacy().url')
         ->toContain('login().url')
         ->toContain('Admin');
 });
