@@ -38,7 +38,7 @@ test('GET /robots.txt returns plain text disallow list and sitemap line', functi
         ->toContain('Disallow: /login')
         ->toContain('Disallow: /dashboard')
         ->toContain('Disallow: /orders')
-        ->toContain('Disallow: /cards')
+        ->toContain('Disallow: /catalog')
         ->toContain('Disallow: /settings')
         ->not->toContain('Disallow: /inventory')
         ->not->toContain('Disallow: /add-cards')
