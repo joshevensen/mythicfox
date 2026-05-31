@@ -3,13 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\SellerStats;
+use App\Models\Set;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -32,7 +32,7 @@ class ResetAccountCommand extends Command
         $items = OrderItem::count();
         $inventory = Inventory::count();
         $products = Product::count();
-        $sets = CardSet::count();
+        $sets = Set::count();
         $cards = Card::count();
         $sellerStats = SellerStats::count();
         $files = File::count();

@@ -2,16 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<CardSet>
+ * @extends Factory<Set>
  */
-class CardSetFactory extends Factory
+class SetFactory extends Factory
 {
-    protected $model = CardSet::class;
+    protected $model = Set::class;
 
     /**
      * @return array<string, mixed>

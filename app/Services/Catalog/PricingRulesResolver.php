@@ -3,8 +3,8 @@
 namespace App\Services\Catalog;
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 
 /**
  * Resolves the effective PricingRules for a card or set by walking up the
@@ -19,11 +19,11 @@ use App\Models\Product;
  */
 class PricingRulesResolver
 {
-    public static function forSet(CardSet $set): PricingRules
+    public static function forSet(Set $set): PricingRules
     {
         $product = $set->relationLoaded('product') ? $set->product : $set->product()->first();
         if (! $product instanceof Product) {
-            throw new \RuntimeException("CardSet [{$set->id}] has no product");
+            throw new \RuntimeException("Set [{$set->id}] has no product");
         }
 
         return new PricingRules(
@@ -37,7 +37,7 @@ class PricingRulesResolver
     public static function forCard(Card $card): PricingRules
     {
         $set = $card->relationLoaded('set') ? $card->set : $card->set()->first();
-        if (! $set instanceof CardSet) {
+        if (! $set instanceof Set) {
             throw new \RuntimeException("Card [{$card->id}] has no set");
         }
 

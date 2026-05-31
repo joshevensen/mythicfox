@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Settings;
 
-use App\Models\CardSet;
+use App\Models\Set;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -29,7 +29,7 @@ class UpdateSetPricingRulesRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            /** @var CardSet $set */
+            /** @var Set $set */
             $set = $this->route('set');
             $product = $set->product;
 

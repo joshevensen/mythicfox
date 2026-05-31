@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +24,7 @@ class ClearCatalogCommand extends Command
         }
 
         $products = Product::count();
-        $sets = CardSet::count();
+        $sets = Set::count();
         $cards = Card::count();
 
         if ($products === 0 && $sets === 0 && $cards === 0) {

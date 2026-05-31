@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 /**
@@ -25,7 +25,7 @@ beforeEach(function () {
 
 test('round-trips a complex Inventory URL state through serialization', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Round Trip',
     ]);
@@ -52,8 +52,8 @@ test('round-trips a complex Inventory URL state through serialization', function
 
 test('removing a single value from a multi-value filter leaves the rest intact', function () {
     $product = Product::factory()->magic()->create();
-    $setA = CardSet::factory()->forProduct($product)->create(['name' => 'Alpha']);
-    $setB = CardSet::factory()->forProduct($product)->create(['name' => 'Beta']);
+    $setA = Set::factory()->forProduct($product)->create(['name' => 'Alpha']);
+    $setB = Set::factory()->forProduct($product)->create(['name' => 'Beta']);
 
     $cardA = Card::factory()->state(['set_id' => $setA->id])->nearMint()->create([
         'product_name' => 'A', 'number' => '1',

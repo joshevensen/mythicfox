@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\CardSetFactory;
+use Database\Factories\SetFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['product_id', 'name', 'base_price', 'high_price', 'market_offset', 'high_offset'])]
-class CardSet extends Model
+class Set extends Model
 {
-    /** @use HasFactory<CardSetFactory> */
+    /** @use HasFactory<SetFactory> */
     use HasFactory;
 
     protected $table = 'sets';

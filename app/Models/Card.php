@@ -26,7 +26,7 @@ class Card extends Model
 
     public function set(): BelongsTo
     {
-        return $this->belongsTo(CardSet::class, 'set_id');
+        return $this->belongsTo(Set::class, 'set_id');
     }
 
     public function inventory(): HasOne

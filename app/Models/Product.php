@@ -28,11 +28,11 @@ class Product extends Model
 
     public function sets(): HasMany
     {
-        return $this->hasMany(CardSet::class);
+        return $this->hasMany(Set::class);
     }
 
     public function cards(): HasManyThrough
     {
-        return $this->hasManyThrough(Card::class, CardSet::class);
+        return $this->hasManyThrough(Card::class, Set::class);
     }
 }

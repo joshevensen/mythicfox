@@ -1,11 +1,11 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Orders\InventoryDecrementer;
 use App\Services\Orders\InventoryDecrementResult;
 use Illuminate\Support\Carbon;
@@ -42,7 +42,7 @@ function buildOrder(string $status = 'Completed - Paid'): Order
 function seedCatalog(): array
 {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Test Set']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Test Set']);
     $card = Card::factory()->create([
         'set_id' => $set->id,
         'product_name' => 'Test Card',
@@ -106,7 +106,7 @@ test('unknown product (no catalog match) increments unmatched counter, others de
 
 test('card with no inventory row increments the no-inventory counter', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Test Set']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Test Set']);
     Card::factory()->create([
         'set_id' => $set->id,
         'product_name' => 'Test Card',

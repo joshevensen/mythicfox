@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Catalog\PricingRulesResolver;
 
 test('resolver returns product values when set has all nulls', function () {
@@ -12,7 +12,7 @@ test('resolver returns product values when set has all nulls', function () {
         'market_offset' => 0,
         'high_offset' => 15,
     ]);
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
 
     $rules = PricingRulesResolver::forSet($set);
 
@@ -30,7 +30,7 @@ test('resolver overrides individual fields per-set', function () {
         'high_offset' => 15,
     ]);
 
-    $set = CardSet::factory()->create([
+    $set = Set::factory()->create([
         'product_id' => $product->id,
         'high_offset' => 50, // override one field
         'base_price' => null,
@@ -54,7 +54,7 @@ test('resolver overrides all four fields when all are set', function () {
         'high_offset' => 15,
     ]);
 
-    $set = CardSet::factory()->create([
+    $set = Set::factory()->create([
         'product_id' => $product->id,
         'base_price' => 100,
         'high_price' => 2000,
@@ -72,7 +72,7 @@ test('resolver overrides all four fields when all are set', function () {
 
 test('forCard delegates to forSet', function () {
     $product = Product::factory()->create(['base_price' => 50]);
-    $set = CardSet::factory()->create(['product_id' => $product->id, 'base_price' => 75]);
+    $set = Set::factory()->create(['product_id' => $product->id, 'base_price' => 75]);
     $card = Card::factory()->create(['set_id' => $set->id]);
 
     $rules = PricingRulesResolver::forCard($card);

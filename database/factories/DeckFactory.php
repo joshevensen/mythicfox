@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\CardSet;
 use App\Models\Deck;
+use App\Models\Set;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +19,7 @@ class DeckFactory extends Factory
     public function definition(): array
     {
         return [
-            'set_id' => CardSet::factory(),
+            'set_id' => Set::factory(),
             'tcgplayer_id' => fake()->unique()->numberBetween(100_000, 999_999),
             'product_name' => fake()->unique()->words(3, true),
             'rarity' => 'Deck',

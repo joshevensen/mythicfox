@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AddCardsRequest;
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +45,7 @@ class AddCardsController extends Controller
         $condition = $request->query('condition');
 
         $sets = $productId
-            ? CardSet::query()
+            ? Set::query()
                 ->where('product_id', $productId)
                 ->orderBy('name')
                 ->get(['id', 'name'])
@@ -105,7 +105,7 @@ class AddCardsController extends Controller
             }
         });
 
-        $set = CardSet::query()->find($request->validated('set_id'));
+        $set = Set::query()->find($request->validated('set_id'));
         $condition = $request->validated('condition');
 
         return back()->with('toast', [

@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 
 beforeEach(function () {
@@ -34,7 +34,7 @@ test('GET /inventory with no filters renders empty-filters Inertia state', funct
 
 test('GET /inventory with all required filters returns rows', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Welcome to Rathe']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Welcome to Rathe']);
 
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create([
         'product_name' => 'Boltyn',
@@ -67,7 +67,7 @@ test('GET /inventory with all required filters returns rows', function () {
 
 test('partial filters keep the empty-filters state', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $card = Card::factory()->state(['set_id' => $set->id])->nearMint()->create();
 
@@ -86,7 +86,7 @@ test('partial filters keep the empty-filters state', function () {
 
 test('In stock toggle excludes zero-qty rows', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $stocked = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'Stocked']);
     $unstocked = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'Unstocked']);
@@ -117,7 +117,7 @@ test('In stock toggle excludes zero-qty rows', function () {
 
 test('Has override toggle filters to rows with non-null override_price', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $a = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'A']);
     $b = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'B']);
@@ -139,7 +139,7 @@ test('Has override toggle filters to rows with non-null override_price', functio
 
 test('sort by quantity desc orders results', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $low = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'Low']);
     $high = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'High']);
@@ -162,7 +162,7 @@ test('sort by quantity desc orders results', function () {
 
 test('override_count meta reflects the live count of rows with overrides', function () {
     $product = Product::factory()->magic()->create();
-    $set = CardSet::factory()->forProduct($product)->create();
+    $set = Set::factory()->forProduct($product)->create();
 
     $a = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'A']);
     $b = Card::factory()->state(['set_id' => $set->id])->nearMint()->create(['product_name' => 'B']);

@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Set;
 use App\Services\Orders\OrderImporter;
 use App\Services\Orders\OrderImportInput;
 use App\Services\Orders\OrderImportResult;
@@ -33,7 +33,7 @@ function singleOrderInput(?string $orderListOverride = null): OrderImportInput
 function seedDecrementCatalog(): Inventory
 {
     $product = Product::factory()->fleshAndBlood()->create();
-    $set = CardSet::factory()->forProduct($product)->create(['name' => 'Crucible of War']);
+    $set = Set::factory()->forProduct($product)->create(['name' => 'Crucible of War']);
     $card = Card::factory()->create([
         'set_id' => $set->id,
         'product_name' => 'Beast Within',

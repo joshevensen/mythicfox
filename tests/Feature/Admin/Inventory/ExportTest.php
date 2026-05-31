@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Card;
-use App\Models\CardSet;
 use App\Models\File;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Set;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,7 +16,7 @@ beforeEach(function () {
 function seedInventoryRow(int $market = 250, ?int $low = 225, ?int $override = null, ?int $lastExported = null): Inventory
 {
     $product = Product::factory()->create(['name' => fake()->unique()->word()]);
-    $set = CardSet::factory()->create(['product_id' => $product->id]);
+    $set = Set::factory()->create(['product_id' => $product->id]);
     $card = Card::factory()->create([
         'set_id' => $set->id,
         'market_price' => $market,

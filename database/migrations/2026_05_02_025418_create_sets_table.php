@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// Eloquent model is App\Models\CardSet (with $table = 'sets'). PHP allows a `Set`
-// class name, but it shadows the SPL ds\Set collection in IDEs; CardSet is unambiguous.
+// Sets are product-scoped catalog releases or sealed product groupings.
 return new class extends Migration
 {
     public function up(): void

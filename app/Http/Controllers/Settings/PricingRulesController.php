@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateProductPricingRulesRequest;
 use App\Http\Requests\Settings\UpdateSetPricingRulesRequest;
-use App\Models\CardSet;
 use App\Models\Product;
+use App\Models\Set;
 use Illuminate\Http\RedirectResponse;
 
 class PricingRulesController extends Controller
@@ -21,7 +21,7 @@ class PricingRulesController extends Controller
         ]);
     }
 
-    public function updateSet(UpdateSetPricingRulesRequest $request, CardSet $set): RedirectResponse
+    public function updateSet(UpdateSetPricingRulesRequest $request, Set $set): RedirectResponse
     {
         $set->update($request->validated());
 
