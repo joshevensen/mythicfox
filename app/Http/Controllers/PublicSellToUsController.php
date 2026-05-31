@@ -9,6 +9,8 @@ class PublicSellToUsController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('public/SellToUs');
+        return Inertia::render('public/SellToUs', [
+            'contactEmail' => config('brand.contact_email'),
+        ]);
     }
 }

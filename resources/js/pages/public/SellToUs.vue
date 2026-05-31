@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { home } from '@/routes';
+
+defineProps<{
+    contactEmail: string | null;
+}>();
 </script>
 
 <template>
@@ -40,7 +44,8 @@ import { home } from '@/routes';
 
         <div class="flex flex-wrap items-center justify-center gap-4">
             <a
-                href="mailto:josh@mythicfoxgames.com"
+                v-if="contactEmail"
+                :href="`mailto:${contactEmail}`"
                 class="inline-flex items-center gap-2 rounded border border-[#F38B17] px-6 py-3 text-sm font-semibold tracking-widest text-[#F38B17] uppercase transition-colors hover:bg-[#F38B17] hover:text-[#12100C]"
             >
                 Get in Touch →
