@@ -37,7 +37,7 @@ class DemoCatalogSeeder extends Seeder
 
         $this->seedProduct($fab, [
             ['name' => 'Welcome to Rathe, Unlimited', 'numbers' => fn ($i) => sprintf('WTR%03d', $i), 'rarities' => ['Common', 'Rare', 'Super Rare', 'Majestic']],
-            ['name' => 'Blitz Deck: Monarch - Boltyn', 'numbers' => fn ($i) => sprintf('BOL%03d', $i), 'rarities' => ['Common', 'Rare', 'Majestic']],
+            ['name' => 'Monarch - Boltyn', 'numbers' => fn ($i) => sprintf('BOL%03d', $i), 'rarities' => ['Common', 'Rare', 'Majestic']],
         ], $tcgplayerSeed + 2_000);
     }
 

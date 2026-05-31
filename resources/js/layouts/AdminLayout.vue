@@ -91,10 +91,6 @@ const reloadCurrentImportPage = (kind: 'catalog' | 'orders'): void => {
         router.reload({ only: ['cards', 'variants', 'meta'] });
     }
 
-    if (kind === 'catalog' && page.url.startsWith('/decks')) {
-        router.reload({ only: ['decks', 'meta'] });
-    }
-
     if (kind === 'orders' && page.url.startsWith('/orders')) {
         router.reload({ only: ['orders', 'meta'] });
     }

@@ -1,11 +1,13 @@
 <?php
 
-test('MfTopNav declares all six section links', function () {
+test('MfTopNav declares the maintained section links', function () {
     $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
 
-    foreach (['Dashboard', 'Orders', 'Cards', 'Decks', 'Inventory', 'Settings'] as $label) {
+    foreach (['Dashboard', 'Orders', 'Cards', 'Inventory', 'Settings'] as $label) {
         expect($source)->toContain("label: '{$label}'");
     }
+
+    expect($source)->not->toContain("href: '/decks'");
 });
 
 test('MfTopNav highlights the active route via prefix-based matching with brand color', function () {

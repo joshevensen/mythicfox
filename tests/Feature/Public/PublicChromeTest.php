@@ -20,7 +20,7 @@ test('the sitemap excludes admin and auth routes', function () {
     $response = $this->get('/sitemap.xml');
     $body = $response->getContent();
 
-    foreach (['/login', '/dashboard', '/orders', '/cards', '/decks', '/inventory', '/add-cards', '/settings'] as $path) {
+    foreach (['/login', '/dashboard', '/orders', '/cards', '/inventory', '/add-cards', '/settings'] as $path) {
         expect($body)->not->toContain($path);
     }
 });
@@ -39,10 +39,10 @@ test('GET /robots.txt returns plain text disallow list and sitemap line', functi
         ->toContain('Disallow: /dashboard')
         ->toContain('Disallow: /orders')
         ->toContain('Disallow: /cards')
-        ->toContain('Disallow: /decks')
         ->toContain('Disallow: /inventory')
         ->toContain('Disallow: /add-cards')
         ->toContain('Disallow: /settings')
+        ->not->toContain('Disallow: /decks')
         ->toContain('Sitemap: '.route('sitemap'));
 });
 
