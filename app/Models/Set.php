@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['product_id', 'name', 'base_price', 'high_price', 'market_offset', 'high_offset'])]
+#[Fillable(['product_id', 'name', 'base_price', 'high_price', 'market_offset', 'high_offset', 'cards_synced_at'])]
 class Set extends Model
 {
     /** @use HasFactory<SetFactory> */
@@ -24,7 +24,13 @@ class Set extends Model
             'high_price' => 'integer',
             'market_offset' => 'integer',
             'high_offset' => 'integer',
+            'cards_synced_at' => 'datetime',
         ];
+    }
+
+    public function needsCardSync(): bool
+    {
+        return $this->cards_synced_at === null;
     }
 
     public function product(): BelongsTo

@@ -43,6 +43,18 @@ return [
             : null,
     ],
 
+    'scryfall' => [
+        'base_url' => env('SCRYFALL_BASE_URL', 'https://api.scryfall.com'),
+    ],
+
+    'lorcast' => [
+        'base_url' => env('LORCAST_BASE_URL', 'https://api.lorcast.com'),
+    ],
+
+    'fab_cards' => [
+        'base_url' => env('FAB_CARDS_BASE_URL', 'https://raw.githubusercontent.com/the-fab-cube/flesh-and-blood-cards/main/json/english/'),
+    ],
+
     'do_spaces' => [
         'key' => env('DO_SPACES_KEY'),
         'secret' => env('DO_SPACES_SECRET'),

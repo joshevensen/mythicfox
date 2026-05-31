@@ -32,4 +32,14 @@ class SetFactory extends Factory
     {
         return $this->state(fn () => ['product_id' => $product->id]);
     }
+
+    public function synced(): static
+    {
+        return $this->state(fn () => ['cards_synced_at' => now()]);
+    }
+
+    public function unsynced(): static
+    {
+        return $this->state(fn () => ['cards_synced_at' => null]);
+    }
 }
