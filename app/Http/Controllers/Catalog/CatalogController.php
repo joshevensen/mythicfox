@@ -1,5 +1,21 @@
 <?php
 
+/**
+ * Serves the /catalog index page with paginated canonical cards, per-card printing variants, filter options, and import status props.
+ *
+ * @context Inertia controller for the operator-facing catalog browser. Renders Catalog/Index with
+ *          server-side pagination and filtering driven by BrowseCardsQuery. Pricing staleness is
+ *          surfaced per-product so operators know when a TCGPlayer import is overdue.
+ *
+ * @gotchas
+ * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
+ * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
+ *
+ * @dependencies
+ * - BrowseCardsQuery — handles paginator and variant lookups
+ * - ImportPricingCustomExportJob — cache keys checked for in-flight/last-result status
+ */
+
 namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\Queries\BrowseCardsQuery;
