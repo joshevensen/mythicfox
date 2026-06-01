@@ -1,6 +1,6 @@
 # Catalog
 
-Browse every card the system knows about — the full TCGPlayer catalog seeded from `PricingCustomExport.csv` uploads. Includes cards with zero stock. Read-mostly.
+Browse every card the system knows about. Canonical cards are synced from game-specific sources (`catalog:sync`) and can have their market prices refreshed by uploading a TCGPlayer PricingCustomExport CSV. One row per canonical card; expand to see per-finish Printing details.
 
 **Route**: `/catalog`
 **Access**: admin
@@ -10,15 +10,13 @@ Browse every card the system knows about — the full TCGPlayer catalog seeded f
 
 ## Purpose
 
-Lookup and browse view for the seller. Primary use cases:
+Lookup and browse view for the operator. Primary use cases:
 
-- Look up a specific card by name or number
-- Browse what's in a set
-- Spot-check that a fresh `PricingCustomExport` import landed correctly
-- See which cards are in stock and total quantity per card across all condition variants
-- Get TCGplayer Id / SKU for a specific (card, condition) variant
-
-Pricing decisions and override management happen on the Inventory page, not here.
+- Browse the full catalog across all supported games (Magic, Lorcana, Flesh & Blood)
+- Look up a specific card by name, number, or set
+- Expand a row to see per-finish Printing details (finish, TCGPlayer ID, market price, low price)
+- Trigger a TCGPlayer PricingCustomExport CSV import to refresh market prices
+- Monitor pricing staleness per product
 
 ---
 
@@ -28,11 +26,9 @@ Pricing decisions and override management happen on the Inventory page, not here
 
 | Element | Behavior |
 |---|---|
-| Title | "Catalog" |
-| Stale-data indicator | Small inline text next to the upload button: e.g. "Magic refreshed 2 days ago", "Lorcana refreshed 8 days ago". Surfaces `products.priced_at` per product. Highlighted when any value is older than 3 days. |
-| **Upload PricingCustomExport** (primary button) | Opens an `MfFileDropzone` modal. See §Upload flow. |
-
-No "File history" button — the Files page handles that.
+| Title | "Cards" |
+| Stale-data indicator | Per-product inline text: e.g. "Magic refreshed 2 days ago". Highlighted in amber when any product's `priced_at` is older than 3 days or null. |
+| **Import catalog** button | Opens the GlobalImportModal on the catalog tab. |
 
 ### Filter panel
 
@@ -42,46 +38,36 @@ Collapsible (`MfFilterPanel`), sits above the table.
 |---|---|---|
 | Product | single-select dropdown | "All products" |
 | Set | multi-select, chained to Product | "All sets" |
-| In stock | toggle | off — i.e. show all cards |
 
-`In stock = on` shows only cards where **any** condition variant has `inventory.quantity > 0`. (Catalog cards with no inventory rows or all-zero inventory are hidden.)
+Set filter options update when Product changes. Any Set selections not in the new Product are dropped with a toast: *"Removed N set filters not in {Product}"*.
 
-Active filters render as removable chips above the table per the standard pattern. Filter state lives in the URL.
+Filter state lives in the URL.
 
 ### Table
 
-PrimeVue DataTable in `lazy` mode with **expand rows** (PrimeVue's `expandable-row-groups` is not what we want — we use the per-row expand toggle).
+Sortable, paginated, with expandable rows.
 
-#### Parent row columns
+#### Row columns
 
-One row per **(set, product_name, number)** — a card. Aggregates across condition variants.
+One row per canonical Card.
 
-| Column | Source | Sortable | Notes |
-|---|---|---|---|
-| `▸` (expand toggle) | — | no | PrimeVue expand chevron |
-| Card Name | `cards.product_name` | yes | Default sort, ascending |
-| Number | `cards.number` | yes | Collector number; visually compact |
-| Set Name | `sets.name` | yes | |
-| Rarity | `cards.rarity` | yes | Verbatim TCGPlayer value |
-| Total Qty | `SUM(inventory.quantity)` across condition variants | yes | Renders as `0` if no inventory rows exist; right-aligned |
-
-**Default sort**: Card Name ascending.
-
-The aggregation key is `(set_id, product_name, number)`. Within that group, every condition variant is a child row (see expand row).
+| Column | Source | Sortable |
+|---|---|---|
+| Card Name | `cards.name` | yes — default sort, ascending |
+| Number | `cards.number` | yes |
+| Set Name | `sets.name` | yes |
+| Rarity | `cards.rarity` | yes |
 
 #### Expand row
 
-When the user clicks the expand toggle, the row opens to reveal one sub-row per condition variant of that card. Rendered as a nested table inside the parent row's expanded area.
+Click the row expand toggle to reveal a sub-table of Printings for that card.
 
 | Sub-column | Source | Notes |
 |---|---|---|
-| Condition | `cards.condition` | Full TCGPlayer condition string verbatim, e.g. `Near Mint`, `Near Mint Unlimited Edition Rainbow Foil` |
-| Quantity | `inventory.quantity` | `0` if no inventory row exists for this `card_id` |
-| TCGplayer ID | `cards.tcgplayer_id` | Monospace (`MfMonospaceId`); the TCGPlayer-assigned identifier for this exact (product, condition) SKU |
-
-Sub-rows are sorted by Condition (alphabetical) — minor decision that can be tuned later.
-
-No prices shown on this page. Prices live on the Inventory page.
+| Finish | `printings.finish` | Normalized — e.g. `Non Foil`, `Foil`, `Rainbow Foil` |
+| TCGplayer ID | `printings.tcgplayer_id` | Monospace (`MfMonospaceId`); `—` if null |
+| Market | `printings.market_price` | Formatted as currency; `—` if null |
+| Low | `printings.low_price` | Formatted as currency; `—` if null |
 
 ---
 
@@ -89,76 +75,15 @@ No prices shown on this page. Prices live on the Inventory page.
 
 ### Filtering
 
-Standard `MfFilterPanel` behavior. Two notable details:
+Standard `MfFilterPanel` behavior. Product and Set filters are URL-persisted and chained: Set options are scoped to the selected Product. Stale Set selections are dropped silently with a toast on Product change.
 
-- **Set filter is chained**: when Product changes, the Set filter's options update to that product's sets. Existing Set selections that don't match the new Product are dropped silently with a small toast: *"Removed 3 set filters not in Magic"*.
-- **In stock** triggers a `HAVING SUM(inventory.quantity) > 0` style filter on the aggregated query.
+### Row expand
 
-### Sorting
+Click the row expand toggle (or anywhere on the mobile card) to toggle the Printing sub-table inline. No navigation or modal.
 
-Click a column header to toggle asc → desc → unsorted (single-column sort, server-side). Total Qty sorts on the aggregate, not on any individual variant's quantity.
+### Import
 
-### Row click
-
-Click anywhere on the parent row (or the explicit `▸` toggle) → expands inline. Click again → collapses. No navigation, no modal — pure inline expand.
-
-### Upload flow
-
-1. Click **Upload PricingCustomExport**. Modal opens with `MfFileDropzone` accepting `.csv`, max size 200MB.
-2. User drops or selects a file. Client-side validation: extension only.
-3. On submit: upload to server, queue a processing job, dismiss modal, show toast: *"PricingCustomExport queued — refreshing catalog…"*
-4. Job progress is reflected by polling or Inertia partial reloads. While processing, the upload button shows a small spinner badge ("Importing…").
-5. On completion, replace the spinner with a success indicator briefly, then return to normal. Final toast: *"Refreshed N cards across {Product Name}"*.
-6. The catalog table auto-reloads at completion.
-
-If the file fails validation server-side (wrong header, missing columns), an `MfErrorBanner` appears at the top of the page with the parse error. The file is still saved to `files` for inspection.
-
----
-
-## Data
-
-Reads:
-
-- `cards` (joined to `sets`, joined to `products`)
-- `inventory` (left-join, aggregated)
-- `products.priced_at` (for the stale-data indicator)
-
-Writes:
-
-- Catalog imports go through the standard PricingCustomExport flow per [catalog-schema.md](../catalog-schema.md). The page itself does no direct writes other than triggering the upload.
-
-The aggregated parent-row query is non-trivial. A view or materialized query class is appropriate; index hints below.
-
-### Indexes (DB)
-
-- `cards (set_id, product_name, number)` — supports the GROUP BY for parent rows
-- `cards (tcgplayer_id)` — already unique
-- `cards (product_name)` — supports default sort
-- `inventory (card_id)` — already unique
-- Foreign-key indexes on `cards.set_id`, `sets.product_id`
-
----
-
-## Mobile layout
-
-Standard responsive behavior per [ux-patterns.md §Responsive behavior](ux-patterns.md). Page-specific deviations:
-
-- **Parent-row card layout** on screens `< 768px`:
-  ```
-  ┌──────────────────────────────────────┐
-  │  Boltyn                       ▸      │
-  │  #BOL001  ·  Welcome to Rathe        │
-  │  Rare                                │
-  │  Total Qty: 4                        │
-  └──────────────────────────────────────┘
-  ```
-- **Tap anywhere on the card to expand** (not just the chevron). Sub-rows render as a tighter list inside the expanded card:
-  ```
-     Near Mint            Qty 2     id 4941474
-     Lightly Played       Qty 1     id 4941566
-     Near Mint Foil       Qty 1     id 4941474
-  ```
-- **Upload PricingCustomExport button sticks to the bottom of the viewport** on phones for one-thumb reach.
+Click **Import catalog** to open the GlobalImportModal on the catalog tab. This accepts a TCGPlayer PricingCustomExport CSV and queues an import job that refreshes market prices on Printings. While in flight, the button shows an "Importing…" state.
 
 ---
 
@@ -166,20 +91,32 @@ Standard responsive behavior per [ux-patterns.md §Responsive behavior](ux-patte
 
 | State | Display |
 |---|---|
-| Empty (no catalog rows ever) | `MfEmptyState`: "Your catalog is empty." Body: "Upload a TCGPlayer PricingCustomExport to seed it." CTA: opens the same upload modal. No filter panel rendered. |
+| Empty (no catalog rows ever) | "No cards in catalog." + prompt to run `php artisan catalog:sync` + **Import catalog** button. |
 | Empty (filters return zero rows) | "No cards match these filters." + Clear filters button. |
-| Loading | Skeleton rows (PrimeVue built-in) per the standard pattern. |
-| Error | `MfErrorBanner` above the table with retry; previously-loaded rows stay visible. |
-| During import | Upload button shows "Importing…" spinner; existing table rows unchanged until refresh. |
-| Stale data | "Magic refreshed 8 days ago" rendered in amber/warning text next to the upload button when any product's `priced_at` is null or older than 3 days. |
+| Loading | Skeleton rows per the standard pattern. |
+| During import | Import button shows "Importing…"; existing rows unchanged until refresh. |
+| Stale data | Per-product staleness text in amber when `priced_at` is null or older than 3 days. |
+
+---
+
+## Mobile layout
+
+Standard responsive behavior per [ux-patterns.md §Responsive behavior](ux-patterns.md). Mobile card layout:
+
+```
+┌──────────────────────────────────────┐
+│  Agatha's Soul Cauldron         ▸    │
+│  #234  ·  Wilds of Eldraine          │
+│  Mythic                              │
+└──────────────────────────────────────┘
+```
+
+Tap anywhere on the card to expand. Sub-rows render as a table inside the expanded card.
 
 ---
 
 ## Things to consider
 
-- **The aggregated parent-row query is the heaviest read in the app.** With ~776K cards in Magic alone, a `GROUP BY (set_id, product_name, number)` with a `COUNT(*)` over conditions and a `LEFT JOIN inventory` is non-trivial. Index carefully and consider a denormalized `card_groups` materialized view if the live query becomes the bottleneck.
-- **Expand-all is a footgun.** PrimeVue can support "expand all rows" on a DataTable. With hundreds of cards and many condition variants each, that's an enormous DOM. The table should explicitly disable expand-all (or at least confirm before doing it).
-- **"In stock" toggle adds a `HAVING` clause.** This forces aggregation before filtering, which can slow down queries on big result sets. Test query plans with realistic volumes.
-- **PricingCustomExport refreshes per product, not per set.** The "Magic refreshed N days ago" indicator reflects the latest full-product refresh. A user who uploads a per-set filtered export only refreshes that set's prices; the per-product `priced_at` stamp doesn't capture the partial nature. If per-set imports become common, consider `priced_at` per set instead.
-- **Catalog rows accumulate forever.** TCGPlayer never reduces their catalog; old sets stay live. Over years this grows unbounded. No archive mechanism is specced — if it becomes a problem, an "archive product" concept could hide rotated-out sets without losing them.
-- **Mobile card-row tap-to-expand has a learnability cost.** Users on phones won't necessarily expect a card to open inline. Consider a small chevron affordance + brief animation on first expand to teach the interaction.
+- **Catalog sync vs. pricing import are separate concerns.** `catalog:sync` populates Cards and Printings from upstream APIs. PricingCustomExport import refreshes market prices on existing Printings. The two flows are independent.
+- **`tcgplayer_id` is null for multi-finish cards.** When a game source reports a card without a per-finish TCGPlayer ID, `tcgplayer_id` is stored as null on all Printings for that card. This is expected and displayed as `—` in the table.
+- **Sync staleness.** `cards_synced_at` on Set tracks the last sync. The `catalog:sync` command respects this; use `--force` to bypass.
