@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'josh@mythicfoxgames.com'],
             [
                 'name' => 'Josh Evensen',
-                'password' => Hash::make('MythicFox2024!#'),
+                'password' => Hash::make('Xk7$mP2#nQ9@'),
             ]
         );
     }
