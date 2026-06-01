@@ -16,8 +16,6 @@ Index of UX docs. Each page of the app has its own focused doc under [ux/](ux/).
 | Dashboard | `/dashboard` | [ux/dashboard.md](ux/dashboard.md) |
 | Orders Table | `/orders` | [ux/orders-table.md](ux/orders-table.md) |
 | Catalog | `/catalog` | [ux/catalog.md](ux/catalog.md) |
-| Inventory | `/inventory` | [ux/inventory.md](ux/inventory.md) |
-| Add Cards | `/add-cards` | [ux/add-cards.md](ux/add-cards.md) |
 | Settings | `/settings` | [ux/settings.md](ux/settings.md) |
 
 There is no order detail page — clicking the TCGPlayer-link icon on an order row opens that order in the TCGPlayer Seller Portal. See [ux/orders-table.md](ux/orders-table.md).
