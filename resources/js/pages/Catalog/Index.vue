@@ -12,8 +12,8 @@ import MfTable from '@/components/MfTable.vue';
 import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
-import RowExpand from '@/pages/Cards/RowExpand.vue';
-import { index as cardsIndex } from '@/routes/cards';
+import RowExpand from '@/pages/Catalog/RowExpand.vue';
+import { index as cardsIndex } from '@/routes/catalog';
 
 type CardRow = {
     key: string;
@@ -326,10 +326,14 @@ const stalenessLabel = (entry: StaleEntry): string => {
                 data-test="catalog-empty"
             >
                 <p class="text-base font-medium text-foreground">
-                    No cards yet.
+                    No cards in catalog.
                 </p>
                 <p class="max-w-md text-sm text-muted-foreground">
-                    Import a TCGPlayer PricingCustomExport to seed it.
+                    Run
+                    <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs"
+                        >php artisan catalog:sync</code
+                    >
+                    to import, or upload a TCGPlayer PricingCustomExport.
                 </p>
                 <Button
                     type="button"

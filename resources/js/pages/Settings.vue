@@ -7,7 +7,7 @@ import EditProductRulesModal from '@/components/settings/EditProductRulesModal.v
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
 import FileHistorySection from '@/components/settings/FileHistorySection.vue';
 import SellerStatsSection from '@/components/settings/SellerStatsSection.vue';
-import { index as cardsIndex } from '@/routes/cards';
+import { index as catalogIndex } from '@/routes/catalog';
 
 type FileRow = {
     id: number;
@@ -152,7 +152,7 @@ const refresh = () => {
                 PricingCustomExport upload.
             </p>
             <Link
-                :href="cardsIndex().url"
+                :href="catalogIndex().url"
                 class="mt-2 inline-block text-mf-orange hover:underline"
             >
                 Go to Cards

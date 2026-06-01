@@ -3,7 +3,7 @@
 test('MfTopNav declares the maintained section links', function () {
     $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
 
-    foreach (['Dashboard', 'Orders', 'Cards', 'Settings'] as $label) {
+    foreach (['Dashboard', 'Orders', 'Catalog', 'Settings'] as $label) {
         expect($source)->toContain("label: '{$label}'");
     }
 

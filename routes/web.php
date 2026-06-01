@@ -54,7 +54,7 @@ Allow: /
 Disallow: /login
 Disallow: /dashboard
 Disallow: /orders
-Disallow: /cards
+Disallow: /catalog
 Disallow: /settings
 Sitemap: {$sitemap}
 
@@ -74,8 +74,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('orders/{order:tcgplayer_order_number}/items', [OrderItemsController::class, 'index'])
         ->name('orders.items.index');
 
-    Route::get('cards', [CatalogController::class, 'index'])->name('cards.index');
-    Route::post('cards/upload', [CatalogUploadController::class, 'store'])->name('cards.upload');
+    Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
 });
 
 require __DIR__.'/settings.php';
