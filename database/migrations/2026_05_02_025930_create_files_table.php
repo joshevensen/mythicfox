@@ -21,6 +21,8 @@ return new class extends Migration
             $table->timestamp('uploaded_at');
             $table->timestamp('expired_at')->nullable();
             $table->timestamps();
+
+            $table->index(['type', 'uploaded_at']);
         });
     }
 
