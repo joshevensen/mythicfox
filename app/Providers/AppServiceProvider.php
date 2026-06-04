@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Services\Backup\PgDumpRunner;
 use App\Services\Backup\SubprocessRunner;
-use App\Services\SellerStats\BrowsershotStorefrontFetcher;
-use App\Services\SellerStats\StorefrontFetcher;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +14,6 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(StorefrontFetcher::class, BrowsershotStorefrontFetcher::class);
         $this->app->bind(SubprocessRunner::class, PgDumpRunner::class);
     }
 

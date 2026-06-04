@@ -79,11 +79,3 @@ test('the homepage Vue component receives storefront URL via props (not hardcode
         ->toContain('tcgplayerStorefrontUrl')
         ->not->toContain('https://www.tcgplayer.com/sellers');
 });
-
-test('the controller applies the staleness rule server-side, not in the view', function () {
-    $source = file_get_contents(app_path('Http/Controllers/PublicHomepageController.php'));
-
-    expect($source)
-        ->toContain('subDays(14)')
-        ->toContain('showBuyersSay');
-});

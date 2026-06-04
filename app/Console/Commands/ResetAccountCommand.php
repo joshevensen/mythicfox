@@ -7,7 +7,6 @@ use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\SellerStats;
 use App\Models\Set;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +31,6 @@ class ResetAccountCommand extends Command
         $products = Product::count();
         $sets = Set::count();
         $cards = Card::count();
-        $sellerStats = SellerStats::count();
         $files = File::count();
 
         $disk = Storage::disk(config('filesystems.default'));
@@ -42,7 +40,7 @@ class ResetAccountCommand extends Command
             $storageFiles += count($disk->allFiles($prefix));
         }
 
-        if ($orders + $items + $products + $sets + $cards + $sellerStats + $files + $storageFiles === 0) {
+        if ($orders + $items + $products + $sets + $cards + $files + $storageFiles === 0) {
             $this->info('Nothing to reset.');
 
             return self::SUCCESS;
@@ -56,7 +54,6 @@ class ResetAccountCommand extends Command
 
         DB::statement('TRUNCATE TABLE order_items, orders RESTART IDENTITY CASCADE');
         DB::statement('TRUNCATE TABLE printings, cards, sets, products RESTART IDENTITY CASCADE');
-        DB::statement('TRUNCATE TABLE seller_stats RESTART IDENTITY');
         DB::statement('TRUNCATE TABLE files RESTART IDENTITY');
 
         $this->info('Account reset complete. Users preserved.');
