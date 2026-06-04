@@ -6,7 +6,6 @@ import MfPageHeader from '@/components/MfPageHeader.vue';
 import EditProductRulesModal from '@/components/settings/EditProductRulesModal.vue';
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
 import FileHistorySection from '@/components/settings/FileHistorySection.vue';
-import SellerStatsSection from '@/components/settings/SellerStatsSection.vue';
 import { index as catalogIndex } from '@/routes/catalog';
 
 type FileRow = {
@@ -25,29 +24,6 @@ type FilesPayload = {
 };
 
 type PurposeOption = { value: string; label: string };
-
-type SellerStatsPayload = {
-    rating: number | null;
-    review_count: number | null;
-    feedback: Array<{
-        text?: string;
-        rating?: number;
-        author?: string;
-        date?: string;
-    }>;
-    feedback_count: number;
-    scraped_at: string | null;
-    last_attempt_at: string | null;
-    last_error: string | null;
-    consecutive_failures: number;
-    status: {
-        key: 'healthy' | 'stale' | 'failed' | 'hidden' | 'unknown';
-        label: string;
-        message: string | null;
-    };
-    raw: Record<string, unknown>;
-    refreshing: boolean;
-};
 
 type SetRow = {
     id: number;
@@ -74,7 +50,6 @@ defineProps<{
     products: ProductRow[];
     files: FilesPayload;
     filePurposes: PurposeOption[];
-    sellerStats: SellerStatsPayload;
 }>();
 
 const editingProduct = ref<ProductRow | null>(null);
@@ -124,12 +99,6 @@ const refresh = () => {
             class="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-mf-orange hover:text-mf-orange"
         >
             File history
-        </a>
-        <a
-            href="#seller-stats"
-            class="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-mf-orange hover:text-mf-orange"
-        >
-            Seller stats
         </a>
     </nav>
 
@@ -252,8 +221,6 @@ const refresh = () => {
     </section>
 
     <FileHistorySection :files="files" :purposes="filePurposes" />
-
-    <SellerStatsSection :seller-stats="sellerStats" />
 
     <EditProductRulesModal
         v-model:visible="productModalVisible"
