@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
 {
-    protected $signature = 'user:create {email} {name}';
+    protected $signature = 'user:create {email} {name} {password}';
 
     protected $description = 'Create the single admin user (refuses if a user already exists)';
 
@@ -16,18 +16,10 @@ class CreateUserCommand extends Command
     {
         $email = (string) $this->argument('email');
         $name = (string) $this->argument('name');
+        $password = (string) $this->argument('password');
 
         if (User::count() > 0) {
             $this->error('A user already exists. This is a single-user app — use `user:reset-password` instead.');
-
-            return self::FAILURE;
-        }
-
-        $password = (string) $this->secret('Password');
-        $confirm = (string) $this->secret('Confirm password');
-
-        if ($password === '' || $password !== $confirm) {
-            $this->error('Passwords do not match.');
 
             return self::FAILURE;
         }
