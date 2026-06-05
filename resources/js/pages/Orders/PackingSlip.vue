@@ -262,12 +262,12 @@ function sheetTotalPrice(sheet: Sheet): string {
                     >
                         <thead>
                             <tr>
-                                <th class="col-game">GAME</th>
-                                <th class="col-set">SET</th>
+                                <th class="col-qty">QTY</th>
                                 <th class="col-name">CARD NAME</th>
                                 <th class="col-num">#</th>
+                                <th class="col-game">GAME</th>
+                                <th class="col-set">SET</th>
                                 <th class="col-price">PRICE</th>
-                                <th class="col-qty">QTY</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -276,12 +276,7 @@ function sheetTotalPrice(sheet: Sheet): string {
                                 :key="idx"
                                 :data-test="`card-row-${order.tcgplayer_order_number}-${sheet.sheet_index}-${idx}`"
                             >
-                                <td class="col-game">
-                                    {{ abbreviateGame(item.product_line) }}
-                                </td>
-                                <td class="col-set">
-                                    {{ item.set_name }}
-                                </td>
+                                <td class="col-qty">{{ item.quantity }}</td>
                                 <td class="col-name">
                                     {{ item.product_name }}
                                     <span class="cond-tag"
@@ -291,21 +286,26 @@ function sheetTotalPrice(sheet: Sheet): string {
                                     >
                                 </td>
                                 <td class="col-num">{{ item.number }}</td>
+                                <td class="col-game">
+                                    {{ abbreviateGame(item.product_line) }}
+                                </td>
+                                <td class="col-set">
+                                    {{ item.set_name }}
+                                </td>
                                 <td class="col-price">
                                     {{ formatCents(item.unit_price) }}
                                 </td>
-                                <td class="col-qty">{{ item.quantity }}</td>
                             </tr>
                             <!-- Per-sheet total row -->
                             <tr
                                 class="total-row"
                                 :data-test="`total-row-${order.tcgplayer_order_number}-${sheet.sheet_index}`"
                             >
+                                <td class="col-qty">{{ sheetQty(sheet) }}</td>
                                 <td colspan="4" class="total-label">TOTAL</td>
                                 <td class="col-price">
                                     {{ sheetTotalPrice(sheet) }}
                                 </td>
-                                <td class="col-qty">{{ sheetQty(sheet) }}</td>
                             </tr>
                         </tbody>
                     </table>
