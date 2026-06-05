@@ -6,6 +6,7 @@ use App\Services\Orders\SellerIdValidator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -33,11 +34,16 @@ class PackingSlipPdfParser
      */
     public function parse(string $absolutePath): Collection
     {
+        $pdftotext = $this->findPdftotext();
+        if ($pdftotext === null) {
+            throw new RuntimeException('pdftotext is not installed. Run `apt-get install poppler-utils` on the server to process packing slip PDFs.');
+        }
+
         if (! is_readable($absolutePath)) {
             throw new RuntimeException("Cannot read PDF at [{$absolutePath}]");
         }
 
-        $process = new Process(['pdftotext', '-layout', $absolutePath, '-']);
+        $process = new Process([$pdftotext, '-layout', $absolutePath, '-']);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -198,5 +204,10 @@ class PackingSlipPdfParser
             unitPrice: $unitCents,
             totalPrice: $totalCents,
         );
+    }
+
+    protected function findPdftotext(): ?string
+    {
+        return (new ExecutableFinder)->find('pdftotext');
     }
 }

@@ -74,3 +74,16 @@ test('a missing PDF raises a RuntimeException', function () {
     expect(fn () => (new PackingSlipPdfParser)->parse('/no/such/file.pdf'))
         ->toThrow(RuntimeException::class);
 });
+
+test('throws RuntimeException with install instructions when pdftotext is missing', function () {
+    $parser = new class extends PackingSlipPdfParser
+    {
+        protected function findPdftotext(): ?string
+        {
+            return null;
+        }
+    };
+
+    expect(fn () => $parser->parse('/no/such/file.pdf'))
+        ->toThrow(RuntimeException::class, 'poppler-utils');
+});
