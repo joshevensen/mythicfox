@@ -84,6 +84,6 @@ test('throws RuntimeException with install instructions when pdftotext is missin
         }
     };
 
-    expect(fn () => $parser->parse(packingSlipFixture()))
+    expect(fn () => $parser->parse('/no/such/file.pdf'))
         ->toThrow(RuntimeException::class, 'poppler-utils');
 });
