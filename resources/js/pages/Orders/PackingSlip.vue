@@ -570,6 +570,10 @@ function sheetTotalPrice(sheet: Sheet): string {
     border-top: 0.25pt solid #ccc;
 }
 
+.card-table tbody tr:nth-child(even):not(.total-row) td {
+    background-color: #f5f5f5 !important;
+}
+
 .col-game {
     width: 0.5in;
     text-align: right !important;
