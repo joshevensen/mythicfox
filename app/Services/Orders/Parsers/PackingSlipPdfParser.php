@@ -34,7 +34,8 @@ class PackingSlipPdfParser
      */
     public function parse(string $absolutePath): Collection
     {
-        if ($this->findPdftotext() === null) {
+        $pdftotext = $this->findPdftotext();
+        if ($pdftotext === null) {
             throw new RuntimeException('pdftotext is not installed. Run `apt-get install poppler-utils` on the server to process packing slip PDFs.');
         }
 
@@ -42,7 +43,7 @@ class PackingSlipPdfParser
             throw new RuntimeException("Cannot read PDF at [{$absolutePath}]");
         }
 
-        $process = new Process(['pdftotext', '-layout', $absolutePath, '-']);
+        $process = new Process([$pdftotext, '-layout', $absolutePath, '-']);
         $process->run();
 
         if (! $process->isSuccessful()) {
