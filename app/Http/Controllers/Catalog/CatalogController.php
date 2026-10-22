@@ -10,16 +10,19 @@
  * @gotchas
  * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
  * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
- * - Rarity filter options are the distinct non-empty cards.rarity values per product, alphabetical.
+ * - Rarity filter options are the distinct non-empty cards.rarity values per product, alphabetical,
+ *   cached by RarityOptionsQuery and cleared when an import or sync finishes.
  *
  * @dependencies
  * - BrowseCardsQuery — handles paginator and variant lookups
+ * - RarityOptionsQuery — cached rarity filter options per product
  * - ImportPricingCustomExportJob — cache keys checked for in-flight/last-result status
  */
 
 namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\Queries\BrowseCardsQuery;
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\Card;
@@ -41,7 +44,10 @@ class CatalogController extends Controller
 
     private const STALE_DAYS = 3;
 
-    public function __construct(private readonly BrowseCardsQuery $browse) {}
+    public function __construct(
+        private readonly BrowseCardsQuery $browse,
+        private readonly RarityOptionsQuery $rarityOptions,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -57,7 +63,7 @@ class CatalogController extends Controller
         ])->all();
 
         $setsByProduct = $this->setsByProduct();
-        $raritiesByProduct = $this->raritiesByProduct();
+        $raritiesByProduct = $this->rarityOptions->byProduct();
         $stale = $this->stalenessSummary($products);
 
         return Inertia::render('Catalog/Index', [
@@ -141,34 +147,6 @@ class CatalogController extends Controller
             $grouped[$key][] = [
                 'value' => (string) $set->id,
                 'label' => $set->name,
-            ];
-        }
-
-        return $grouped;
-    }
-
-    /**
-     * @return array<string, array<int, array{value: string, label: string}>>
-     */
-    private function raritiesByProduct(): array
-    {
-        $rows = Card::query()
-            ->join('sets', 'cards.set_id', '=', 'sets.id')
-            ->where('cards.rarity', '!=', '')
-            ->select(['sets.product_id', 'cards.rarity'])
-            ->distinct()
-            ->orderBy('sets.product_id')
-            ->orderBy('cards.rarity')
-            ->get();
-
-        $grouped = [];
-
-        foreach ($rows as $row) {
-            $key = (string) $row->product_id;
-            $grouped[$key] ??= [];
-            $grouped[$key][] = [
-                'value' => (string) $row->rarity,
-                'label' => (string) $row->rarity,
             ];
         }
 

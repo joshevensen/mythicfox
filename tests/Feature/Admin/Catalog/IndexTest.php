@@ -1,5 +1,6 @@
 <?php
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Card;
 use App\Models\Printing;
 use App\Models\Product;
@@ -265,4 +266,22 @@ test('blank rarities segments are ignored', function () {
     $this->get(route('catalog.index', ['rarities' => ', ,']))->assertInertia(
         fn ($page) => $page->where('cards.meta.total', 2)
     );
+});
+
+test('rarities_by_product is cached until forgotten', function () {
+    $product = Product::factory()->magic()->create();
+    $set = Set::factory()->forProduct($product)->create();
+    Card::factory()->create(['set_id' => $set->id, 'number' => '1', 'rarity' => 'Common']);
+
+    $key = 'meta.rarities_by_product.'.$product->id;
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 1));
+
+    Card::factory()->create(['set_id' => $set->id, 'number' => '2', 'rarity' => 'Rare']);
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 1));
+
+    RarityOptionsQuery::forget();
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 2));
 });

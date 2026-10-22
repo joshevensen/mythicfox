@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog\Sync;
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Product;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -52,6 +53,8 @@ class CatalogSyncService
                 ]);
             }
         }
+
+        RarityOptionsQuery::forget();
 
         return new SyncResult(
             setsUpserted: $setsUpserted,
