@@ -14,6 +14,15 @@ export function useMfToast() {
         });
     };
 
+    const warning = (message: string, title?: string): void => {
+        toast.add({
+            severity: 'warn',
+            summary: title ?? 'Warning',
+            detail: message,
+            life: AUTO_DISMISS_MS,
+        });
+    };
+
     const error = (message: string, title?: string): void => {
         toast.add({
             severity: 'error',
@@ -31,5 +40,5 @@ export function useMfToast() {
         });
     };
 
-    return { success, error, info };
+    return { success, error, info, warning };
 }

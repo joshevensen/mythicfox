@@ -25,7 +25,8 @@ test('AdminLayout file declares all required shell pieces', function () {
         ->toContain('<GlobalImportModal')
         ->toContain('<MfPageContainer')
         ->toContain('<MfToast')
-        ->toContain('<MfConfirmDialog');
+        ->toContain('<MfConfirmDialog')
+        ->toContain('useFlashToast()');
 
     expect(file_get_contents(resource_path('js/components/MfToast.vue')))
         ->toContain('position="top-right"');

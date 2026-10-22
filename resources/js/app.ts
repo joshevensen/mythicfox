@@ -8,7 +8,6 @@ import AdminLayout from '@/layouts/AdminLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { initializeFlashToast } from '@/lib/flashToast';
 import { MythicFoxPreset } from '@/lib/primevue-preset';
 import { resolveLayout } from '@/lib/resolveLayout';
 import type { LayoutKey } from '@/lib/resolveLayout';
@@ -45,6 +44,3 @@ createInertiaApp({
 
 // This will set light / dark mode on page load...
 initializeTheme();
-
-// This will listen for flash toast data from the server...
-initializeFlashToast();
