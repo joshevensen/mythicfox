@@ -78,9 +78,11 @@ test('PrimeVue MythicFoxPreset pins the brand orange to the primary slot', funct
 
 test('app.ts wires PublicLayout for pages whose name starts with public/', function () {
     $source = file_get_contents(resource_path('js/app.ts'));
+    $resolver = file_get_contents(resource_path('js/lib/resolveLayout.ts'));
 
     expect($source)
         ->toContain("import PublicLayout from '@/layouts/PublicLayout.vue'")
-        ->toContain("name.startsWith('public/')")
-        ->toContain('return PublicLayout');
+        ->toContain('public: PublicLayout');
+
+    expect($resolver)->toContain("name.startsWith('public/')");
 });
