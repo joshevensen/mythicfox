@@ -168,3 +168,12 @@ test('expand-row variants are eager-loaded into props keyed by card row key', fu
             ->where('variants.'.$expectedKey.'.1.market_price', 150)
     );
 });
+
+test('catalog page title and header read Catalog', function () {
+    $source = file_get_contents(resource_path('js/pages/Catalog/Index.vue'));
+
+    expect($source)
+        ->toContain('<Head title="Catalog" />')
+        ->toContain('<MfPageHeader title="Catalog"')
+        ->not->toContain('title="Cards"');
+});

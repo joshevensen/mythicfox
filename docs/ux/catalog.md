@@ -26,7 +26,7 @@ Lookup and browse view for the operator. Primary use cases:
 
 | Element | Behavior |
 |---|---|
-| Title | "Cards" |
+| Title | "Catalog" |
 | Stale-data indicator | Per-product inline text: e.g. "Magic refreshed 2 days ago". Highlighted in amber when any product's `priced_at` is older than 3 days or null. |
 | **Import catalog** button | Opens the GlobalImportModal on the catalog tab. |
 

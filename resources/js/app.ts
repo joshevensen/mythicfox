@@ -5,38 +5,27 @@ import ToastService from 'primevue/toastservice';
 import 'primeicons/primeicons.css';
 import { initializeTheme } from '@/composables/useAppearance';
 import AdminLayout from '@/layouts/AdminLayout.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 import { MythicFoxPreset } from '@/lib/primevue-preset';
+import { resolveLayout } from '@/lib/resolveLayout';
+import type { LayoutKey } from '@/lib/resolveLayout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+const layouts = {
+    none: null,
+    public: PublicLayout,
+    auth: AuthLayout,
+    settings: [AdminLayout, SettingsLayout],
+    admin: AdminLayout,
+} satisfies Record<LayoutKey, unknown>;
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
-    layout: (name) => {
-        switch (true) {
-            case name === 'Welcome':
-            case name === 'Orders/PackingSlip':
-                return null;
-            case name.startsWith('public/'):
-                return PublicLayout;
-            case name.startsWith('auth/'):
-                return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AdminLayout, SettingsLayout];
-            case name === 'Dashboard':
-            case name === 'Settings':
-            case name.startsWith('Cards/'):
-            case name.startsWith('Orders/'):
-            case name.startsWith('placeholders/'):
-                return AdminLayout;
-            default:
-                return AppLayout;
-        }
-    },
+    layout: (name) => layouts[resolveLayout(name)],
     progress: {
         color: '#4B5563',
     },
