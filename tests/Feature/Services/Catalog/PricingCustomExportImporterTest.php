@@ -27,13 +27,13 @@ function importFixture(?string $sourcePath = null): void
 test('first import creates products, sets, canonical cards, and printings with parsed prices', function () {
     importFixture();
 
-    expect(Product::count())->toBe(2);
+    expect(Product::count())->toBe(3);
     expect(Product::where('name', 'Flesh & Blood TCG')->exists())->toBeTrue();
     expect(Product::where('name', 'Magic')->exists())->toBeTrue();
 
-    expect(Set::count())->toBe(3);
-    expect(Card::count())->toBe(5);
-    expect(Printing::count())->toBe(6);
+    expect(Set::count())->toBe(8);
+    expect(Card::count())->toBe(16);
+    expect(Printing::count())->toBe(18);
 
     $boltyn = Card::where('name', 'Boltyn')->where('number', 'BOL001')->firstOrFail();
     expect($boltyn->rarity)->toBe('Majestic');
@@ -84,8 +84,8 @@ test('re-running the same file produces zero logical changes', function () {
 
     expect(Card::count())->toBe($cardCountAfterFirst);
     expect(Printing::count())->toBe($printingCountAfterFirst);
-    expect(Product::count())->toBe(2);
-    expect(Set::count())->toBe(3);
+    expect(Product::count())->toBe(3);
+    expect(Set::count())->toBe(8);
 
     $boltyn->refresh();
     $nonFoil->refresh();
@@ -151,7 +151,7 @@ CSV);
 
 test('artisan command imports a CSV', function () {
     $this->artisan('catalog:import-pricing-custom-export', ['path' => fixturePath()])
-        ->expectsOutputToContain('Imported 7 rows, touched 2 product(s).')
+        ->expectsOutputToContain('Imported 85 rows, touched 3 product(s).')
         ->assertSuccessful();
 });
 
