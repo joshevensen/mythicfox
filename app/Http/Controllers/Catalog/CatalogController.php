@@ -10,6 +10,7 @@
  * @gotchas
  * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
  * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
+ * - Rarity filter options are the distinct non-empty cards.rarity values per product, alphabetical.
  *
  * @dependencies
  * - BrowseCardsQuery — handles paginator and variant lookups
@@ -56,6 +57,7 @@ class CatalogController extends Controller
         ])->all();
 
         $setsByProduct = $this->setsByProduct();
+        $raritiesByProduct = $this->raritiesByProduct();
         $stale = $this->stalenessSummary($products);
 
         return Inertia::render('Catalog/Index', [
@@ -71,6 +73,7 @@ class CatalogController extends Controller
             'meta' => [
                 'products' => $productOptions,
                 'sets_by_product' => $setsByProduct,
+                'rarities_by_product' => $raritiesByProduct,
                 'products_priced_at' => $stale,
                 'has_any_cards' => $this->hasAnyCards(),
                 'import_in_flight' => Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY),
@@ -88,6 +91,7 @@ class CatalogController extends Controller
         $filters = [
             'product_id' => $this->intOrNull($request->query('product')),
             'set_ids' => $this->csvIds($request->query('sets')),
+            'rarities' => $this->csvStrings($request->query('rarities')),
             'sort' => (string) $request->query('sort', 'name'),
             'dir' => $request->query('dir') === 'desc' ? 'desc' : 'asc',
             'per_page' => $this->resolvePerPage($request),
@@ -144,6 +148,34 @@ class CatalogController extends Controller
     }
 
     /**
+     * @return array<string, array<int, array{value: string, label: string}>>
+     */
+    private function raritiesByProduct(): array
+    {
+        $rows = Card::query()
+            ->join('sets', 'cards.set_id', '=', 'sets.id')
+            ->where('cards.rarity', '!=', '')
+            ->select(['sets.product_id', 'cards.rarity'])
+            ->distinct()
+            ->orderBy('sets.product_id')
+            ->orderBy('cards.rarity')
+            ->get();
+
+        $grouped = [];
+
+        foreach ($rows as $row) {
+            $key = (string) $row->product_id;
+            $grouped[$key] ??= [];
+            $grouped[$key][] = [
+                'value' => (string) $row->rarity,
+                'label' => (string) $row->rarity,
+            ];
+        }
+
+        return $grouped;
+    }
+
+    /**
      * @return array<int, array{id: int, name: string, priced_at: string|null, is_stale: bool}>
      */
     private function stalenessSummary(Collection $products): array
@@ -190,6 +222,23 @@ class CatalogController extends Controller
         return collect(explode(',', $value))
             ->map(fn (string $v) => (int) trim($v))
             ->filter(fn (int $v) => $v > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function csvStrings(mixed $value): array
+    {
+        if (! is_string($value) || $value === '') {
+            return [];
+        }
+
+        return collect(explode(',', $value))
+            ->map(fn (string $v) => trim($v))
+            ->filter(fn (string $v) => $v !== '')
+            ->unique()
             ->values()
             ->all();
     }
