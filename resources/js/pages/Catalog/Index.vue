@@ -178,7 +178,7 @@ watch(
 
         for (const { key, count } of result.dropped) {
             info(
-                `Removed ${count} ${droppedFilterNoun[key]} filters not in ${productLabel}.`,
+                `Removed ${count} ${droppedFilterNoun[key] ?? key} filters not in ${productLabel}.`,
             );
         }
 
