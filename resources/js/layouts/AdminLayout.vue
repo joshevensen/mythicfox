@@ -6,6 +6,7 @@ import MfConfirmDialog from '@/components/MfConfirmDialog.vue';
 import MfPageContainer from '@/components/MfPageContainer.vue';
 import MfToast from '@/components/MfToast.vue';
 import MfTopNav from '@/components/MfTopNav.vue';
+import { useFlashToast } from '@/composables/useFlashToast';
 import { useMfToast } from '@/composables/useMfToast';
 
 type CatalogImportResult = {
@@ -55,6 +56,8 @@ const emptyImports = (): GlobalImports => ({
 
 const page = usePage<{ global_imports?: GlobalImports }>();
 const { success, error } = useMfToast();
+
+useFlashToast();
 
 const imports = computed(() => page.props.global_imports ?? emptyImports());
 const pollHandle = ref<number | null>(null);

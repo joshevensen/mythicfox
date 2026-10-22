@@ -45,7 +45,6 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             ...($request->user() ? ['global_imports' => $this->globalImports($request)] : []),
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
 

@@ -243,9 +243,9 @@ const stalenessLabel = (entry: StaleEntry): string => {
 </script>
 
 <template>
-    <Head title="Cards" />
+    <Head title="Catalog" />
 
-    <MfPageHeader title="Cards">
+    <MfPageHeader title="Catalog">
         <div
             v-if="meta.products_priced_at.length > 0"
             class="mr-2 hidden flex-col gap-0.5 text-xs sm:flex"

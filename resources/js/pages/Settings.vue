@@ -124,7 +124,7 @@ const refresh = () => {
                 :href="catalogIndex().url"
                 class="mt-2 inline-block text-mf-orange hover:underline"
             >
-                Go to Cards
+                Go to Catalog
             </Link>
         </div>
 

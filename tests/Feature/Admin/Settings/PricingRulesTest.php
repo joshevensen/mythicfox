@@ -145,3 +145,11 @@ test('empty state renders when no products exist', function () {
             ->has('products', 0)
     );
 });
+
+test('empty state links to the Catalog', function () {
+    $source = file_get_contents(resource_path('js/pages/Settings.vue'));
+
+    expect($source)
+        ->toContain('Go to Catalog')
+        ->not->toContain('Go to Cards');
+});
