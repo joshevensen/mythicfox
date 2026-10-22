@@ -16,6 +16,12 @@ export type FilterDef = {
     key: string;
     label: string;
     options?: FilterOption[];
+    /** Enum only: show a type-to-narrow search box in the dropdown. Default false. */
+    searchable?: boolean;
+    /** Render the control disabled (enum and select). Default false. */
+    disabled?: boolean;
+    /** Placeholder shown while disabled; falls back to `label`. */
+    disabledPlaceholder?: string;
 };
 
 export type FilterValue =

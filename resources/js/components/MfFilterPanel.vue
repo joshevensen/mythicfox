@@ -22,6 +22,9 @@ const props = defineProps<Props>();
 
 const page = usePage();
 
+const placeholderFor = (def: FilterDef): string =>
+    def.disabled ? (def.disabledPlaceholder ?? def.label) : def.label;
+
 const initialUrl = (): URL => {
     const href =
         typeof window === 'undefined'
@@ -390,7 +393,9 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                     option-value="value"
                     option-label="label"
                     display="chip"
-                    :placeholder="def.label"
+                    :filter="def.searchable ?? false"
+                    :disabled="def.disabled ?? false"
+                    :placeholder="placeholderFor(def)"
                     @update:model-value="(v: string[]) => setFilter(def, v)"
                 />
                 <Select
@@ -399,7 +404,8 @@ const setDateTo = (def: FilterDef, raw: string): void => {
                     :options="def.options"
                     option-value="value"
                     option-label="label"
-                    :placeholder="def.label"
+                    :disabled="def.disabled ?? false"
+                    :placeholder="placeholderFor(def)"
                     show-clear
                     @update:model-value="
                         (v: string | null) => setFilter(def, v ?? '')
