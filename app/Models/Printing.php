@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['card_id', 'finish', 'tcgplayer_id', 'justtcg_id', 'other_ids', 'image_url', 'market_price', 'low_price'])]
+#[Fillable(['card_id', 'finish', 'tcgplayer_id', 'justtcg_id', 'other_ids', 'image_url', 'nm_market_price', 'nm_low_price', 'lp_market_price', 'lp_low_price', 'mp_market_price', 'mp_low_price'])]
 class Printing extends Model
 {
     /** @use HasFactory<PrintingFactory> */
@@ -21,8 +21,12 @@ class Printing extends Model
             'tcgplayer_id' => 'integer',
             'justtcg_id' => 'integer',
             'other_ids' => 'array',
-            'market_price' => 'integer',
-            'low_price' => 'integer',
+            'nm_market_price' => 'integer',
+            'nm_low_price' => 'integer',
+            'lp_market_price' => 'integer',
+            'lp_low_price' => 'integer',
+            'mp_market_price' => 'integer',
+            'mp_low_price' => 'integer',
         ];
     }
 

@@ -10,6 +10,7 @@
  * @gotchas
  * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
  * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
+ * - Each row's market_price is computed in SQL by BrowseCardsQuery (LP → NM; non-foil → foil → etched) so it can be sorted server-side.
  * - Rarity filter options are the distinct non-empty cards.rarity values per product, alphabetical,
  *   cached by RarityOptionsQuery and cleared when an import or sync finishes.
  *
@@ -121,6 +122,7 @@ class CatalogController extends Controller
                 'number' => (string) $row->number,
                 'set_name' => (string) $row->set_name,
                 'rarity' => (string) $row->rarity,
+                'market_price' => $row->market_price === null ? null : (int) $row->market_price,
             ];
 
             $variants[$key] = $this->browse->variantsFor((int) $row->id);

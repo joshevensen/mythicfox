@@ -128,8 +128,6 @@ class LorcastSource implements CatalogSyncSource
                 'image_url' => $row['image_url'],
                 'justtcg_id' => null,
                 'other_ids' => $otherIds !== null ? json_encode($otherIds) : null,
-                'market_price' => null,
-                'low_price' => null,
             ];
         }
 
