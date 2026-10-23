@@ -44,3 +44,7 @@
 
 ## Scoping a nested route model (child must belong to parent in the URL)
 - `->scopeBindings()` on the route with `whereNumber` on the IDs — #71 — mismatched parent/child returns 404 with no controller code
+- `->scopeBindings()` with `whereNumber`, resolving the child through a HasManyThrough (`Product::cards()`) — #72 — Laravel supports through-relations for scoped bindings, so no controller ownership check
+
+## Reusing a Vue component that lives under pages/ from a second page
+- `git mv` it to `resources/js/components/{area}/` with a descriptive name, keeping its root `data-test` — #72 — pages/ is for Inertia pages; shared pieces live in components/
