@@ -64,3 +64,19 @@ test('catalog dropdown is driven by a section flag, not its label', function () 
         ->toContain('section.dropdown')
         ->not->toContain("section.label === 'Catalog'");
 });
+
+test('MfTopNav embeds the card search inline on desktop and behind a toggle on mobile', function () {
+    $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
+
+    expect($source)
+        ->toContain('CatalogCardSearch')
+        ->toContain('data-test="topnav-search"')
+        ->toContain('data-test="topnav-search-toggle"')
+        ->toContain('data-test="topnav-mobile-search"')
+        ->toContain('mobileSearchOpen')
+        ->toContain('md:hidden')
+        ->toContain('@navigated="mobileSearchOpen = false"');
+
+    expect(strpos($source, 'data-test="topnav-search-toggle"'))
+        ->toBeLessThan(strpos($source, 'data-test="topnav-import-button"'));
+});

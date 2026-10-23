@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import Drawer from 'primevue/drawer';
 import Popover from 'primevue/popover';
 import { computed, ref, useTemplateRef } from 'vue';
+import CatalogCardSearch from '@/components/catalog/CatalogCardSearch.vue';
 import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { dashboard, logout } from '@/routes';
 import { index as catalogIndex } from '@/routes/catalog';
@@ -68,6 +69,7 @@ const hideCatalogMenu = (): void => {
 };
 
 const drawerOpen = ref(false);
+const mobileSearchOpen = ref(false);
 const importModal = useGlobalImportModal();
 
 const handleLogout = () => {
@@ -163,7 +165,25 @@ const handleLogout = () => {
             </Popover>
         </nav>
 
+        <div
+            class="ml-4 hidden w-full max-w-sm md:block"
+            data-test="topnav-search"
+        >
+            <CatalogCardSearch />
+        </div>
+
         <div class="ml-auto flex items-center">
+            <button
+                type="button"
+                class="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-muted md:hidden"
+                aria-label="Search cards"
+                :aria-expanded="mobileSearchOpen"
+                data-test="topnav-search-toggle"
+                @click="mobileSearchOpen = !mobileSearchOpen"
+            >
+                <i class="pi pi-search" />
+            </button>
+
             <button
                 type="button"
                 class="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-muted"
@@ -283,5 +303,17 @@ const handleLogout = () => {
                 </Link>
             </nav>
         </Drawer>
+
+        <div
+            v-if="mobileSearchOpen"
+            class="absolute inset-x-0 top-full border-b border-border bg-background px-4 py-2 md:hidden"
+            data-test="topnav-mobile-search"
+        >
+            <CatalogCardSearch
+                autofocus
+                @navigated="mobileSearchOpen = false"
+                @dismiss="mobileSearchOpen = false"
+            />
+        </div>
     </header>
 </template>
