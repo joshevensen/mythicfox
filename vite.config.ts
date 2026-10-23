@@ -25,4 +25,11 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    build: {
+        rolldownOptions: {
+            output: {
+                strictExecutionOrder: true,
+            },
+        },
+    },
 });
