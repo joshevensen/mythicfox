@@ -57,6 +57,7 @@ One row per canonical Card.
 | Number | `cards.number` | yes |
 | Set Name | `sets.name` | yes |
 | Rarity | `cards.rarity` | yes |
+| Market Price | LP market price (fallback NM) of the first non-foil → foil → etched printing that has one | yes — unpriced cards sort last in both directions; empty cell when null |
 
 #### Expand row
 
@@ -66,8 +67,12 @@ Click the row expand toggle to reveal a sub-table of Printings for that card.
 |---|---|---|
 | Finish | `printings.finish` | Normalized — e.g. `Non Foil`, `Foil`, `Rainbow Foil` |
 | TCGplayer ID | `printings.tcgplayer_id` | Monospace (`MfMonospaceId`); `—` if null |
-| Market | `printings.market_price` | Formatted as currency; `—` if null |
-| Low | `printings.low_price` | Formatted as currency; `—` if null |
+| NM Market | `printings.nm_market_price` | Formatted as currency; `—` if null |
+| NM Low | `printings.nm_low_price` | Formatted as currency; `—` if null |
+| LP Market | `printings.lp_market_price` | Formatted as currency; `—` if null |
+| LP Low | `printings.lp_low_price` | Formatted as currency; `—` if null |
+| MP Market | `printings.mp_market_price` | Formatted as currency; `—` if null |
+| MP Low | `printings.mp_low_price` | Formatted as currency; `—` if null |
 
 ---
 

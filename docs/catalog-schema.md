@@ -68,10 +68,14 @@ Each row is a per-finish variant of a canonical Card. A card can have multiple p
 | id | bigint PK | |
 | card_id | bigint FK → cards | |
 | finish | string | Normalized finish string — `non-foil`, `foil`, `rainbow-foil`, `cold-foil`, `gold-cold-foil`, `etched` |
-| tcgplayer_id | integer unique nullable | TCGPlayer's per-SKU identifier; null when not available or when a card has multiple finishes sharing one TCGPlayer ID |
+| tcgplayer_id | integer unique nullable | TCGPlayer identifier; null when not available or when a card has multiple finishes sharing one TCGPlayer ID. Sync sources (Scryfall, FAB) write product IDs; the PricingCustomExport import writes the per-condition SKU ID of the Near Mint row |
 | image_url | string nullable | Remote card image URL from the sync source |
-| market_price | integer nullable | cents — last known TCG Market Price |
-| low_price | integer nullable | cents — last known TCG Low Price |
+| nm_market_price | integer nullable | cents — last known TCG Market Price for Near Mint |
+| nm_low_price | integer nullable | cents — last known TCG Low Price for Near Mint |
+| lp_market_price | integer nullable | cents — last known TCG Market Price for Lightly Played |
+| lp_low_price | integer nullable | cents — last known TCG Low Price for Lightly Played |
+| mp_market_price | integer nullable | cents — last known TCG Market Price for Moderately Played |
+| mp_low_price | integer nullable | cents — last known TCG Low Price for Moderately Played |
 | other_ids | json nullable | Provider-specific IDs (e.g. `{"fab_id": "uuid"}`, `{"lorcast_id": "uuid"}`) |
 | created_at | timestamp | |
 | updated_at | timestamp | |
@@ -112,11 +116,11 @@ Scheduled runs: Magic on Saturdays at 1 AM, Lorcana on Sundays at 1 AM, FAB dail
 **Behavior**:
 
 1. Persist the uploaded file via `files` (see [saas-design.md](saas-design.md)).
-2. Iterate rows. For each row:
+2. Iterate rows. Rows whose Condition does not start with `Near Mint`, `Lightly Played` or `Moderately Played` (Heavily Played, Damaged, sealed) are skipped entirely. For each remaining row:
    - Upsert `products` on `name`. Pricing rule fields are not touched on update.
    - Upsert `sets` on `(product_id, name)`. Non-identity fields not touched on update.
    - Upsert canonical `cards` on `(set_id, name, number)`.
-   - Upsert `printings` on `(card_id, finish)`: refresh `market_price`, `low_price`, and `tcgplayer_id`.
+   - Upsert `printings` on `(card_id, finish)`: refresh only that row's condition price pair (`nm_*`, `lp_*` or `mp_*`). `tcgplayer_id` is refreshed from the Near Mint row; LP/MP rows set it only when they insert the printing. Rows for one printing may arrive in any order or import chunk without overwriting another condition's prices.
 3. After all rows for a product are processed, set `products.priced_at = now()` for each touched product.
 
 The import is **idempotent**: re-running the same file refreshes prices but does not duplicate rows.
@@ -131,9 +135,9 @@ The import is **idempotent**: re-running the same file refreshes prices but does
 | Product Name | `cards.name` | Card identity |
 | Number | `cards.number` | Card identity |
 | Rarity | `cards.rarity` | Verbatim |
-| Condition | `printings.finish` (derived) | e.g. `Near Mint Foil` → `foil` |
-| TCG Market Price | `printings.market_price` | Parse decimal → cents |
-| TCG Low Price | `printings.low_price` | Parse decimal → cents |
+| Condition | `printings.finish` (derived) **and** the condition price pair | e.g. `Near Mint Foil` → `foil` + `nm_*`; `Lightly Played*` → `lp_*`; `Moderately Played*` → `mp_*`; Heavily Played / Damaged rows are ignored |
+| TCG Market Price | `printings.{nm\|lp\|mp}_market_price` | Parse decimal → cents |
+| TCG Low Price | `printings.{nm\|lp\|mp}_low_price` | Parse decimal → cents |
 | Title, TCG Direct Low, TCG Low Price With Shipping, Total Quantity, Add to Quantity, TCG Marketplace Price, Photo URL | — | Not stored |
 
 ---
@@ -217,8 +221,8 @@ A stale-data hint appears before generating if any product's `priced_at` is olde
 | Number | `cards.number` |
 | Rarity | `cards.rarity` |
 | Condition | `printings.finish` (denormalized back to TCGPlayer condition string) |
-| TCG Market Price | `printings.market_price` (formatted decimal) |
-| TCG Low Price | `printings.low_price` (formatted decimal) |
+| TCG Market Price | the market price for the exported row's condition — `printings.{nm\|lp\|mp}_market_price` (formatted decimal) |
+| TCG Low Price | the low price for the exported row's condition — `printings.{nm\|lp\|mp}_low_price` (formatted decimal) |
 | TCG Marketplace Price | calculated or override price (formatted decimal); empty if both null |
 | Title, TCG Direct Low, TCG Low Price With Shipping, Add to Quantity, Photo URL | empty |
 
@@ -229,4 +233,5 @@ A stale-data hint appears before generating if any product's `priced_at` is olde
 - **Catalog table size at scale.** With Magic, Lorcana, and FAB seeded, `cards` can reach hundreds of thousands of rows. Index `(set_id, name, number)` carefully and benchmark with realistic data before launch.
 - **Sync staleness.** `cards_synced_at` on `Set` tracks when cards were last fetched. Use `needsCardSync()` to check; the `--force` flag on `catalog:sync` bypasses the staleness check.
 - **TCGPlayer can rename cards.** Upsert by `(set_id, name, number)` means a rename creates a new canonical Card and rebinds the Printing. This is intentional — the new identity is more accurate.
+- **`tcgplayer_id` mixes ID kinds.** The PricingCustomExport `TCGplayer Id` is a per-condition SKU ID, while Scryfall/FAB sync write product IDs into the same column. Don't build `tcgplayer.com/product/{id}` links from it (see #67).
 - **Finish normalization.** The `PricingCustomExportImporter` derives `finish` from the TCGPlayer condition string (e.g. `Near Mint Foil` → `foil`). Sync sources use game-specific finish vocabularies mapped in each adapter.
