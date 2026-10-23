@@ -6,3 +6,12 @@
 
 ## Rendering server-flashed toasts
 - `useFlashToast()` composable in the admin layout, rendering through PrimeVue `MfToast` — #62 — the vue-sonner `Toaster` was only mounted by the removed starter-kit layouts
+
+## Adding a capability to the shared MfFilterPanel that only one page needs
+- Optional, default-off `FilterDef` fields (`searchable`, `disabled`, `disabledPlaceholder`) — #65 — keeps one filter panel; other consumers unchanged
+
+## Caching filter options derived from scanning catalog cards
+- `Cache::rememberForever` in a `App\Catalog\Queries` class, with a static `forget()` called by every card writer (import, sync, truncate commands) — #65 — card writes are bulk upserts/truncates that bypass model events, so explicit invalidation is the only reliable hook
+
+## Asserting PrimeVue component props in a vitest component test
+- Explicit `defineComponent` stubs declaring the props under test — #65 — PrimeVue declares props on an extended base component, which `stubs: { X: true }` doesn't copy

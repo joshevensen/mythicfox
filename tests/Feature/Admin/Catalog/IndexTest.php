@@ -1,5 +1,6 @@
 <?php
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Card;
 use App\Models\Printing;
 use App\Models\Product;
@@ -176,4 +177,111 @@ test('catalog page title and header read Catalog', function () {
         ->toContain('<Head title="Catalog" />')
         ->toContain('<MfPageHeader title="Catalog"')
         ->not->toContain('title="Cards"');
+});
+
+test('rarities_by_product lists distinct non-empty rarities alphabetically', function () {
+    $product = Product::factory()->magic()->create();
+    $set = Set::factory()->forProduct($product)->create();
+
+    foreach (['Rare', 'Common', 'Rare', 'Legendary', ''] as $i => $rarity) {
+        Card::factory()->create(['set_id' => $set->id, 'number' => (string) $i, 'rarity' => $rarity]);
+    }
+
+    $key = 'meta.rarities_by_product.'.$product->id;
+
+    $this->get(route('catalog.index'))->assertInertia(
+        fn ($page) => $page
+            ->has($key, 3)
+            ->where($key.'.0', ['value' => 'Common', 'label' => 'Common'])
+            ->where($key.'.1', ['value' => 'Legendary', 'label' => 'Legendary'])
+            ->where($key.'.2', ['value' => 'Rare', 'label' => 'Rare'])
+    );
+});
+
+test('rarities_by_product is scoped per product', function () {
+    $magic = Product::factory()->magic()->create();
+    $lorcana = Product::factory()->lorcana()->create();
+    $empty = Product::factory()->create(['name' => 'Empty Product']);
+    $magicSet = Set::factory()->forProduct($magic)->create();
+    $lorcanaSet = Set::factory()->forProduct($lorcana)->create();
+
+    Card::factory()->create(['set_id' => $magicSet->id, 'number' => '1', 'rarity' => 'Mythic']);
+    Card::factory()->create(['set_id' => $lorcanaSet->id, 'number' => '1', 'rarity' => 'Enchanted']);
+
+    $this->get(route('catalog.index'))->assertInertia(
+        fn ($page) => $page
+            ->has('meta.rarities_by_product.'.$magic->id, 1)
+            ->where('meta.rarities_by_product.'.$magic->id.'.0.value', 'Mythic')
+            ->has('meta.rarities_by_product.'.$lorcana->id, 1)
+            ->where('meta.rarities_by_product.'.$lorcana->id.'.0.value', 'Enchanted')
+            ->missing('meta.rarities_by_product.'.$empty->id)
+    );
+});
+
+test('filtering by rarities narrows results', function () {
+    $product = Product::factory()->magic()->create();
+    $set = Set::factory()->forProduct($product)->create();
+
+    foreach (['Common', 'Rare', 'Super Rare'] as $i => $rarity) {
+        Card::factory()->create(['set_id' => $set->id, 'number' => (string) $i, 'rarity' => $rarity]);
+    }
+
+    $response = $this->get(route('catalog.index', ['product' => $product->id, 'rarities' => 'Rare,Super Rare']));
+
+    $response->assertInertia(fn ($page) => $page->where('cards.meta.total', 2));
+
+    $rarities = collect($response->inertiaProps('cards.data'))->pluck('rarity')->sort()->values()->all();
+
+    expect($rarities)->toBe(['Rare', 'Super Rare']);
+});
+
+test('rarity filter combines with set filter', function () {
+    $product = Product::factory()->magic()->create();
+    $setA = Set::factory()->forProduct($product)->create(['name' => 'Set A']);
+    $setB = Set::factory()->forProduct($product)->create(['name' => 'Set B']);
+
+    foreach ([$setA, $setB] as $set) {
+        Card::factory()->create(['set_id' => $set->id, 'name' => $set->name.' Rare', 'number' => '1', 'rarity' => 'Rare']);
+        Card::factory()->create(['set_id' => $set->id, 'name' => $set->name.' Common', 'number' => '2', 'rarity' => 'Common']);
+    }
+
+    $this->get(route('catalog.index', [
+        'product' => $product->id,
+        'sets' => (string) $setA->id,
+        'rarities' => 'Rare',
+    ]))->assertInertia(
+        fn ($page) => $page
+            ->where('cards.meta.total', 1)
+            ->where('cards.data.0.name', 'Set A Rare')
+    );
+});
+
+test('blank rarities segments are ignored', function () {
+    $product = Product::factory()->magic()->create();
+    $set = Set::factory()->forProduct($product)->create();
+
+    Card::factory()->create(['set_id' => $set->id, 'number' => '1', 'rarity' => 'Common']);
+    Card::factory()->create(['set_id' => $set->id, 'number' => '2', 'rarity' => 'Rare']);
+
+    $this->get(route('catalog.index', ['rarities' => ', ,']))->assertInertia(
+        fn ($page) => $page->where('cards.meta.total', 2)
+    );
+});
+
+test('rarities_by_product is cached until forgotten', function () {
+    $product = Product::factory()->magic()->create();
+    $set = Set::factory()->forProduct($product)->create();
+    Card::factory()->create(['set_id' => $set->id, 'number' => '1', 'rarity' => 'Common']);
+
+    $key = 'meta.rarities_by_product.'.$product->id;
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 1));
+
+    Card::factory()->create(['set_id' => $set->id, 'number' => '2', 'rarity' => 'Rare']);
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 1));
+
+    RarityOptionsQuery::forget();
+
+    $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 2));
 });

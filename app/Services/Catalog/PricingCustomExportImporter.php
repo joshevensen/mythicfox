@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog;
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\File;
 use App\Services\Catalog\Support\ImportPath;
 use Illuminate\Support\Carbon;
@@ -84,6 +85,8 @@ class PricingCustomExportImporter
             $this->upserter->flush();
             $this->upserter->bumpPricedAt();
         });
+
+        RarityOptionsQuery::forget();
 
         $touchedIds = $this->upserter->touchedProductIds();
 

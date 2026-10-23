@@ -1,11 +1,13 @@
 <?php
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Product;
 use App\Models\Set;
 use App\Services\Catalog\Sync\CatalogSyncService;
 use App\Services\Catalog\Sync\CatalogSyncSource;
 use App\Services\Catalog\Sync\ScryfallSource;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 function fakeSource(int $setsToUpsert = 1, int $cardsPerSet = 5): CatalogSyncSource
 {
@@ -116,4 +118,13 @@ test('sync continues if one set card sync throws', function () {
 
 test('throws for unknown game', function () {
     expect(fn () => (new CatalogSyncService)->sync('pokemon'))->toThrow(InvalidArgumentException::class);
+});
+
+test('sync clears the cached rarity options', function () {
+    Product::factory()->create(['name' => 'Magic']);
+    Cache::forever(RarityOptionsQuery::CACHE_KEY, ['stale' => []]);
+
+    (new CatalogSyncService)->sync('magic');
+
+    expect(Cache::has(RarityOptionsQuery::CACHE_KEY))->toBeFalse();
 });

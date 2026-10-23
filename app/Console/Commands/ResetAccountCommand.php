@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Card;
 use App\Models\File;
 use App\Models\Order;
@@ -54,6 +55,7 @@ class ResetAccountCommand extends Command
 
         DB::statement('TRUNCATE TABLE order_items, orders RESTART IDENTITY CASCADE');
         DB::statement('TRUNCATE TABLE printings, cards, sets, products RESTART IDENTITY CASCADE');
+        RarityOptionsQuery::forget();
         DB::statement('TRUNCATE TABLE files RESTART IDENTITY');
 
         $this->info('Account reset complete. Users preserved.');
