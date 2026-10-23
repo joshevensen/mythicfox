@@ -128,6 +128,8 @@ test('heavily played and damaged rows are ignored', function () {
     expect(Set::where('name', 'Ignored Set')->exists())->toBeFalse();
     expect(Card::where('name', 'Only Played')->exists())->toBeFalse();
     expect(Printing::whereIn('tcgplayer_id', [9200001, 9200002, 9200004, 9200005])->exists())->toBeFalse();
+    expect(Product::where('name', 'Lorcana TCG')->firstOrFail()->priced_at)->not->toBeNull();
+    expect(Product::count())->toBe(1);
 
     $mixed = printingFor('Mixed', '2', 'non-foil');
     expect($mixed->tcgplayer_id)->toBe(9200003);
@@ -152,6 +154,25 @@ test('per-condition prices are independent of row order', function (bool $revers
 
     @unlink($tmp);
 })->with(['csv order' => false, 'reversed order' => true]);
+
+test('a printing without an NM row keeps the SKU id it was inserted with', function () {
+    $first = writePricingCsv('pricing-lp-only.csv', [
+        '"9300002","Magic","Test Set","LP Only","","3","R","Lightly Played","4.00","","","3.50","0","0","",""',
+    ]);
+    $second = writePricingCsv('pricing-lp-only-new-sku.csv', [
+        '"9300099","Magic","Test Set","LP Only","","3","R","Lightly Played","4.20","","","3.60","0","0","",""',
+    ]);
+
+    importFixture($first);
+    importFixture($second);
+
+    $printing = printingFor('LP Only', '3', 'non-foil');
+    expect($printing->tcgplayer_id)->toBe(9300002);
+    expect(conditionPrices($printing))->toBe(['nm' => [null, null], 'lp' => [420, 360], 'mp' => [null, null]]);
+
+    @unlink($first);
+    @unlink($second);
+});
 
 test('conditions flushed in different chunks do not overwrite each other', function () {
     $tmp = writePricingCsv('pricing-chunks.csv', array_reverse(threeConditionRows()));

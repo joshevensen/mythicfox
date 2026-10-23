@@ -20,18 +20,6 @@ use Illuminate\Support\Carbon;
  */
 class CatalogUpserter
 {
-    /** @var array<string, int> name → product id */
-    private array $productCache = [];
-
-    /** @var array<string, int> "{product_id}\0{name}" → set id */
-    private array $setCache = [];
-
-    /** @var array<int, true> product ids touched in this run */
-    private array $touchedProductIds = [];
-
-    /** @var array<string, array<string, mixed>> buffered card upsert rows keyed by canonical identity */
-    private array $cardBuffer = [];
-
     /**
      * Upsert columns per condition. Each condition's upsert only updates its own
      * price pair, so rows for one printing can arrive in any order or chunk
@@ -45,6 +33,18 @@ class CatalogUpserter
         'lp' => ['justtcg_id', 'other_ids', 'image_url', 'lp_market_price', 'lp_low_price'],
         'mp' => ['justtcg_id', 'other_ids', 'image_url', 'mp_market_price', 'mp_low_price'],
     ];
+
+    /** @var array<string, int> name → product id */
+    private array $productCache = [];
+
+    /** @var array<string, int> "{product_id}\0{name}" → set id */
+    private array $setCache = [];
+
+    /** @var array<int, true> product ids touched in this run */
+    private array $touchedProductIds = [];
+
+    /** @var array<string, array<string, mixed>> buffered card upsert rows keyed by canonical identity */
+    private array $cardBuffer = [];
 
     /** @var array<'nm'|'lp'|'mp', array<string, array<string, mixed>>> buffered printing upsert rows keyed by condition, then card identity + finish */
     private array $printingBuffer = [];
