@@ -13,6 +13,7 @@ import MfTable from '@/components/MfTable.vue';
 import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
+import { pruneDependentFilters } from '@/lib/pruneDependentFilters';
 import RowExpand from '@/pages/Catalog/RowExpand.vue';
 import { index as cardsIndex } from '@/routes/catalog';
 
@@ -67,6 +68,7 @@ type ImportResult = {
 type Meta = {
     products: FilterOption[];
     sets_by_product: Record<string, FilterOption[]>;
+    rarities_by_product: Record<string, FilterOption[]>;
     products_priced_at: StaleEntry[];
     has_any_cards: boolean;
     import_in_flight: boolean;
@@ -86,7 +88,7 @@ const importModal = useGlobalImportModal();
 
 const tableState = useTableState({
     endpoint: cardsIndex().url,
-    filterKeys: ['product', 'sets'],
+    filterKeys: ['product', 'sets', 'rarities'],
     defaultSort: { field: 'name', dir: 'asc' },
     inertiaOnly: ['cards', 'variants', 'meta'],
 });
@@ -104,6 +106,16 @@ const setOptions = computed<FilterOption[]>(() => {
     return props.meta.sets_by_product[selectedProductId.value] ?? [];
 });
 
+const rarityOptions = computed<FilterOption[]>(() => {
+    if (!selectedProductId.value) {
+        return [];
+    }
+
+    return props.meta.rarities_by_product[selectedProductId.value] ?? [];
+});
+
+const productRequired = computed(() => !selectedProductId.value);
+
 const filters = computed<FilterDef[]>(() => [
     {
         kind: 'select',
@@ -116,12 +128,29 @@ const filters = computed<FilterDef[]>(() => [
         key: 'sets',
         label: 'Set',
         options: setOptions.value,
+        searchable: true,
+        disabled: productRequired.value,
+        disabledPlaceholder: 'Select a product first',
+    },
+    {
+        kind: 'enum',
+        key: 'rarities',
+        label: 'Rarity',
+        options: rarityOptions.value,
+        disabled: productRequired.value,
+        disabledPlaceholder: 'Select a product first',
     },
 ]);
 
-// Chained Set filter: when Product changes, drop selected set IDs that don't
-// belong to the new product. The MfFilterPanel writes filters to the URL —
-// we watch page.url here and synthesize a re-navigation if necessary.
+// Chained Set and Rarity filters: when Product changes, drop selected sets and
+// rarities that don't belong to the new product. The MfFilterPanel writes
+// filters to the URL — we watch page.url here and synthesize a single
+// re-navigation if necessary.
+const droppedFilterNoun: Record<string, string> = {
+    sets: 'set',
+    rarities: 'rarity',
+};
+
 let lastUrl = page.url;
 watch(
     () => page.url,
@@ -137,23 +166,15 @@ watch(
             return;
         }
 
-        const setsRaw = cur.searchParams.get('sets') ?? '';
-        const selectedSetIds = setsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0);
+        const result = pruneDependentFilters(cur.search, curProduct, [
+            { key: 'sets', optionsByProduct: props.meta.sets_by_product },
+            {
+                key: 'rarities',
+                optionsByProduct: props.meta.rarities_by_product,
+            },
+        ]);
 
-        if (selectedSetIds.length === 0) {
-            return;
-        }
-
-        const allowed = new Set(
-            (props.meta.sets_by_product[curProduct] ?? []).map((o) => o.value),
-        );
-        const kept = selectedSetIds.filter((id) => allowed.has(id));
-        const dropped = selectedSetIds.length - kept.length;
-
-        if (dropped === 0) {
+        if (result === null) {
             return;
         }
 
@@ -161,19 +182,13 @@ watch(
             props.meta.products.find((p) => p.value === curProduct)?.label ??
             'this product';
 
-        info(`Removed ${dropped} set filters not in ${productLabel}.`);
-
-        const params = new URLSearchParams(cur.search);
-
-        if (kept.length > 0) {
-            params.set('sets', kept.join(','));
-        } else {
-            params.delete('sets');
+        for (const { key, count } of result.dropped) {
+            info(
+                `Removed ${count} ${droppedFilterNoun[key] ?? key} filters not in ${productLabel}.`,
+            );
         }
 
-        params.delete('page');
-
-        router.get(cur.pathname, Object.fromEntries(params.entries()), {
+        router.get(cur.pathname, result.query, {
             preserveState: true,
             preserveScroll: true,
         });

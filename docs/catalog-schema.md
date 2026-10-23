@@ -57,7 +57,7 @@ Each row is a **canonical card** — a unique (set, name, number) identity. Card
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
-Unique on `(set_id, name, number)`.
+Unique on `(set_id, name, number)`. Indexed on `(set_id, rarity)` for the catalog Rarity filter.
 
 ### `printings`
 

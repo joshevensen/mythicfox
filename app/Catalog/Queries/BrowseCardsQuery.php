@@ -52,6 +52,7 @@ class BrowseCardsQuery
      * @param  array{
      *     product_id?: int|null,
      *     set_ids?: list<int>,
+     *     rarities?: list<string>,
      *     sort?: string,
      *     dir?: 'asc'|'desc',
      *     per_page?: int,
@@ -96,6 +97,7 @@ class BrowseCardsQuery
      * @param  array{
      *     product_id?: int|null,
      *     set_ids?: list<int>,
+     *     rarities?: list<string>,
      * }  $filters
      */
     private function base(array $filters): Builder
@@ -120,6 +122,10 @@ class BrowseCardsQuery
 
         if (! empty($filters['set_ids'])) {
             $query->whereIn('cards.set_id', $filters['set_ids']);
+        }
+
+        if (! empty($filters['rarities'])) {
+            $query->whereIn('cards.rarity', $filters['rarities']);
         }
 
         return $query;

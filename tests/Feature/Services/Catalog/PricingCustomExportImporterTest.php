@@ -1,5 +1,6 @@
 <?php
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Card;
 use App\Models\File;
 use App\Models\Printing;
@@ -7,6 +8,7 @@ use App\Models\Product;
 use App\Models\Set;
 use App\Services\Catalog\CatalogUpserter;
 use App\Services\Catalog\PricingCustomExportImporter;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -275,4 +277,12 @@ test('artisan command fails on missing file', function () {
     $this->artisan('catalog:import-pricing-custom-export', ['path' => '/no/such/file.csv'])
         ->expectsOutputToContain('Cannot read CSV')
         ->assertFailed();
+});
+
+test('import clears the cached rarity options', function () {
+    Cache::forever(RarityOptionsQuery::CACHE_KEY, ['stale' => []]);
+
+    importFixture();
+
+    expect(Cache::has(RarityOptionsQuery::CACHE_KEY))->toBeFalse();
 });

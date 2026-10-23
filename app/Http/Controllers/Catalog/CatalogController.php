@@ -11,15 +11,19 @@
  * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
  * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
  * - Each row's market_price is computed in SQL by BrowseCardsQuery (LP → NM; non-foil → foil → etched) so it can be sorted server-side.
+ * - Rarity filter options are the distinct non-empty cards.rarity values per product, alphabetical,
+ *   cached by RarityOptionsQuery and cleared when an import or sync finishes.
  *
  * @dependencies
  * - BrowseCardsQuery — handles paginator and variant lookups
+ * - RarityOptionsQuery — cached rarity filter options per product
  * - ImportPricingCustomExportJob — cache keys checked for in-flight/last-result status
  */
 
 namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\Queries\BrowseCardsQuery;
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportPricingCustomExportJob;
 use App\Models\Card;
@@ -41,7 +45,10 @@ class CatalogController extends Controller
 
     private const STALE_DAYS = 3;
 
-    public function __construct(private readonly BrowseCardsQuery $browse) {}
+    public function __construct(
+        private readonly BrowseCardsQuery $browse,
+        private readonly RarityOptionsQuery $rarityOptions,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -57,6 +64,7 @@ class CatalogController extends Controller
         ])->all();
 
         $setsByProduct = $this->setsByProduct();
+        $raritiesByProduct = $this->rarityOptions->byProduct();
         $stale = $this->stalenessSummary($products);
 
         return Inertia::render('Catalog/Index', [
@@ -72,6 +80,7 @@ class CatalogController extends Controller
             'meta' => [
                 'products' => $productOptions,
                 'sets_by_product' => $setsByProduct,
+                'rarities_by_product' => $raritiesByProduct,
                 'products_priced_at' => $stale,
                 'has_any_cards' => $this->hasAnyCards(),
                 'import_in_flight' => Cache::has(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY),
@@ -89,6 +98,7 @@ class CatalogController extends Controller
         $filters = [
             'product_id' => $this->intOrNull($request->query('product')),
             'set_ids' => $this->csvIds($request->query('sets')),
+            'rarities' => $this->csvStrings($request->query('rarities')),
             'sort' => (string) $request->query('sort', 'name'),
             'dir' => $request->query('dir') === 'desc' ? 'desc' : 'asc',
             'per_page' => $this->resolvePerPage($request),
@@ -192,6 +202,23 @@ class CatalogController extends Controller
         return collect(explode(',', $value))
             ->map(fn (string $v) => (int) trim($v))
             ->filter(fn (int $v) => $v > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function csvStrings(mixed $value): array
+    {
+        if (! is_string($value) || $value === '') {
+            return [];
+        }
+
+        return collect(explode(',', $value))
+            ->map(fn (string $v) => trim($v))
+            ->filter(fn (string $v) => $v !== '')
+            ->unique()
             ->values()
             ->all();
     }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Catalog\Queries\RarityOptionsQuery;
 use App\Models\Card;
 use App\Models\Product;
 use App\Models\Set;
@@ -35,6 +36,7 @@ class ClearCatalogCommand extends Command
         }
 
         DB::statement('TRUNCATE TABLE printings, cards, sets, products RESTART IDENTITY CASCADE');
+        RarityOptionsQuery::forget();
 
         $this->info("Cleared {$products} product(s), {$sets} set(s), and {$cards} card(s).");
 
