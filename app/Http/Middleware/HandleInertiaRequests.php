@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Jobs\ImportOrdersJob;
 use App\Jobs\ImportPricingCustomExportJob;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
@@ -44,8 +45,29 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            ...($request->user() ? ['global_imports' => $this->globalImports($request)] : []),
+            ...($request->user() ? [
+                'global_imports' => $this->globalImports($request),
+                'catalog_products' => fn (): array => $this->catalogProducts(),
+            ] : []),
         ];
+    }
+
+    /**
+     * Products for the top-nav catalog dropdown, ordered by products.name.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    private function catalogProducts(): array
+    {
+        return Product::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'display_name'])
+            ->map(fn (Product $product): array => [
+                'id' => (int) $product->id,
+                'label' => $product->display_label,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

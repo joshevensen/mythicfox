@@ -106,18 +106,19 @@ test('malformed CSV (missing required columns) still creates a files row but fla
     Bus::assertNotDispatched(ImportPricingCustomExportJob::class);
 });
 
-test('upload error is exposed to the page via meta.upload_error after a malformed upload', function () {
+test('upload error is exposed to catalog pages via global_imports', function () {
     Bus::fake();
+    $product = Product::factory()->magic()->create();
 
     $body = "Wrong,Header,Columns\nfoo,bar,baz\n";
 
-    $this->from(route('catalog.index'))->post(route('catalog.upload'), [
+    $this->from(route('catalog.products.show', $product))->post(route('catalog.upload'), [
         'file' => UploadedFile::fake()->createWithContent('weird.csv', $body),
     ]);
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get(route('catalog.products.show', $product))->assertInertia(
         fn ($page) => $page
-            ->where('meta.upload_error', fn ($v) => is_string($v) && str_contains($v, 'Missing columns'))
+            ->where('global_imports.catalog.upload_error', fn ($v) => is_string($v) && str_contains($v, 'Missing columns'))
     );
 });
 
@@ -154,14 +155,17 @@ test('the job materializes persisted files and runs the importer end-to-end', fu
         ->and($last['product_label'])->toBe('Magic');
 });
 
-test('catalog index page exposes import_in_flight + import_last_result to props', function () {
+test('catalog pages expose shared import status', function () {
     Cache::flush();
+    $product = Product::factory()->magic()->create();
+    $url = route('catalog.products.show', $product);
+
     Cache::put(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY, true, now()->addHour());
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get($url)->assertInertia(
         fn ($page) => $page
-            ->where('meta.import_in_flight', true)
-            ->where('meta.import_last_result', null)
+            ->where('global_imports.catalog.in_flight', true)
+            ->where('global_imports.catalog.last_result', null)
     );
 
     Cache::forget(ImportPricingCustomExportJob::IN_FLIGHT_CACHE_KEY);
@@ -177,12 +181,12 @@ test('catalog index page exposes import_in_flight + import_last_result to props'
         now()->addHour(),
     );
 
-    $this->get(route('catalog.index'))->assertInertia(
+    $this->get($url)->assertInertia(
         fn ($page) => $page
-            ->where('meta.import_in_flight', false)
-            ->where('meta.import_last_result.success', true)
-            ->where('meta.import_last_result.rows_processed', 7)
-            ->where('meta.import_last_result.product_label', 'Magic')
+            ->where('global_imports.catalog.in_flight', false)
+            ->where('global_imports.catalog.last_result.success', true)
+            ->where('global_imports.catalog.last_result.rows_processed', 7)
+            ->where('global_imports.catalog.last_result.product_label', 'Magic')
     );
 });
 

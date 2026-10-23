@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Catalog\CatalogCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
+use App\Http\Controllers\Catalog\CatalogProductController;
 use App\Http\Controllers\Catalog\CatalogUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Orders\OrderItemsController;
@@ -76,6 +78,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
+    Route::get('catalog/{product}', [CatalogProductController::class, 'show'])
+        ->whereNumber('product')->name('catalog.products.show');
+    Route::get('catalog/{product}/cards', [CatalogCardsController::class, 'product'])
+        ->whereNumber('product')->name('catalog.products.cards.index');
+    Route::get('catalog/{product}/sets/{set}', [CatalogCardsController::class, 'set'])
+        ->whereNumber(['product', 'set'])->scopeBindings()->name('catalog.products.sets.show');
 });
 
 require __DIR__.'/settings.php';

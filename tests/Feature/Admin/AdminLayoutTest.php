@@ -2,6 +2,7 @@
 
 use App\Jobs\ImportOrdersJob;
 use App\Jobs\ImportPricingCustomExportJob;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -110,4 +111,39 @@ test('logout POST destroys the session and redirects to login', function () {
 
     $response->assertRedirect();
     expect(auth()->check())->toBeFalse();
+});
+
+test('shares catalog products ordered by name with display labels', function () {
+    $this->actingAs(User::factory()->create());
+
+    $magic = Product::factory()->magic()->withDisplayName('MTG')->create();
+    $lorcana = Product::factory()->lorcana()->create();
+
+    $this->get(route('dashboard'))->assertInertia(
+        fn ($page) => $page
+            ->has('catalog_products', 2)
+            ->where('catalog_products.0', ['id' => $lorcana->id, 'label' => 'Lorcana TCG'])
+            ->where('catalog_products.1', ['id' => $magic->id, 'label' => 'MTG'])
+    );
+});
+
+test('catalog products include newly created products', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('dashboard'))->assertInertia(fn ($page) => $page->has('catalog_products', 0));
+
+    Product::factory()->magic()->create();
+
+    $this->get(route('dashboard'))->assertInertia(fn ($page) => $page->has('catalog_products', 1));
+});
+
+test('guests do not receive catalog products', function () {
+    Product::factory()->magic()->create();
+
+    $this->get(route('home'))->assertInertia(fn ($page) => $page->missing('catalog_products'));
+});
+
+test('admin layout reloads catalog sets after an import', function () {
+    expect(file_get_contents(resource_path('js/layouts/AdminLayout.vue')))
+        ->toContain("only: ['cards', 'variants', 'sets', 'product', 'meta']");
 });
