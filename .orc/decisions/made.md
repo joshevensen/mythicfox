@@ -48,3 +48,12 @@
 
 ## Reusing a Vue component that lives under pages/ from a second page
 - `git mv` it to `resources/js/components/{area}/` with a descriptive name, keeping its root `data-test` — #72 — pages/ is for Inertia pages; shared pieces live in components/
+
+## Calling a JSON endpoint from a Vue component
+- Plain `fetch` with a Wayfinder URL and `AbortController` to drop stale responses — #73 — matches OrderItemsPanel/FileHistorySection; direct cancellation and easy to stub, over Inertia `useHttp`
+
+## Testing stateful/timing frontend logic (debounce, aborts, keyboard highlight)
+- Extract it into a composable with injected dependencies and cover it with vitest; markup stays on Pest source assertions — #73 — source-text checks can't verify timing or response order
+
+## Rate-limiting an expensive authenticated JSON endpoint
+- `->middleware('throttle:60,1')` on the route plus a 429 test — #73 — client debounce isn't a server control; unindexed ILIKE scans per call
