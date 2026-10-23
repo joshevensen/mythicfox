@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import MfMoney from '@/components/MfMoney.vue';
+import { show as productShow } from '@/routes/catalog/products';
 
 type SetStat = {
     name: string;
@@ -16,6 +17,7 @@ type RarityStat = {
 
 type GameStat = {
     game: string;
+    product_id: number | null;
     total_revenue: number;
     cards_sold: number;
     avg_price_per_card: number | null;
@@ -57,15 +59,32 @@ function logoFor(game: string): string | null {
             :key="stat.game"
             class="flex w-full shrink-0 flex-col gap-6 overflow-y-auto rounded-xl border border-border bg-card p-5 sm:w-90"
         >
-            <img
-                v-if="logoFor(stat.game)"
-                :src="logoFor(stat.game)!"
-                :alt="stat.game"
-                class="mx-auto mb-4 h-20 w-auto object-contain object-left"
-            />
-            <span v-else class="text-base font-semibold text-foreground">
-                {{ stat.game }}
-            </span>
+            <component
+                :is="stat.product_id !== null ? Link : 'div'"
+                v-bind="
+                    stat.product_id !== null
+                        ? {
+                              href: productShow(stat.product_id).url,
+                              'data-test': `game-link-${stat.product_id}`,
+                          }
+                        : {}
+                "
+                class="flex flex-col"
+            >
+                <img
+                    v-if="logoFor(stat.game)"
+                    :src="logoFor(stat.game)!"
+                    :alt="stat.game"
+                    class="mx-auto mb-4 h-20 w-auto object-contain object-left"
+                />
+                <span
+                    v-else
+                    class="text-base font-semibold text-foreground"
+                    :class="{ 'hover:underline': stat.product_id !== null }"
+                >
+                    {{ stat.game }}
+                </span>
+            </component>
 
             <div class="flex flex-col gap-1">
                 <p

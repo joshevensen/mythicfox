@@ -5,6 +5,11 @@ import Heading from '@/components/Heading.vue';
 import MfMoney from '@/components/MfMoney.vue';
 import EditProductRulesModal from '@/components/settings/EditProductRulesModal.vue';
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { index as catalogIndex } from '@/routes/catalog';
 import { index as productsIndex } from '@/routes/settings/products';
 
@@ -167,36 +172,46 @@ const refresh = () => {
                     />
                 </button>
 
-                <div class="mt-4">
-                    <h4 class="mb-2 text-sm font-medium text-muted-foreground">
-                        Sets ({{ product.sets_count }})
-                    </h4>
-                    <ul
-                        v-if="product.sets.length > 0"
-                        class="divide-y divide-border rounded-md border border-border"
+                <Collapsible v-slot="{ open }" class="mt-4">
+                    <CollapsibleTrigger
+                        class="flex w-full items-center justify-between gap-2 text-left text-sm font-medium text-muted-foreground hover:text-foreground"
+                        :data-test="`toggle-sets-${product.id}`"
                     >
-                        <li v-for="set in product.sets" :key="set.id">
-                            <button
-                                type="button"
-                                class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                                :data-test="`edit-set-${set.id}`"
-                                @click="openSetModal(product, set)"
-                            >
-                                <span>{{ set.name }}</span>
-                                <span
-                                    v-if="set.overridden"
-                                    class="rounded-full bg-mf-teal/15 px-2 py-0.5 text-xs font-medium text-mf-teal"
-                                    data-test="overridden-badge"
+                        <span>Sets ({{ product.sets_count }})</span>
+                        <i
+                            class="pi pi-chevron-down text-xs transition-transform"
+                            :class="{ 'rotate-180': open }"
+                            aria-hidden="true"
+                        />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent class="mt-2">
+                        <ul
+                            v-if="product.sets.length > 0"
+                            class="divide-y divide-border rounded-md border border-border"
+                        >
+                            <li v-for="set in product.sets" :key="set.id">
+                                <button
+                                    type="button"
+                                    class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+                                    :data-test="`edit-set-${set.id}`"
+                                    @click="openSetModal(product, set)"
                                 >
-                                    overridden
-                                </span>
-                            </button>
-                        </li>
-                    </ul>
-                    <p v-else class="text-sm text-muted-foreground">
-                        No sets yet for this product.
-                    </p>
-                </div>
+                                    <span>{{ set.name }}</span>
+                                    <span
+                                        v-if="set.overridden"
+                                        class="rounded-full bg-mf-teal/15 px-2 py-0.5 text-xs font-medium text-mf-teal"
+                                        data-test="overridden-badge"
+                                    >
+                                        overridden
+                                    </span>
+                                </button>
+                            </li>
+                        </ul>
+                        <p v-else class="text-sm text-muted-foreground">
+                            No sets yet for this product.
+                        </p>
+                    </CollapsibleContent>
+                </Collapsible>
             </article>
         </div>
     </section>

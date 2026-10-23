@@ -35,3 +35,15 @@ test('file history uses the files tab route', function () {
         ->toContain("from '@/routes/settings/files'")
         ->not->toContain('settings().url');
 });
+
+test('product sets sit behind a collapsible that starts collapsed', function () {
+    $source = file_get_contents(resource_path('js/pages/settings/Products.vue'));
+
+    expect($source)
+        ->toContain("from '@/components/ui/collapsible'")
+        ->toContain('<CollapsibleTrigger')
+        ->toContain('<CollapsibleContent')
+        ->toContain('toggle-sets-')
+        ->not->toContain('default-open')
+        ->not->toContain(':open=');
+});
