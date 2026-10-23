@@ -8,7 +8,7 @@
  *
  * @gotchas
  * - Variants are eager-loaded per card on every page load (one query per visible card row via BrowseCardsQuery::variantsFor).
- * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
+ * - Sort, direction and per-page parsing is shared via CatalogTableParams (per-page constrained to its PER_PAGE_OPTIONS).
  * - Each row's market_price is computed in SQL by BrowseCardsQuery (LP → NM; non-foil → foil → etched) so it can be sorted server-side.
  * - Rarity options are product-wide (cached by RarityOptionsQuery), so the set view can offer a rarity with no cards in that set.
  * - The set route uses scoped bindings, so a set from another product 404s before reaching this controller.
@@ -22,6 +22,7 @@
 namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\CatalogProductPayload;
+use App\Catalog\CatalogTableParams;
 use App\Catalog\Queries\BrowseCardsQuery;
 use App\Catalog\Queries\RarityOptionsQuery;
 use App\Http\Controllers\Controller;
@@ -33,10 +34,6 @@ use Inertia\Response;
 
 class CatalogCardsController extends Controller
 {
-    private const DEFAULT_PER_PAGE = 50;
-
-    private const PER_PAGE_OPTIONS = [25, 50, 100, 200];
-
     public function __construct(
         private readonly BrowseCardsQuery $browse,
         private readonly RarityOptionsQuery $rarityOptions,
@@ -58,10 +55,7 @@ class CatalogCardsController extends Controller
             'product_id' => $product->id,
             'set_ids' => $set === null ? [] : [$set->id],
             'rarities' => $this->csvStrings($request->query('rarities')),
-            'sort' => (string) $request->query('sort', 'name'),
-            'dir' => $request->query('dir') === 'desc' ? 'desc' : 'asc',
-            'per_page' => $this->resolvePerPage($request),
-            'page' => max(1, (int) $request->query('page', 1)),
+            ...CatalogTableParams::fromRequest($request),
         ]);
 
         $rows = [];
@@ -121,12 +115,5 @@ class CatalogCardsController extends Controller
             ->unique()
             ->values()
             ->all();
-    }
-
-    private function resolvePerPage(Request $request): int
-    {
-        $raw = (int) $request->query('per_page', self::DEFAULT_PER_PAGE);
-
-        return in_array($raw, self::PER_PAGE_OPTIONS, true) ? $raw : self::DEFAULT_PER_PAGE;
     }
 }

@@ -2,6 +2,10 @@
 import Button from 'primevue/button';
 import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 
+withDefaults(defineProps<{ title?: string }>(), {
+    title: 'No cards in catalog.',
+});
+
 const importModal = useGlobalImportModal();
 
 const onUploadClick = (): void => {
@@ -15,7 +19,7 @@ const onUploadClick = (): void => {
         data-test="catalog-empty"
     >
         <p class="text-base font-medium text-foreground">
-            No cards in catalog.
+            {{ title }}
         </p>
         <p class="max-w-md text-sm text-muted-foreground">
             Run

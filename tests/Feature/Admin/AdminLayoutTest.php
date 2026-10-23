@@ -143,7 +143,10 @@ test('guests do not receive catalog products', function () {
     $this->get(route('home'))->assertInertia(fn ($page) => $page->missing('catalog_products'));
 });
 
-test('admin layout reloads catalog sets after an import', function () {
+test('admin layout reloads catalog data and the nav product list after an import', function () {
     expect(file_get_contents(resource_path('js/layouts/AdminLayout.vue')))
-        ->toContain("only: ['cards', 'variants', 'sets', 'product', 'meta']");
+        ->toContain("'catalog_products'")
+        ->toContain("['cards', 'variants', 'sets', 'product', 'meta']")
+        ->toContain("page.component === 'Catalog/Empty'")
+        ->toContain('router.visit(catalogIndex().url)');
 });

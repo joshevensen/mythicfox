@@ -8,6 +8,7 @@ import MfToast from '@/components/MfToast.vue';
 import MfTopNav from '@/components/MfTopNav.vue';
 import { useFlashToast } from '@/composables/useFlashToast';
 import { useMfToast } from '@/composables/useMfToast';
+import { index as catalogIndex } from '@/routes/catalog';
 
 type CatalogImportResult = {
     success: boolean;
@@ -89,9 +90,21 @@ const startPolling = (): void => {
 };
 
 const reloadCurrentImportPage = (kind: 'catalog' | 'orders'): void => {
-    if (kind === 'catalog' && page.url.startsWith('/catalog')) {
+    if (kind === 'catalog') {
+        if (page.component === 'Catalog/Empty') {
+            // The first import created products: re-visit /catalog so it redirects to one.
+            router.visit(catalogIndex().url);
+
+            return;
+        }
+
         router.reload({
-            only: ['cards', 'variants', 'sets', 'product', 'meta'],
+            only: [
+                'catalog_products',
+                ...(page.url.startsWith('/catalog')
+                    ? ['cards', 'variants', 'sets', 'product', 'meta']
+                    : []),
+            ],
         });
     }
 

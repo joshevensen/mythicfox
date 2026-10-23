@@ -141,7 +141,10 @@ const setUrl = (setId: number): string =>
                         Clear filters
                     </button>
                 </div>
-                <CatalogEmptyState v-else />
+                <CatalogEmptyState
+                    v-else
+                    :title="`No sets for ${product.label} yet.`"
+                />
             </template>
 
             <template #mobile-row="{ row }">

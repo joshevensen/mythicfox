@@ -315,10 +315,10 @@ test('ignores legacy product and sets query params', function () {
     Card::factory()->create(['set_id' => $setB->id, 'number' => '1']);
     Card::factory()->create(['set_id' => $otherSet->id, 'number' => '1']);
 
-    $this->get(route('catalog.products.cards.index', [
-        $product,
-        'sets' => (string) $setA->id,
-    ]))->assertInertia(fn ($page) => $page->where('cards.meta.total', 2));
+    $url = route('catalog.products.cards.index', $product)
+        .'?product='.$other->id.'&sets='.$setA->id;
+
+    $this->get($url)->assertInertia(fn ($page) => $page->where('cards.meta.total', 2));
 });
 
 test('rarity options are cached until forgotten', function () {

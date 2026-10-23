@@ -55,3 +55,12 @@ test('MfTopNav renders Catalog as a product dropdown from shared props', functio
         ->not->toContain("href: '/orders'")
         ->not->toContain('TODO(phase-50/60)');
 });
+
+test('catalog dropdown is driven by a section flag, not its label', function () {
+    $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
+
+    expect($source)
+        ->toContain('dropdown: true')
+        ->toContain('section.dropdown')
+        ->not->toContain("section.label === 'Catalog'");
+});

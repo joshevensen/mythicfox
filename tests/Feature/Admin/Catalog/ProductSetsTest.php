@@ -172,3 +172,8 @@ test('sets page source declares the table, filter and links', function () {
         ->toContain('MfErrorBanner')
         ->toContain('global_imports');
 });
+
+test('a product with no sets shows a product-specific empty message', function () {
+    expect(file_get_contents(resource_path('js/pages/Catalog/Sets.vue')))
+        ->toContain('No sets for ${product.label} yet.');
+});

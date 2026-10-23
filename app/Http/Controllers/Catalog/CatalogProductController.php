@@ -7,7 +7,7 @@
  *          server-side sorting, name filtering and pagination driven by BrowseSetsQuery.
  *
  * @gotchas
- * - Per-page options are constrained to PER_PAGE_OPTIONS to prevent abuse.
+ * - Sort, direction and per-page parsing is shared via CatalogTableParams (per-page constrained to its PER_PAGE_OPTIONS).
  * - Unknown sort columns fall back to name inside BrowseSetsQuery.
  *
  * @dependencies
@@ -18,6 +18,7 @@
 namespace App\Http\Controllers\Catalog;
 
 use App\Catalog\CatalogProductPayload;
+use App\Catalog\CatalogTableParams;
 use App\Catalog\Queries\BrowseSetsQuery;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
@@ -28,10 +29,6 @@ use Inertia\Response;
 
 class CatalogProductController extends Controller
 {
-    private const DEFAULT_PER_PAGE = 50;
-
-    private const PER_PAGE_OPTIONS = [25, 50, 100, 200];
-
     public function __construct(private readonly BrowseSetsQuery $browse) {}
 
     public function show(Request $request, Product $product): Response
@@ -40,10 +37,7 @@ class CatalogProductController extends Controller
 
         $paginator = $this->browse->paginate($product->id, [
             'name' => is_string($name) ? trim($name) : null,
-            'sort' => (string) $request->query('sort', 'name'),
-            'dir' => $request->query('dir') === 'desc' ? 'desc' : 'asc',
-            'per_page' => $this->resolvePerPage($request),
-            'page' => max(1, (int) $request->query('page', 1)),
+            ...CatalogTableParams::fromRequest($request),
         ]);
 
         $rows = collect($paginator->items())
@@ -67,12 +61,5 @@ class CatalogProductController extends Controller
                 ],
             ],
         ]);
-    }
-
-    private function resolvePerPage(Request $request): int
-    {
-        $raw = (int) $request->query('per_page', self::DEFAULT_PER_PAGE);
-
-        return in_array($raw, self::PER_PAGE_OPTIONS, true) ? $raw : self::DEFAULT_PER_PAGE;
     }
 }

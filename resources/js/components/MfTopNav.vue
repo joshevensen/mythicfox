@@ -15,12 +15,19 @@ type Section = {
     label: string;
     href: string;
     matchPrefix: string;
+    /** Render as a product menu instead of a plain link. */
+    dropdown?: boolean;
 };
 
 const SECTIONS: Section[] = [
     { label: 'Dashboard', href: dashboard().url, matchPrefix: '/dashboard' },
     { label: 'Orders', href: ordersIndex().url, matchPrefix: '/orders' },
-    { label: 'Catalog', href: catalogIndex().url, matchPrefix: '/catalog' },
+    {
+        label: 'Catalog',
+        href: catalogIndex().url,
+        matchPrefix: '/catalog',
+        dropdown: true,
+    },
     { label: 'Settings', href: editProfile().url, matchPrefix: '/settings' },
 ];
 
@@ -94,7 +101,7 @@ const handleLogout = () => {
         <nav class="ml-6 hidden items-center gap-1 md:flex">
             <template v-for="section in SECTIONS" :key="section.label">
                 <button
-                    v-if="section.label === 'Catalog'"
+                    v-if="section.dropdown"
                     type="button"
                     :class="[
                         'inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -216,10 +223,7 @@ const handleLogout = () => {
             <nav class="flex flex-col gap-1">
                 <template v-for="section in SECTIONS" :key="section.label">
                     <template
-                        v-if="
-                            section.label === 'Catalog' &&
-                            catalogProducts.length > 0
-                        "
+                        v-if="section.dropdown && catalogProducts.length > 0"
                     >
                         <span
                             :class="[
