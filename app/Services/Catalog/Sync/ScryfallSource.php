@@ -158,8 +158,6 @@ class ScryfallSource implements CatalogSyncSource
                 'image_url' => $row['image_url'],
                 'justtcg_id' => null,
                 'other_ids' => null,
-                'market_price' => null,
-                'low_price' => null,
             ];
         }
 

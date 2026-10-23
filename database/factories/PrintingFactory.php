@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Card;
 use App\Models\Printing;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use InvalidArgumentException;
 
 /**
  * @extends Factory<Printing>
@@ -25,8 +26,12 @@ class PrintingFactory extends Factory
             'justtcg_id' => null,
             'other_ids' => null,
             'image_url' => null,
-            'market_price' => fake()->numberBetween(50, 5_000),
-            'low_price' => fake()->numberBetween(25, 4_500),
+            'nm_market_price' => fake()->numberBetween(50, 5_000),
+            'nm_low_price' => fake()->numberBetween(25, 4_500),
+            'lp_market_price' => fake()->numberBetween(50, 5_000),
+            'lp_low_price' => fake()->numberBetween(25, 4_500),
+            'mp_market_price' => fake()->numberBetween(50, 5_000),
+            'mp_low_price' => fake()->numberBetween(25, 4_500),
         ];
     }
 
@@ -45,11 +50,32 @@ class PrintingFactory extends Factory
         return $this->state(fn () => ['finish' => 'etched']);
     }
 
-    public function withPricing(int $marketCents, ?int $lowCents): static
+    /**
+     * Sets one condition's market/low pair, leaving the other conditions untouched.
+     *
+     * @param  'nm'|'lp'|'mp'  $condition
+     */
+    public function withPricing(string $condition, ?int $marketCents, ?int $lowCents): static
+    {
+        if (! in_array($condition, ['nm', 'lp', 'mp'], true)) {
+            throw new InvalidArgumentException("Unknown condition [{$condition}]; expected nm, lp or mp.");
+        }
+
+        return $this->state(fn () => [
+            "{$condition}_market_price" => $marketCents,
+            "{$condition}_low_price" => $lowCents,
+        ]);
+    }
+
+    public function withoutPricing(): static
     {
         return $this->state(fn () => [
-            'market_price' => $marketCents,
-            'low_price' => $lowCents,
+            'nm_market_price' => null,
+            'nm_low_price' => null,
+            'lp_market_price' => null,
+            'lp_low_price' => null,
+            'mp_market_price' => null,
+            'mp_low_price' => null,
         ]);
     }
 }
