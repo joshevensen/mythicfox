@@ -156,4 +156,18 @@ class BrowseCardsQuery
             })
             ->all();
     }
+
+    /**
+     * The card's image: the first non-empty printing image_url, preferring non-foil, foil, then etched.
+     */
+    public function imageUrlFor(int $cardId): ?string
+    {
+        return Printing::query()
+            ->where('card_id', $cardId)
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->orderByRaw("CASE finish WHEN 'non-foil' THEN 0 WHEN 'foil' THEN 1 WHEN 'etched' THEN 2 ELSE 3 END")
+            ->orderBy('finish')
+            ->value('image_url');
+    }
 }

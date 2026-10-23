@@ -249,14 +249,15 @@ test('sort by market price orders asc/desc with nulls last', function () {
 
 test('card table source keeps rarity, market price and row expand without product or set filters', function () {
     $cards = file_get_contents(resource_path('js/pages/Catalog/Cards.vue'));
-    $expand = file_get_contents(resource_path('js/pages/Catalog/RowExpand.vue'));
+    $expand = file_get_contents(resource_path('js/components/catalog/CatalogPrintingsTable.vue'));
 
     expect($cards)
         ->toContain("key: 'rarities'")
         ->toContain("key: 'market_price'")
         ->toContain("label: 'Market Price'")
         ->toContain('data-test="catalog-card-market-price"')
-        ->toContain('RowExpand')
+        ->toContain('CatalogPrintingsTable')
+        ->not->toContain('@/pages/Catalog/RowExpand.vue')
         ->toContain('<Head :title="heading" />')
         ->toContain('CatalogPageHeader')
         ->toContain('CatalogEmptyState')
