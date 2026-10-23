@@ -57,3 +57,9 @@
 
 ## Rate-limiting an expensive authenticated JSON endpoint
 - `->middleware('throttle:60,1')` on the route plus a 429 test — #73 — client debounce isn't a server control; unindexed ILIKE scans per call
+
+## Linking order-derived stats to catalog products
+- Match `order_items.product_line` to `products.name` at query time with one `whereIn`/`pluck`, `null` when unmatched — #80 — both are TCGPlayer product-line strings and there's no FK; a migration and backfill is more than a link warrants
+
+## Collapsible sections on an admin page
+- Reuse `components/ui/collapsible` (reka-ui), one instance per section, default closed — #80 — already in the repo and gives each section independent open state with no extra wiring

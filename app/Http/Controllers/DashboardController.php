@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,14 +18,16 @@ class DashboardController extends Controller
         $topSets = $this->topSets();
         $rarityMix = $this->rarityMix();
         $avgItemsPerOrder = $this->avgItemsPerOrder();
+        $productIds = $this->productIdsByName($baseStats->pluck('product_line'));
 
-        $gameStats = $baseStats->map(function (OrderItem $item) use ($topSets, $rarityMix, $avgItemsPerOrder) {
+        $gameStats = $baseStats->map(function (OrderItem $item) use ($topSets, $rarityMix, $avgItemsPerOrder, $productIds) {
             $pl = $item->product_line;
             $cardsSold = (int) $item->cards_sold;
             $totalRevenue = (int) $item->total_revenue;
 
             return [
                 'game' => $pl,
+                'product_id' => $productIds->get($pl),
                 'total_revenue' => $totalRevenue,
                 'cards_sold' => $cardsSold,
                 'avg_price_per_card' => $cardsSold > 0 ? (int) round($totalRevenue / $cardsSold) : null,
@@ -57,6 +60,19 @@ class DashboardController extends Controller
             ->groupBy('product_line')
             ->orderBy('total_revenue', 'desc')
             ->get();
+    }
+
+    /**
+     * Map each product line to its catalog Product id, matched by TCGPlayer name.
+     *
+     * @param  Collection<int, string>  $productLines
+     * @return Collection<string, int>
+     */
+    private function productIdsByName(Collection $productLines): Collection
+    {
+        return Product::query()
+            ->whereIn('name', $productLines)
+            ->pluck('id', 'name');
     }
 
     /** @return Collection<string, array<int, array<string, mixed>>> */
