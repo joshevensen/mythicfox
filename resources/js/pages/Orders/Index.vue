@@ -288,10 +288,7 @@ const onBulkPrint = (
         </template>
 
         <template #cell-tcgplayer_status="{ row }">
-            <MfStatusPill
-                :status="row.tcgplayer_status"
-                :tracking-number="row.tracking_number"
-            />
+            <MfStatusPill :status="row.tcgplayer_status" />
         </template>
 
         <template #expand-row="{ row }">
@@ -391,10 +388,7 @@ const onBulkPrint = (
                             />
                         </div>
                     </label>
-                    <MfStatusPill
-                        :status="row.tcgplayer_status"
-                        :tracking-number="row.tracking_number"
-                    />
+                    <MfStatusPill :status="row.tcgplayer_status" />
                 </div>
                 <div
                     class="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground"

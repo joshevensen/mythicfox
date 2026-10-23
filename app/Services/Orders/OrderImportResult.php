@@ -15,6 +15,7 @@ class OrderImportResult
         public int $ordersInserted = 0,
         public int $ordersUpdated = 0,
         public int $lineItemsCreated = 0,
+        public int $lineItemsUpdated = 0,
         public int $lineItemsUnmatchedToPdf = 0,
         public array $files = [],
         public array $errors = [],

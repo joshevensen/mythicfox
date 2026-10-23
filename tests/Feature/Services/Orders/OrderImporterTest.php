@@ -120,7 +120,7 @@ test('status flip on re-import updates only mutable fields, leaves order_items u
     @unlink($modifiedOrderList);
 });
 
-test('null line prices stay null on re-import even when PDF is now provided', function () {
+test('null line prices are filled on re-import when the PDF is now provided', function () {
     $input = buildInput(
         shipping: mergeFixture('merge-shipping.csv'),
         pull: mergeFixture('merge-pullsheet.csv'),
@@ -137,7 +137,7 @@ test('null line prices stay null on re-import even when PDF is now provided', fu
     );
     (new OrderImporter)->import($secondInput);
 
-    expect($line->refresh()->unit_price)->toBeNull();
+    expect($line->refresh()->unit_price)->toBe(690);
 });
 
 test('OrderList missing from input is fatal and produces no DB writes', function () {
