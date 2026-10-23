@@ -6,7 +6,6 @@ describe('resolveLayout', () => {
         'Catalog/Index',
         'Catalog/RowExpand',
         'Dashboard',
-        'Settings',
         'Orders/Index',
         'Orders/OrderItemsPanel',
         'placeholders/ComingSoon',
@@ -14,12 +13,15 @@ describe('resolveLayout', () => {
         expect(resolveLayout(name)).toBe('admin');
     });
 
-    it.each(['settings/Profile', 'settings/Security', 'settings/Appearance'])(
-        'renders %s in the settings stack',
-        (name) => {
-            expect(resolveLayout(name)).toBe('settings');
-        },
-    );
+    it.each([
+        'settings/Profile',
+        'settings/Security',
+        'settings/Appearance',
+        'settings/Products',
+        'settings/Files',
+    ])('renders %s in the settings stack', (name) => {
+        expect(resolveLayout(name)).toBe('settings');
+    });
 
     it('renders auth pages in the auth layout', () => {
         expect(resolveLayout('auth/Login')).toBe('auth');

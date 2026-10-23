@@ -12,7 +12,7 @@ beforeEach(function () {
 test('unauthenticated visit redirects to login', function () {
     auth()->logout();
 
-    $this->get(route('settings'))->assertRedirect(route('login'));
+    $this->get(route('settings.files.index'))->assertRedirect(route('login'));
 });
 
 test('authenticated visit lists files default-sorted by uploaded_at desc', function () {
@@ -25,9 +25,9 @@ test('authenticated visit lists files default-sorted by uploaded_at desc', funct
         'uploaded_at' => Carbon::parse('2026-04-01 10:00:00'),
     ]);
 
-    $this->get(route('settings'))->assertOk()->assertInertia(
+    $this->get(route('settings.files.index'))->assertOk()->assertInertia(
         fn ($page) => $page
-            ->component('Settings')
+            ->component('settings/Files')
             ->has('files.data', 2)
             ->where('files.data.0.original_filename', 'newer.csv')
             ->where('files.data.1.original_filename', 'older.csv')
@@ -39,7 +39,7 @@ test('filtering by direction=export returns only export rows', function () {
     File::factory()->create(['type' => 'import']);
     File::factory()->create(['type' => 'export']);
 
-    $this->get(route('settings', ['direction' => 'export']))->assertInertia(
+    $this->get(route('settings.files.index', ['direction' => 'export']))->assertInertia(
         fn ($page) => $page
             ->has('files.data', 1)
             ->where('files.data.0.type', 'export')
@@ -97,7 +97,7 @@ test('stream endpoint returns the file contents for an active file on local disk
 test('empty state renders when no files exist', function () {
     File::query()->delete();
 
-    $this->get(route('settings'))->assertOk()->assertInertia(
+    $this->get(route('settings.files.index'))->assertOk()->assertInertia(
         fn ($page) => $page
             ->where('files.meta.total', 0)
             ->has('files.data', 0)

@@ -11,6 +11,7 @@ import { useMoney } from '@/composables/useMoney';
 type Product = {
     id: number;
     name: string;
+    display_label: string;
     base_price: number;
     high_price: number;
     market_offset: number;
@@ -98,7 +99,7 @@ const inheritField = (field: SetRuleField) => {
 const resetAll = () => {
     confirm({
         title: 'Reset all to product defaults?',
-        body: `All four fields will be cleared so this set inherits from ${props.product?.name ?? 'its product'}.`,
+        body: `All four fields will be cleared so this set inherits from ${props.product?.display_label ?? 'its product'}.`,
         verb: 'Reset',
         destructive: true,
         onConfirm: () => {
@@ -112,11 +113,11 @@ const resetAll = () => {
 
 const productDefaultLabel = (field: SetRuleField) =>
     props.product
-        ? `${props.product.name} default: ${formatCents(props.product[field])}`
+        ? `${props.product.display_label} default: ${formatCents(props.product[field])}`
         : '';
 
 const subtitle = computed(() =>
-    props.product ? `Overrides ${props.product.name} defaults` : '',
+    props.product ? `Overrides ${props.product.display_label} defaults` : '',
 );
 
 const dialogVisible = ref(props.visible);

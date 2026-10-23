@@ -9,6 +9,8 @@ import { useMfToast } from '@/composables/useMfToast';
 type Product = {
     id: number;
     name: string;
+    display_name: string | null;
+    display_label: string;
     base_price: number;
     high_price: number;
     market_offset: number;
@@ -28,6 +30,7 @@ const emit = defineEmits<{
 const { success } = useMfToast();
 
 const form = useForm({
+    display_name: '' as string,
     base_price: 0,
     high_price: 0,
     market_offset: 0,
@@ -39,6 +42,7 @@ watch(
     (next) => {
         if (next) {
             form.defaults({
+                display_name: next.display_name ?? '',
                 base_price: next.base_price,
                 high_price: next.high_price,
                 market_offset: next.market_offset,
@@ -58,8 +62,11 @@ const submit = () => {
     }
 
     const action = updateProductAction(props.product.id);
+    const displayName = form.display_name.trim();
+    const savedLabel = displayName === '' ? props.product.name : displayName;
 
     form.transform((data) => ({
+        display_name: displayName === '' ? null : displayName,
         base_price: data.base_price ?? 0,
         high_price: data.high_price ?? 0,
         market_offset: data.market_offset ?? 0,
@@ -67,7 +74,7 @@ const submit = () => {
     })).submit(action.method, action.url, {
         preserveScroll: true,
         onSuccess: () => {
-            success(`${props.product?.name ?? ''} pricing rules saved.`);
+            success(`${savedLabel} pricing rules saved.`);
             emit('saved');
             close();
         },
@@ -87,7 +94,11 @@ watch(dialogVisible, (v) => emit('update:visible', v));
         v-model:visible="dialogVisible"
         modal
         :draggable="false"
-        :header="product ? `${product.name} — pricing rules` : 'Pricing rules'"
+        :header="
+            product
+                ? `${product.display_label} — pricing rules`
+                : 'Pricing rules'
+        "
         :style="{ width: '100%', maxWidth: '32rem' }"
         :breakpoints="{ '768px': '100vw' }"
     >
@@ -96,6 +107,43 @@ watch(dialogVisible, (v) => emit('update:visible', v));
             data-test="edit-product-rules-form"
             @submit.prevent="submit"
         >
+            <div class="flex flex-col gap-2">
+                <p
+                    class="text-sm text-muted-foreground"
+                    data-test="product-tcgplayer-name"
+                >
+                    TCGPlayer name:
+                    <span class="font-medium text-foreground">{{
+                        product?.name
+                    }}</span>
+                </p>
+                <label
+                    for="product-display-name"
+                    class="text-sm font-medium text-foreground"
+                >
+                    Display name
+                </label>
+                <input
+                    id="product-display-name"
+                    v-model="form.display_name"
+                    type="text"
+                    maxlength="255"
+                    :placeholder="product?.name"
+                    class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    data-test="product-display-name"
+                />
+                <p class="text-xs text-muted-foreground">
+                    Optional. Leave blank to use the TCGPlayer name.
+                </p>
+                <p
+                    v-if="form.errors.display_name"
+                    class="text-sm text-red-500"
+                    data-test="error-display-name"
+                >
+                    {{ form.errors.display_name }}
+                </p>
+            </div>
+
             <div class="flex flex-col gap-2">
                 <label
                     for="product-base-price"

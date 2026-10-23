@@ -17,6 +17,7 @@ class ProductFactory extends Factory
     {
         return [
             'name' => fake()->unique()->words(2, true),
+            'display_name' => null,
             'base_price' => 25,
             'high_price' => 1000,
             'market_offset' => 0,
@@ -38,5 +39,10 @@ class ProductFactory extends Factory
     public function fleshAndBlood(): static
     {
         return $this->state(fn () => ['name' => 'Flesh & Blood TCG']);
+    }
+
+    public function withDisplayName(string $displayName): static
+    {
+        return $this->state(fn () => ['display_name' => $displayName]);
     }
 }

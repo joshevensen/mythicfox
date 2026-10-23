@@ -11,7 +11,7 @@ beforeEach(function () {
 test('unauthenticated visit redirects to login', function () {
     auth()->logout();
 
-    $this->get(route('settings'))->assertRedirect(route('login'));
+    $this->get(route('settings.products.index'))->assertRedirect(route('login'));
 });
 
 test('authenticated visit returns 200 and exposes products with their inline rule values', function () {
@@ -27,9 +27,9 @@ test('authenticated visit returns 200 and exposes products with their inline rul
         'base_price' => 75,
     ]);
 
-    $this->get(route('settings'))->assertOk()->assertInertia(
+    $this->get(route('settings.products.index'))->assertOk()->assertInertia(
         fn ($page) => $page
-            ->component('Settings')
+            ->component('settings/Products')
             ->has('products', 1)
             ->where('products.0.name', 'Magic')
             ->where('products.0.base_price', 50)
@@ -110,7 +110,7 @@ test('updating set pricing rules with all-null fields clears overrides and remov
         ->market_offset->toBeNull()
         ->high_offset->toBeNull();
 
-    $this->get(route('settings'))->assertInertia(
+    $this->get(route('settings.products.index'))->assertInertia(
         fn ($page) => $page
             ->where('products.0.sets.0.id', $set->id)
             ->where('products.0.sets.0.overridden', false)
@@ -139,17 +139,116 @@ test('updating set pricing rules rejects base_price greater than effective high_
 test('empty state renders when no products exist', function () {
     Product::query()->delete();
 
-    $this->get(route('settings'))->assertOk()->assertInertia(
+    $this->get(route('settings.products.index'))->assertOk()->assertInertia(
         fn ($page) => $page
-            ->component('Settings')
+            ->component('settings/Products')
             ->has('products', 0)
     );
 });
 
 test('empty state links to the Catalog', function () {
-    $source = file_get_contents(resource_path('js/pages/Settings.vue'));
+    $source = file_get_contents(resource_path('js/pages/settings/Products.vue'));
 
     expect($source)
         ->toContain('Go to Catalog')
         ->not->toContain('Go to Cards');
+});
+
+test('products page exposes raw name, display_name and display_label', function () {
+    Product::factory()->magic()->withDisplayName('MTG')->create();
+
+    $this->get(route('settings.products.index'))->assertOk()->assertInertia(
+        fn ($page) => $page
+            ->component('settings/Products')
+            ->where('products.0.name', 'Magic')
+            ->where('products.0.display_name', 'MTG')
+            ->where('products.0.display_label', 'MTG')
+    );
+});
+
+/**
+ * @return array<string, int>
+ */
+function validProductRules(): array
+{
+    return [
+        'base_price' => 25,
+        'high_price' => 1000,
+        'market_offset' => 0,
+        'high_offset' => 15,
+    ];
+}
+
+test('updating a product trims and saves display_name and toasts with the label', function () {
+    $product = Product::factory()->lorcana()->create();
+
+    $this->patch(
+        route('settings.products.pricing-rules.update', $product),
+        [...validProductRules(), 'display_name' => '  Lorcana  '],
+    )->assertRedirect()->assertSessionHas('toast.message', 'Lorcana pricing rules saved.');
+
+    expect($product->fresh()->display_name)->toBe('Lorcana');
+});
+
+test('blank display_name clears it back to null', function (string $blank) {
+    $product = Product::factory()->magic()->withDisplayName('Old')->create();
+
+    $this->patch(
+        route('settings.products.pricing-rules.update', $product),
+        [...validProductRules(), 'display_name' => $blank],
+    )->assertRedirect();
+
+    expect($product->fresh()->display_name)->toBeNull();
+})->with(['empty' => '', 'whitespace' => '   ']);
+
+test('omitting display_name leaves the stored value unchanged', function () {
+    $product = Product::factory()->magic()->withDisplayName('MTG')->create();
+
+    $this->patch(
+        route('settings.products.pricing-rules.update', $product),
+        validProductRules(),
+    )->assertRedirect();
+
+    expect($product->fresh()->display_name)->toBe('MTG');
+});
+
+test('display_name longer than 255 characters is rejected', function () {
+    $product = Product::factory()->magic()->withDisplayName('MTG')->create();
+
+    $this->patch(
+        route('settings.products.pricing-rules.update', $product),
+        [...validProductRules(), 'display_name' => str_repeat('a', 256)],
+    )->assertSessionHasErrors('display_name');
+
+    expect($product->fresh()->display_name)->toBe('MTG');
+});
+
+test('product name cannot be changed through the pricing rules endpoint', function () {
+    $product = Product::factory()->magic()->create();
+
+    $this->patch(
+        route('settings.products.pricing-rules.update', $product),
+        [...validProductRules(), 'name' => 'Hacked'],
+    )->assertRedirect();
+
+    expect($product->fresh()->name)->toBe('Magic');
+});
+
+test('product modal edits display_name and shows the TCGPlayer name read-only', function () {
+    $source = file_get_contents(resource_path('js/components/settings/EditProductRulesModal.vue'));
+
+    expect($source)
+        ->toContain('data-test="product-display-name"')
+        ->toContain('data-test="product-tcgplayer-name"')
+        ->toContain('v-model="form.display_name"')
+        ->toContain('display_label')
+        ->not->toContain('v-model="form.name"');
+});
+
+test('set modal and products page show the product display label', function () {
+    $setModal = file_get_contents(resource_path('js/components/settings/EditSetRulesModal.vue'));
+    $productsPage = file_get_contents(resource_path('js/pages/settings/Products.vue'));
+
+    expect($setModal)->toContain('product.display_label')->not->toContain('product.name')
+        ->and($productsPage)->toContain('product.display_label');
 });

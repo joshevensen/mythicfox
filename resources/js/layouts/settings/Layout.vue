@@ -8,6 +8,8 @@ import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { index as filesIndex } from '@/routes/settings/files';
+import { index as productsIndex } from '@/routes/settings/products';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -23,6 +25,14 @@ const sidebarNavItems: NavItem[] = [
         title: 'Appearance',
         href: editAppearance(),
     },
+    {
+        title: 'Products',
+        href: productsIndex(),
+    },
+    {
+        title: 'Files',
+        href: filesIndex(),
+    },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
@@ -32,7 +42,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
     <div class="px-4 py-6">
         <Heading
             title="Settings"
-            description="Manage your profile and account settings"
+            description="Manage your account, products, and files"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">

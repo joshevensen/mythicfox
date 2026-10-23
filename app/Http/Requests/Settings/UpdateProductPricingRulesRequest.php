@@ -11,12 +11,24 @@ class UpdateProductPricingRulesRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $displayName = $this->input('display_name');
+
+        if (is_string($displayName)) {
+            $trimmed = trim($displayName);
+
+            $this->merge(['display_name' => $trimmed === '' ? null : $trimmed]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
+            'display_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'base_price' => ['required', 'integer', 'min:0', 'lte:high_price'],
             'high_price' => ['required', 'integer', 'min:0'],
             'market_offset' => ['required', 'integer', 'min:0'],

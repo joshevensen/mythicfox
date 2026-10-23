@@ -18,6 +18,7 @@
 
 ## Changing the columns of an existing table
 - New migration (add/drop columns); never edit the original create migration — #66 — deployed databases must migrate forward cleanly
+- New migration (add/drop columns); never edit the original create migration — #70 — added `products.display_name` in its own migration
 
 ## Sorting a paginated query by a nullable computed value with nulls last
 - `orderByRaw("{expr} IS NULL")` then `orderByRaw("{expr} {dir}")`, repeating the expression instead of its alias — #66 — portable across PostgreSQL/MySQL/SQLite; PostgreSQL rejects aliases inside ORDER BY expressions
@@ -27,3 +28,13 @@
 
 ## Covering Inertia page template changes when the page has no vitest test
 - Pest Inertia prop assertions plus `file_get_contents` source assertions on the `.vue` file, with `types:check` — #66 — avoids building a component-test harness for one page
+- Pest Inertia prop assertions plus `file_get_contents` source assertions on the `.vue` file, with `types:check` — #70 — server normalizes and is behavior-tested; matches existing settings tests
+
+## Showing a friendlier label for a record whose name is an import/sync match key
+- Separate nullable `display_name` column plus a model `display_label` accessor (`display_name ?? name`) sent in payloads — #70 — editing `name` would break import matching and create duplicates
+
+## Naming a route that is also a prefix of existing nested route names
+- Suffix with `.index` (e.g. `settings.products.index`) — #70 — avoids a Wayfinder leaf-vs-namespace clash with `settings.products.*`; matches `catalog.index`
+
+## Adding a settings area
+- Its own `settings/*` Inertia page listed in the settings sidebar (`layouts/settings/Layout.vue`) — #70 — `resolveLayout` only gives the settings shell to `settings/*` pages

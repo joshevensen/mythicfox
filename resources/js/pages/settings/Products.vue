@@ -1,29 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import Heading from '@/components/Heading.vue';
 import MfMoney from '@/components/MfMoney.vue';
-import MfPageHeader from '@/components/MfPageHeader.vue';
 import EditProductRulesModal from '@/components/settings/EditProductRulesModal.vue';
 import EditSetRulesModal from '@/components/settings/EditSetRulesModal.vue';
-import FileHistorySection from '@/components/settings/FileHistorySection.vue';
 import { index as catalogIndex } from '@/routes/catalog';
-
-type FileRow = {
-    id: number;
-    type: 'import' | 'export';
-    purpose: string;
-    original_filename: string;
-    uploaded_at: string | null;
-    expired_at: string | null;
-    is_expired: boolean;
-};
-
-type FilesPayload = {
-    data: FileRow[];
-    meta: { total: number; current_page: number; per_page: number };
-};
-
-type PurposeOption = { value: string; label: string };
+import { index as productsIndex } from '@/routes/settings/products';
 
 type SetRow = {
     id: number;
@@ -38,6 +21,8 @@ type SetRow = {
 type ProductRow = {
     id: number;
     name: string;
+    display_name: string | null;
+    display_label: string;
     base_price: number;
     high_price: number;
     market_offset: number;
@@ -46,10 +31,19 @@ type ProductRow = {
     sets_count: number;
 };
 
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            {
+                title: 'Product settings',
+                href: productsIndex(),
+            },
+        ],
+    },
+});
+
 defineProps<{
     products: ProductRow[];
-    files: FilesPayload;
-    filePurposes: PurposeOption[];
 }>();
 
 const editingProduct = ref<ProductRow | null>(null);
@@ -76,40 +70,20 @@ const refresh = () => {
 </script>
 
 <template>
-    <Head title="Settings" />
+    <Head title="Product settings" />
 
-    <MfPageHeader title="Settings" />
-    <p class="-mt-4 mb-6 text-sm text-muted-foreground">
-        Manage pricing rules and review import/export history.
-    </p>
-
-    <nav
-        aria-label="Settings sections"
-        class="mb-8 flex flex-wrap gap-2"
-        data-test="settings-toc"
-    >
-        <a
-            href="#pricing-rules"
-            class="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-mf-orange hover:text-mf-orange"
-        >
-            Pricing rules
-        </a>
-        <a
-            href="#file-history"
-            class="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-mf-orange hover:text-mf-orange"
-        >
-            File history
-        </a>
-    </nav>
+    <h1 class="sr-only">Product settings</h1>
 
     <section
         id="pricing-rules"
-        class="scroll-mt-20"
+        class="space-y-6"
         data-test="pricing-rules-section"
     >
-        <h2 class="mb-4 text-xl font-semibold text-foreground">
-            Pricing rules
-        </h2>
+        <Heading
+            variant="small"
+            title="Pricing rules"
+            description="Set default pricing rules and display names per product."
+        />
 
         <div
             v-if="products.length === 0"
@@ -143,8 +117,15 @@ const refresh = () => {
                 >
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold text-foreground">
-                            {{ product.name }}
+                            {{ product.display_label }}
                         </h3>
+                        <p
+                            v-if="product.display_name !== null"
+                            class="text-xs text-muted-foreground"
+                            :data-test="`product-${product.id}-tcgplayer-name`"
+                        >
+                            TCGPlayer: {{ product.name }}
+                        </p>
                         <p
                             class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
                             :data-test="`product-${product.id}-summary`"
@@ -219,8 +200,6 @@ const refresh = () => {
             </article>
         </div>
     </section>
-
-    <FileHistorySection :files="files" :purposes="filePurposes" />
 
     <EditProductRulesModal
         v-model:visible="productModalVisible"
