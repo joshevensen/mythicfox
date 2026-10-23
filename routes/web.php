@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Catalog\CatalogCardController;
 use App\Http\Controllers\Catalog\CatalogCardsController;
 use App\Http\Controllers\Catalog\CatalogController;
 use App\Http\Controllers\Catalog\CatalogProductController;
@@ -84,6 +85,8 @@ Route::middleware(['auth'])->group(function () {
         ->whereNumber('product')->name('catalog.products.cards.index');
     Route::get('catalog/{product}/sets/{set}', [CatalogCardsController::class, 'set'])
         ->whereNumber(['product', 'set'])->scopeBindings()->name('catalog.products.sets.show');
+    Route::get('catalog/{product}/cards/{card}', [CatalogCardController::class, 'show'])
+        ->whereNumber(['product', 'card'])->scopeBindings()->name('catalog.products.cards.show');
 });
 
 require __DIR__.'/settings.php';

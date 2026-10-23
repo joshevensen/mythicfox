@@ -6,7 +6,7 @@ describe('resolveLayout', () => {
         'Catalog/Sets',
         'Catalog/Cards',
         'Catalog/Empty',
-        'Catalog/RowExpand',
+        'Catalog/Card',
         'Dashboard',
         'Orders/Index',
         'Orders/OrderItemsPanel',

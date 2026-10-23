@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogEmptyState from '@/components/catalog/CatalogEmptyState.vue';
 import CatalogPageHeader from '@/components/catalog/CatalogPageHeader.vue';
+import CatalogPrintingsTable from '@/components/catalog/CatalogPrintingsTable.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
 import MfMoney from '@/components/MfMoney.vue';
@@ -10,9 +11,11 @@ import MfMonospaceId from '@/components/MfMonospaceId.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import { useTableState } from '@/composables/useTableState';
-import RowExpand from '@/pages/Catalog/RowExpand.vue';
 import { show as productShow } from '@/routes/catalog/products';
-import { index as productCardsIndex } from '@/routes/catalog/products/cards';
+import {
+    index as productCardsIndex,
+    show as cardShow,
+} from '@/routes/catalog/products/cards';
 import { show as setShow } from '@/routes/catalog/products/sets';
 
 type CardRow = {
@@ -123,6 +126,9 @@ const columns = computed<ColumnDef<CardRow>[]>(() => {
 
 const setUrl = (setId: number): string =>
     setShow({ product: props.product.id, set: setId }).url;
+
+const cardUrl = (cardId: number): string =>
+    cardShow({ product: props.product.id, card: cardId }).url;
 </script>
 
 <template>
@@ -156,7 +162,14 @@ const setUrl = (setId: number): string =>
             </template>
 
             <template #cell-name="{ row }">
-                <span class="font-medium">{{ row.name }}</span>
+                <Link
+                    :href="cardUrl(row.id)"
+                    class="font-medium text-foreground hover:text-mf-orange hover:underline"
+                    :data-test="`catalog-card-link-${row.id}`"
+                    @click.stop
+                >
+                    {{ row.name }}
+                </Link>
             </template>
 
             <template #cell-number="{ row }">
@@ -181,7 +194,7 @@ const setUrl = (setId: number): string =>
             </template>
 
             <template #expand-row="{ row }">
-                <RowExpand :variants="variants[row.key] ?? []" />
+                <CatalogPrintingsTable :variants="variants[row.key] ?? []" />
             </template>
 
             <template #empty>
@@ -215,9 +228,16 @@ const setUrl = (setId: number): string =>
                 >
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex flex-col">
-                            <span class="text-sm font-medium text-foreground">
+                            <Link
+                                :href="cardUrl(row.id)"
+                                class="text-sm font-medium text-foreground hover:text-mf-orange hover:underline"
+                                :data-test="`catalog-card-link-${row.id}`"
+                                @click.stop
+                                @keydown.enter.stop
+                                @keydown.space.stop
+                            >
                                 {{ row.name }}
-                            </span>
+                            </Link>
                             <span
                                 class="text-xs text-muted-foreground"
                                 data-test="catalog-card-meta"
@@ -251,7 +271,9 @@ const setUrl = (setId: number): string =>
                         </div>
                     </div>
                     <div v-if="expanded" class="-mx-3 mt-1 -mb-3">
-                        <RowExpand :variants="variants[row.key] ?? []" />
+                        <CatalogPrintingsTable
+                            :variants="variants[row.key] ?? []"
+                        />
                     </div>
                 </div>
             </template>
