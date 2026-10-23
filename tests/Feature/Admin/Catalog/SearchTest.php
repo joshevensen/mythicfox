@@ -188,3 +188,11 @@ test('card search component implements the combobox pattern', function () {
         ->toContain('useCardSearch')
         ->not->toContain("'/catalog/");
 });
+
+test('search is rate limited to 60 requests per minute', function () {
+    foreach (range(1, 60) as $attempt) {
+        $this->getJson(route('catalog.search', ['q' => 'bolt']))->assertOk();
+    }
+
+    $this->getJson(route('catalog.search', ['q' => 'bolt']))->assertTooManyRequests();
+});

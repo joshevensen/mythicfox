@@ -80,7 +80,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('catalog/upload', [CatalogUploadController::class, 'store'])->name('catalog.upload');
-    Route::get('catalog/search', [CatalogSearchController::class, 'index'])->name('catalog.search');
+    Route::get('catalog/search', [CatalogSearchController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('catalog.search');
     Route::get('catalog/{product}', [CatalogProductController::class, 'show'])
         ->whereNumber('product')->name('catalog.products.show');
     Route::get('catalog/{product}/cards', [CatalogCardsController::class, 'product'])
