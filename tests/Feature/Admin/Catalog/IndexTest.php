@@ -398,3 +398,13 @@ test('rarities_by_product is cached until forgotten', function () {
 
     $this->get(route('catalog.index'))->assertInertia(fn ($page) => $page->has($key, 2));
 });
+
+test('product filter options and staleness summary use the display label', function () {
+    Product::factory()->lorcana()->withDisplayName('Lorcana')->create();
+
+    $this->get(route('catalog.index'))->assertInertia(
+        fn ($page) => $page
+            ->where('meta.products.0.label', 'Lorcana')
+            ->where('meta.products_priced_at.0.name', 'Lorcana')
+    );
+});

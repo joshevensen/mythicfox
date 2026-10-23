@@ -46,7 +46,8 @@ class ImportPricingCustomExportJob implements ShouldQueue
                 : Product::query()
                     ->whereIn('id', $result->productIds)
                     ->orderBy('name')
-                    ->pluck('name')
+                    ->get(['id', 'name', 'display_name'])
+                    ->map(fn (Product $product): string => $product->display_label)
                     ->all();
 
             Cache::put(self::LAST_RESULT_CACHE_KEY, [

@@ -17,7 +17,7 @@ class PricingRulesController extends Controller
 
         return back()->with('toast', [
             'kind' => 'success',
-            'message' => "{$product->name} pricing rules saved.",
+            'message' => "{$product->display_label} pricing rules saved.",
         ]);
     }
 

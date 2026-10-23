@@ -185,3 +185,29 @@ test('catalog index page exposes import_in_flight + import_last_result to props'
             ->where('meta.import_last_result.product_label', 'Magic')
     );
 });
+
+test('re-importing matches a product with a display name by its TCGPlayer name', function () {
+    Cache::flush();
+
+    Product::factory()->magic()->withDisplayName('MTG')->create();
+
+    $body = pricingCustomExportHeader()."\n"
+        ."4941474,Magic,Welcome to Rathe,Boltyn,,BOL001,Rare,Near Mint,1.50,,,1.20,1,0,1.50,\n";
+
+    Storage::put('imports/pricing/2026/05/test.csv', $body);
+
+    $file = File::create([
+        'type' => 'import',
+        'file_path' => 'imports/pricing/2026/05/test.csv',
+        'original_filename' => 'PricingCustomExport.csv',
+        'uploaded_at' => now(),
+    ]);
+
+    (new ImportPricingCustomExportJob($file->id))->handle(
+        app(PricingCustomExportImporter::class),
+    );
+
+    expect(Product::query()->count())->toBe(1)
+        ->and(Product::query()->first()->name)->toBe('Magic')
+        ->and(Cache::get(ImportPricingCustomExportJob::LAST_RESULT_CACHE_KEY)['product_label'])->toBe('MTG');
+});

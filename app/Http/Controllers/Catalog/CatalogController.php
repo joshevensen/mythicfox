@@ -56,11 +56,11 @@ class CatalogController extends Controller
 
         $products = Product::query()
             ->orderBy('name')
-            ->get(['id', 'name', 'priced_at']);
+            ->get(['id', 'name', 'display_name', 'priced_at']);
 
         $productOptions = $products->map(fn (Product $p) => [
             'value' => (string) $p->id,
-            'label' => $p->name,
+            'label' => $p->display_label,
         ])->all();
 
         $setsByProduct = $this->setsByProduct();
@@ -167,7 +167,7 @@ class CatalogController extends Controller
 
             return [
                 'id' => (int) $p->id,
-                'name' => (string) $p->name,
+                'name' => $p->display_label,
                 'priced_at' => $p->priced_at?->toIso8601String(),
                 'is_stale' => $isStale,
             ];
