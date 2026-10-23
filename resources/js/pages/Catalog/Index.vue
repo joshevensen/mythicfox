@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import MfErrorBanner from '@/components/MfErrorBanner.vue';
 import type { FilterDef, FilterOption } from '@/components/MfFilter.types';
 import MfFilterPanel from '@/components/MfFilterPanel.vue';
+import MfMoney from '@/components/MfMoney.vue';
 import MfMonospaceId from '@/components/MfMonospaceId.vue';
 import MfPageHeader from '@/components/MfPageHeader.vue';
 import type { ColumnDef } from '@/components/MfTable.types';
@@ -24,6 +25,7 @@ type CardRow = {
     number: string;
     set_name: string;
     rarity: string;
+    market_price: number | null;
 };
 
 type CardsPayload = {
@@ -38,8 +40,12 @@ type CardsPayload = {
 type Variant = {
     finish: string;
     tcgplayer_id: number | null;
-    market_price: number | null;
-    low_price: number | null;
+    nm_market_price: number | null;
+    nm_low_price: number | null;
+    lp_market_price: number | null;
+    lp_low_price: number | null;
+    mp_market_price: number | null;
+    mp_low_price: number | null;
 };
 
 type StaleEntry = {
@@ -195,6 +201,12 @@ const columns: ColumnDef<CardRow>[] = [
         label: 'Rarity',
         sortable: true,
     },
+    {
+        key: 'market_price',
+        label: 'Market Price',
+        sortable: true,
+        align: 'right',
+    },
 ];
 
 const onUploadClick = (): void => {
@@ -300,6 +312,13 @@ const stalenessLabel = (entry: StaleEntry): string => {
             <MfMonospaceId :value="row.number" />
         </template>
 
+        <template #cell-market_price="{ row }">
+            <MfMoney
+                v-if="row.market_price !== null"
+                :cents="row.market_price"
+            />
+        </template>
+
         <template #expand-row="{ row }">
             <RowExpand :variants="variants[row.key] ?? []" />
         </template>
@@ -370,13 +389,24 @@ const stalenessLabel = (entry: StaleEntry): string => {
                             {{ row.rarity }}
                         </span>
                     </div>
-                    <i
-                        :class="[
-                            'pi text-xs text-muted-foreground',
-                            expanded ? 'pi-chevron-down' : 'pi-chevron-right',
-                        ]"
-                        aria-hidden="true"
-                    />
+                    <div class="flex items-center gap-2">
+                        <span
+                            v-if="row.market_price !== null"
+                            class="text-sm text-foreground"
+                            data-test="catalog-card-market-price"
+                        >
+                            <MfMoney :cents="row.market_price" />
+                        </span>
+                        <i
+                            :class="[
+                                'pi text-xs text-muted-foreground',
+                                expanded
+                                    ? 'pi-chevron-down'
+                                    : 'pi-chevron-right',
+                            ]"
+                            aria-hidden="true"
+                        />
+                    </div>
                 </div>
                 <div v-if="expanded" class="-mx-3 mt-1 -mb-3">
                     <RowExpand :variants="variants[row.key] ?? []" />

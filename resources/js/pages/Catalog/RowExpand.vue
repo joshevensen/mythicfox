@@ -5,9 +5,24 @@ import MfMonospaceId from '@/components/MfMonospaceId.vue';
 type Variant = {
     finish: string;
     tcgplayer_id: number | null;
-    market_price: number | null;
-    low_price: number | null;
+    nm_market_price: number | null;
+    nm_low_price: number | null;
+    lp_market_price: number | null;
+    lp_low_price: number | null;
+    mp_market_price: number | null;
+    mp_low_price: number | null;
 };
+
+type PriceField = Exclude<keyof Variant, 'finish' | 'tcgplayer_id'>;
+
+const priceColumns: { field: PriceField; label: string }[] = [
+    { field: 'nm_market_price', label: 'NM Market' },
+    { field: 'nm_low_price', label: 'NM Low' },
+    { field: 'lp_market_price', label: 'LP Market' },
+    { field: 'lp_low_price', label: 'LP Low' },
+    { field: 'mp_market_price', label: 'MP Market' },
+    { field: 'mp_low_price', label: 'MP Low' },
+];
 
 defineProps<{
     variants: Variant[];
@@ -33,8 +48,13 @@ const labelForFinish = (finish: string): string =>
                 <tr>
                     <th class="px-4 py-2 text-left">Finish</th>
                     <th class="px-4 py-2 text-left">TCGplayer ID</th>
-                    <th class="px-4 py-2 text-right">Market</th>
-                    <th class="px-4 py-2 text-right">Low</th>
+                    <th
+                        v-for="col in priceColumns"
+                        :key="col.field"
+                        class="px-4 py-2 text-right"
+                    >
+                        {{ col.label }}
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -52,11 +72,12 @@ const labelForFinish = (finish: string): string =>
                         />
                         <span v-else class="text-muted-foreground">—</span>
                     </td>
-                    <td class="px-4 py-2 text-right">
-                        <MfMoney :cents="v.market_price" />
-                    </td>
-                    <td class="px-4 py-2 text-right">
-                        <MfMoney :cents="v.low_price" />
+                    <td
+                        v-for="col in priceColumns"
+                        :key="col.field"
+                        class="px-4 py-2 text-right"
+                    >
+                        <MfMoney :cents="v[col.field]" />
                     </td>
                 </tr>
             </tbody>

@@ -142,18 +142,18 @@ test('expand-row variants are eager-loaded into props keyed by card row key', fu
         'number' => 'BOL001',
         'rarity' => 'Rare',
     ]);
-    Printing::factory()->create([
+    Printing::factory()->withoutPricing()->create([
         'card_id' => $card->id,
         'finish' => 'non-foil',
         'tcgplayer_id' => 4941474,
-        'market_price' => 150,
-        'low_price' => 120,
+        'nm_market_price' => 150,
+        'nm_low_price' => 120,
+        'lp_market_price' => 140,
+        'mp_low_price' => 90,
     ]);
-    Printing::factory()->foil()->create([
+    Printing::factory()->foil()->withPricing('nm', 250, 200)->create([
         'card_id' => $card->id,
         'tcgplayer_id' => 4941566,
-        'market_price' => 250,
-        'low_price' => 200,
     ]);
 
     $expectedKey = (string) $card->id;
@@ -164,9 +164,122 @@ test('expand-row variants are eager-loaded into props keyed by card row key', fu
             ->has('variants.'.$expectedKey, 2)
             ->where('variants.'.$expectedKey.'.0.finish', 'foil')
             ->where('variants.'.$expectedKey.'.0.tcgplayer_id', 4941566)
-            ->where('variants.'.$expectedKey.'.1.finish', 'non-foil')
-            ->where('variants.'.$expectedKey.'.1.market_price', 150)
+            ->has('variants.'.$expectedKey.'.1', fn ($variant) => $variant
+                ->where('finish', 'non-foil')
+                ->where('tcgplayer_id', 4941474)
+                ->where('nm_market_price', 150)
+                ->where('nm_low_price', 120)
+                ->where('lp_market_price', 140)
+                ->where('lp_low_price', null)
+                ->where('mp_market_price', null)
+                ->where('mp_low_price', 90)
+            )
     );
+});
+
+/**
+ * Creates a card in a fresh set and returns its catalog row's market_price.
+ *
+ * @param  callable(Card): void  $withPrintings
+ */
+function catalogMarketPriceFor(callable $withPrintings): ?int
+{
+    $card = Card::factory()->create();
+    $withPrintings($card);
+
+    $response = test()->get(route('catalog.index'));
+    $row = collect($response->viewData('page')['props']['cards']['data'])->firstWhere('id', $card->id);
+
+    return $row['market_price'];
+}
+
+test('market price prefers LP and falls back to NM', function () {
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->withoutPricing()->withPricing('lp', 300, null)->withPricing('nm', 500, null)
+            ->create(['card_id' => $card->id]);
+    }))->toBe(300);
+
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->withoutPricing()->withPricing('nm', 500, null)
+            ->create(['card_id' => $card->id]);
+    }))->toBe(500);
+});
+
+test('market price falls back non-foil → foil → etched', function () {
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->withoutPricing()->create(['card_id' => $card->id]);
+        Printing::factory()->foil()->withoutPricing()->withPricing('nm', 700, null)->create(['card_id' => $card->id]);
+        Printing::factory()->etched()->withoutPricing()->withPricing('lp', 900, null)->create(['card_id' => $card->id]);
+    }))->toBe(700);
+
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->withoutPricing()->create(['card_id' => $card->id]);
+        Printing::factory()->foil()->withoutPricing()->create(['card_id' => $card->id]);
+        Printing::factory()->etched()->withoutPricing()->withPricing('lp', 900, null)->create(['card_id' => $card->id]);
+    }))->toBe(900);
+
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->create(['card_id' => $card->id, 'finish' => 'rainbow-foil']);
+    }))->toBeNull();
+});
+
+test('market price is null when no printing has a price', function () {
+    expect(catalogMarketPriceFor(fn (Card $card) => null))->toBeNull();
+
+    expect(catalogMarketPriceFor(function (Card $card) {
+        Printing::factory()->withoutPricing()->create(['card_id' => $card->id]);
+    }))->toBeNull();
+});
+
+test('sort by market price orders asc/desc with nulls last', function () {
+    $set = Set::factory()->forProduct(Product::factory()->magic()->create())->create();
+
+    foreach (['Cheap' => 100, 'Pricey' => 300, 'Unpriced' => null] as $name => $price) {
+        $card = Card::factory()->create(['set_id' => $set->id, 'name' => $name]);
+        $printing = Printing::factory()->withoutPricing();
+
+        if ($price !== null) {
+            $printing = $printing->withPricing('lp', $price, null);
+        }
+
+        $printing->create(['card_id' => $card->id]);
+    }
+
+    $this->get(route('catalog.index', ['sort' => 'market_price', 'dir' => 'asc']))->assertInertia(
+        fn ($page) => $page
+            ->where('cards.data.0.market_price', 100)
+            ->where('cards.data.1.market_price', 300)
+            ->where('cards.data.2.market_price', null)
+            ->where('cards.data.2.name', 'Unpriced')
+    );
+
+    $this->get(route('catalog.index', ['sort' => 'market_price', 'dir' => 'desc']))->assertInertia(
+        fn ($page) => $page
+            ->where('cards.data.0.market_price', 300)
+            ->where('cards.data.1.market_price', 100)
+            ->where('cards.data.2.market_price', null)
+            ->where('cards.meta.total', 3)
+    );
+});
+
+test('catalog pages render the Market Price column and per-condition expand columns', function () {
+    $index = file_get_contents(resource_path('js/pages/Catalog/Index.vue'));
+    $expand = file_get_contents(resource_path('js/pages/Catalog/RowExpand.vue'));
+
+    expect($index)
+        ->toContain("key: 'market_price'")
+        ->toContain("label: 'Market Price'")
+        ->toContain('data-test="catalog-card-market-price"');
+
+    expect($expand)
+        ->toContain("'NM Market'")
+        ->toContain("'NM Low'")
+        ->toContain("'LP Market'")
+        ->toContain("'LP Low'")
+        ->toContain("'MP Market'")
+        ->toContain("'MP Low'")
+        ->not->toContain('v.market_price')
+        ->not->toContain('v.low_price');
 });
 
 test('catalog page title and header read Catalog', function () {
