@@ -3,7 +3,9 @@ import { resolveLayout } from '@/lib/resolveLayout';
 
 describe('resolveLayout', () => {
     it.each([
-        'Catalog/Index',
+        'Catalog/Sets',
+        'Catalog/Cards',
+        'Catalog/Empty',
         'Catalog/RowExpand',
         'Dashboard',
         'Orders/Index',

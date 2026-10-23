@@ -5,6 +5,9 @@ import Popover from 'primevue/popover';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useGlobalImportModal } from '@/composables/useGlobalImportModal';
 import { dashboard, logout } from '@/routes';
+import { index as catalogIndex } from '@/routes/catalog';
+import { show as productShow } from '@/routes/catalog/products';
+import { index as ordersIndex } from '@/routes/orders';
 import { edit as editProfile } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -14,16 +17,17 @@ type Section = {
     matchPrefix: string;
 };
 
-// TODO(phase-50/60): swap placeholder URLs for Wayfinder helpers once
-// orders/catalog routes exist.
 const SECTIONS: Section[] = [
     { label: 'Dashboard', href: dashboard().url, matchPrefix: '/dashboard' },
-    { label: 'Orders', href: '/orders', matchPrefix: '/orders' },
-    { label: 'Catalog', href: '/catalog', matchPrefix: '/catalog' },
+    { label: 'Orders', href: ordersIndex().url, matchPrefix: '/orders' },
+    { label: 'Catalog', href: catalogIndex().url, matchPrefix: '/catalog' },
     { label: 'Settings', href: editProfile().url, matchPrefix: '/settings' },
 ];
 
-const page = usePage<{ auth: { user: User } }>();
+const page = usePage<{
+    auth: { user: User };
+    catalog_products?: { id: number; label: string }[];
+}>();
 
 const currentUrl = computed(() => page.url);
 
@@ -31,12 +35,29 @@ const isActive = (section: Section): boolean =>
     currentUrl.value === section.matchPrefix ||
     currentUrl.value.startsWith(`${section.matchPrefix}/`);
 
+const catalogProducts = computed(() => page.props.catalog_products ?? []);
+
+const isCatalogProductActive = (id: number): boolean =>
+    currentUrl.value === `/catalog/${id}` ||
+    currentUrl.value.startsWith(`/catalog/${id}/`);
+
 const userName = computed(() => page.props.auth?.user?.name ?? '');
 
 const userPopover = useTemplateRef<InstanceType<typeof Popover>>('userPopover');
 
 const toggleUserMenu = (event: MouseEvent) => {
     userPopover.value?.toggle(event);
+};
+
+const catalogPopover =
+    useTemplateRef<InstanceType<typeof Popover>>('catalogPopover');
+
+const toggleCatalogMenu = (event: MouseEvent) => {
+    catalogPopover.value?.toggle(event);
+};
+
+const hideCatalogMenu = (): void => {
+    catalogPopover.value?.hide();
 };
 
 const drawerOpen = ref(false);
@@ -71,21 +92,68 @@ const handleLogout = () => {
         </Link>
 
         <nav class="ml-6 hidden items-center gap-1 md:flex">
-            <Link
-                v-for="section in SECTIONS"
-                :key="section.label"
-                :href="section.href"
-                :class="[
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive(section)
-                        ? 'bg-mf-orange/10 text-mf-orange'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                ]"
-                :data-test="`topnav-link-${section.label.toLowerCase()}`"
-                :aria-current="isActive(section) ? 'page' : undefined"
-            >
-                {{ section.label }}
-            </Link>
+            <template v-for="section in SECTIONS" :key="section.label">
+                <button
+                    v-if="section.label === 'Catalog'"
+                    type="button"
+                    :class="[
+                        'inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        isActive(section)
+                            ? 'bg-mf-orange/10 text-mf-orange'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    ]"
+                    :data-test="`topnav-link-${section.label.toLowerCase()}`"
+                    :aria-current="isActive(section) ? 'page' : undefined"
+                    aria-haspopup="true"
+                    @click="toggleCatalogMenu"
+                >
+                    {{ section.label }}
+                    <i class="pi pi-chevron-down text-xs" aria-hidden="true" />
+                </button>
+                <Link
+                    v-else
+                    :href="section.href"
+                    :class="[
+                        'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        isActive(section)
+                            ? 'bg-mf-orange/10 text-mf-orange'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    ]"
+                    :data-test="`topnav-link-${section.label.toLowerCase()}`"
+                    :aria-current="isActive(section) ? 'page' : undefined"
+                >
+                    {{ section.label }}
+                </Link>
+            </template>
+
+            <Popover ref="catalogPopover">
+                <div class="flex w-56 flex-col gap-1 p-1">
+                    <Link
+                        v-for="p in catalogProducts"
+                        :key="p.id"
+                        :href="productShow(p.id).url"
+                        :class="[
+                            'rounded-md px-3 py-2 text-sm',
+                            isCatalogProductActive(p.id)
+                                ? 'bg-mf-orange/10 text-mf-orange'
+                                : 'text-foreground hover:bg-muted',
+                        ]"
+                        :data-test="`topnav-catalog-product-${p.id}`"
+                        @click="hideCatalogMenu"
+                    >
+                        {{ p.label }}
+                    </Link>
+                    <Link
+                        v-if="catalogProducts.length === 0"
+                        :href="catalogIndex().url"
+                        class="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                        data-test="topnav-catalog-index"
+                        @click="hideCatalogMenu"
+                    >
+                        Catalog
+                    </Link>
+                </div>
+            </Popover>
         </nav>
 
         <div class="ml-auto flex items-center">
@@ -146,21 +214,55 @@ const handleLogout = () => {
                 />
             </template>
             <nav class="flex flex-col gap-1">
-                <Link
-                    v-for="section in SECTIONS"
-                    :key="section.label"
-                    :href="section.href"
-                    :class="[
-                        'rounded-md px-3 py-2 text-sm font-medium',
-                        isActive(section)
-                            ? 'bg-mf-orange/10 text-mf-orange'
-                            : 'text-foreground hover:bg-muted',
-                    ]"
-                    :data-test="`drawer-link-${section.label.toLowerCase()}`"
-                    @click="drawerOpen = false"
-                >
-                    {{ section.label }}
-                </Link>
+                <template v-for="section in SECTIONS" :key="section.label">
+                    <template
+                        v-if="
+                            section.label === 'Catalog' &&
+                            catalogProducts.length > 0
+                        "
+                    >
+                        <span
+                            :class="[
+                                'rounded-md px-3 py-2 text-sm font-medium',
+                                isActive(section)
+                                    ? 'text-mf-orange'
+                                    : 'text-foreground',
+                            ]"
+                            :data-test="`drawer-link-${section.label.toLowerCase()}`"
+                        >
+                            {{ section.label }}
+                        </span>
+                        <Link
+                            v-for="p in catalogProducts"
+                            :key="p.id"
+                            :href="productShow(p.id).url"
+                            :class="[
+                                'rounded-md py-2 pr-3 pl-6 text-sm',
+                                isCatalogProductActive(p.id)
+                                    ? 'bg-mf-orange/10 text-mf-orange'
+                                    : 'text-foreground hover:bg-muted',
+                            ]"
+                            :data-test="`drawer-catalog-product-${p.id}`"
+                            @click="drawerOpen = false"
+                        >
+                            {{ p.label }}
+                        </Link>
+                    </template>
+                    <Link
+                        v-else
+                        :href="section.href"
+                        :class="[
+                            'rounded-md px-3 py-2 text-sm font-medium',
+                            isActive(section)
+                                ? 'bg-mf-orange/10 text-mf-orange'
+                                : 'text-foreground hover:bg-muted',
+                        ]"
+                        :data-test="`drawer-link-${section.label.toLowerCase()}`"
+                        @click="drawerOpen = false"
+                    >
+                        {{ section.label }}
+                    </Link>
+                </template>
                 <div class="my-2 border-t border-border" />
                 <Link
                     :href="logout()"

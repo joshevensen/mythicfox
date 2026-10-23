@@ -90,7 +90,9 @@ const startPolling = (): void => {
 
 const reloadCurrentImportPage = (kind: 'catalog' | 'orders'): void => {
     if (kind === 'catalog' && page.url.startsWith('/catalog')) {
-        router.reload({ only: ['cards', 'variants', 'meta'] });
+        router.reload({
+            only: ['cards', 'variants', 'sets', 'product', 'meta'],
+        });
     }
 
     if (kind === 'orders' && page.url.startsWith('/orders')) {
