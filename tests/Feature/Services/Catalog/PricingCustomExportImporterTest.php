@@ -18,10 +18,57 @@ function fixturePath(): string
     return base_path('tests/fixtures/catalog/pricing-custom-export-sample.csv');
 }
 
-function importFixture(?string $sourcePath = null): void
+function importFixture(?string $sourcePath = null, int $chunkSize = 500): void
 {
-    $importer = new PricingCustomExportImporter(new CatalogUpserter);
+    $importer = new PricingCustomExportImporter(new CatalogUpserter($chunkSize));
     $importer->import($sourcePath ?? fixturePath());
+}
+
+/**
+ * @param  list<string>  $rows  CSV data rows (without header)
+ */
+function writePricingCsv(string $name, array $rows): string
+{
+    $path = sys_get_temp_dir().'/'.$name;
+    $header = 'TCGplayer Id,Product Line,Set Name,Product Name,Title,Number,Rarity,Condition,TCG Market Price,TCG Direct Low,TCG Low Price With Shipping,TCG Low Price,Total Quantity,Add to Quantity,TCG Marketplace Price,Photo URL';
+    file_put_contents($path, implode("\n", [$header, ...$rows])."\n");
+
+    return $path;
+}
+
+/**
+ * @return array{nm: array{0: int|null, 1: int|null}, lp: array{0: int|null, 1: int|null}, mp: array{0: int|null, 1: int|null}}
+ */
+function conditionPrices(Printing $printing): array
+{
+    return [
+        'nm' => [$printing->nm_market_price, $printing->nm_low_price],
+        'lp' => [$printing->lp_market_price, $printing->lp_low_price],
+        'mp' => [$printing->mp_market_price, $printing->mp_low_price],
+    ];
+}
+
+function printingFor(string $name, string $number, string $finish): Printing
+{
+    return Printing::query()
+        ->where('finish', $finish)
+        ->whereHas('card', fn ($query) => $query->where('name', $name)->where('number', $number))
+        ->firstOrFail();
+}
+
+/**
+ * @return list<string>
+ */
+function threeConditionRows(): array
+{
+    return [
+        '"9100001","Magic","Test Set","Order Card","","1","R","Near Mint","5.00","","","4.50","0","0","",""',
+        '"9100002","Magic","Test Set","Order Card","","1","R","Lightly Played","4.00","","","3.50","0","0","",""',
+        '"9100003","Magic","Test Set","Order Card","","1","R","Moderately Played","3.00","","","2.50","0","0","",""',
+        '"9100004","Magic","Test Set","Order Card","","1","R","Near Mint Foil","9.00","","","8.50","0","0","",""',
+        '"9100005","Magic","Test Set","Order Card","","1","R","Lightly Played Foil","8.00","","","7.50","0","0","",""',
+        '"9100006","Magic","Test Set","Order Card","","1","R","Moderately Played Foil","7.00","","","6.50","0","0","",""',
+    ];
 }
 
 test('first import creates products, sets, canonical cards, and printings with parsed prices', function () {
@@ -41,16 +88,81 @@ test('first import creates products, sets, canonical cards, and printings with p
     $nonFoil = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
     expect($nonFoil->card_id)->toBe($boltyn->id);
     expect($nonFoil->finish)->toBe('non-foil');
-    expect($nonFoil->market_price)->toBe(1250);
-    expect($nonFoil->low_price)->toBe(1175);
+    expect(conditionPrices($nonFoil))->toBe(['nm' => [1250, 1175], 'lp' => [null, null], 'mp' => [null, null]]);
 
     $foil = Printing::where('tcgplayer_id', 4941701)->firstOrFail();
     expect($foil->card_id)->toBe($boltyn->id);
     expect($foil->finish)->toBe('foil');
 
-    $emptyLow = Printing::where('tcgplayer_id', 5012346)->firstOrFail();
-    expect($emptyLow->market_price)->toBe(210);
-    expect($emptyLow->low_price)->toBeNull();
+    $edgewall = printingFor('Edgewall Innkeeper', '97/204', 'non-foil');
+    expect($edgewall->tcgplayer_id)->toBe(5012345);
+    expect(conditionPrices($edgewall))->toBe(['nm' => [250, 225], 'lp' => [210, null], 'mp' => [null, null]]);
+
+    $lossesNonFoil = printingFor('Acceptable Losses', '179/298', 'non-foil');
+    expect($lossesNonFoil->tcgplayer_id)->toBe(8926937);
+    expect(conditionPrices($lossesNonFoil))->toBe(['nm' => [54, 40], 'lp' => [53, 40], 'mp' => [16, 24]]);
+
+    $lossesFoil = printingFor('Acceptable Losses', '179/298', 'foil');
+    expect($lossesFoil->tcgplayer_id)->toBe(8926942);
+    expect(conditionPrices($lossesFoil))->toBe(['nm' => [316, 200], 'lp' => [222, 231], 'mp' => [316, null]]);
+
+    $ahri = printingFor('Ahri, Alluring', '066/298', 'foil');
+    expect($ahri->tcgplayer_id)->toBe(8925997);
+    expect(conditionPrices($ahri))->toBe(['nm' => [56, 25], 'lp' => [120, 30], 'mp' => [78, null]]);
+});
+
+test('heavily played and damaged rows are ignored', function () {
+    $tmp = writePricingCsv('pricing-hp-damaged.csv', [
+        '"9200001","Magic","Ignored Set","Only Played","","1","R","Heavily Played","1.00","","","0.90","0","0","",""',
+        '"9200002","Magic","Ignored Set","Only Played","","1","R","Damaged Foil","0.50","","","0.40","0","0","",""',
+        '"9200003","Lorcana TCG","Kept Set","Mixed","","2","R","Near Mint","3.00","","","2.80","0","0","",""',
+        '"9200004","Lorcana TCG","Kept Set","Mixed","","2","R","Heavily Played","1.00","","","0.90","0","0","",""',
+        '"9200005","Lorcana TCG","Kept Set","Mixed","","2","R","Damaged","0.10","","","0.05","0","0","",""',
+    ]);
+
+    importFixture($tmp);
+
+    expect(Product::where('name', 'Magic')->exists())->toBeFalse();
+    expect(Set::where('name', 'Ignored Set')->exists())->toBeFalse();
+    expect(Card::where('name', 'Only Played')->exists())->toBeFalse();
+    expect(Printing::whereIn('tcgplayer_id', [9200001, 9200002, 9200004, 9200005])->exists())->toBeFalse();
+
+    $mixed = printingFor('Mixed', '2', 'non-foil');
+    expect($mixed->tcgplayer_id)->toBe(9200003);
+    expect(conditionPrices($mixed))->toBe(['nm' => [300, 280], 'lp' => [null, null], 'mp' => [null, null]]);
+
+    @unlink($tmp);
+});
+
+test('per-condition prices are independent of row order', function (bool $reversed) {
+    $rows = threeConditionRows();
+    $tmp = writePricingCsv('pricing-order.csv', $reversed ? array_reverse($rows) : $rows);
+
+    importFixture($tmp);
+
+    $nonFoil = printingFor('Order Card', '1', 'non-foil');
+    $foil = printingFor('Order Card', '1', 'foil');
+
+    expect($nonFoil->tcgplayer_id)->toBe(9100001);
+    expect(conditionPrices($nonFoil))->toBe(['nm' => [500, 450], 'lp' => [400, 350], 'mp' => [300, 250]]);
+    expect($foil->tcgplayer_id)->toBe(9100004);
+    expect(conditionPrices($foil))->toBe(['nm' => [900, 850], 'lp' => [800, 750], 'mp' => [700, 650]]);
+
+    @unlink($tmp);
+})->with(['csv order' => false, 'reversed order' => true]);
+
+test('conditions flushed in different chunks do not overwrite each other', function () {
+    $tmp = writePricingCsv('pricing-chunks.csv', array_reverse(threeConditionRows()));
+
+    importFixture($tmp, chunkSize: 1);
+
+    $nonFoil = printingFor('Order Card', '1', 'non-foil');
+    expect($nonFoil->tcgplayer_id)->toBe(9100001);
+    expect(conditionPrices($nonFoil))->toBe(['nm' => [500, 450], 'lp' => [400, 350], 'mp' => [300, 250]]);
+    expect(conditionPrices(printingFor('Order Card', '1', 'foil')))
+        ->toBe(['nm' => [900, 850], 'lp' => [800, 750], 'mp' => [700, 650]]);
+
+    @unlink($tmp);
 });
 
 test('a files row is persisted with the import', function () {
@@ -77,8 +189,13 @@ test('re-running the same file produces zero logical changes', function () {
     $cardCountAfterFirst = Card::count();
     $printingCountAfterFirst = Printing::count();
     $boltyn = Card::where('name', 'Boltyn')->where('number', 'BOL001')->firstOrFail();
-    $nonFoil = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
-    $marketBefore = $nonFoil->market_price;
+    $snapshot = fn () => Printing::query()
+        ->orderBy('card_id')
+        ->orderBy('finish')
+        ->get()
+        ->map(fn (Printing $printing) => [$printing->card_id, $printing->finish, $printing->tcgplayer_id, conditionPrices($printing)])
+        ->all();
+    $before = $snapshot();
 
     importFixture();
 
@@ -88,9 +205,8 @@ test('re-running the same file produces zero logical changes', function () {
     expect(Set::count())->toBe(8);
 
     $boltyn->refresh();
-    $nonFoil->refresh();
     expect($boltyn->name)->toBe('Boltyn');
-    expect($nonFoil->market_price)->toBe($marketBefore);
+    expect($snapshot())->toBe($before);
 });
 
 test('second import creates a new canonical identity when name or number changes', function () {
@@ -108,8 +224,8 @@ test('second import creates a new canonical identity when name or number changes
     $renamed = Card::where('name', 'RENAMED Boltyn')->where('number', 'RENAMED-001')->firstOrFail();
     $printing = Printing::where('tcgplayer_id', 4941700)->firstOrFail();
     expect($printing->card_id)->toBe($renamed->id);
-    expect($printing->market_price)->toBe(9999);
-    expect($printing->low_price)->toBe(9800);
+    expect($printing->lp_market_price)->toBe(9999);
+    expect($printing->lp_low_price)->toBe(9800);
 
     @unlink($modified);
 });

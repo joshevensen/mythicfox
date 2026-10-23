@@ -14,7 +14,8 @@ use Illuminate\Support\Carbon;
  *
  * Shared by PricingCustomExportImporter and catalog-style pricing imports.
  * Cards are canonical identities; per-finish provider IDs and prices live on
- * printings.
+ * printings. Prices are stored per condition (NM/LP/MP); rows for any other
+ * condition (Heavily Played, Damaged, sealed, ...) are ignored.
  * Pricing rule fields on products and sets are never touched on update.
  */
 class CatalogUpserter
@@ -31,8 +32,24 @@ class CatalogUpserter
     /** @var array<string, array<string, mixed>> buffered card upsert rows keyed by canonical identity */
     private array $cardBuffer = [];
 
-    /** @var array<string, array<string, mixed>> buffered printing upsert rows keyed by card identity + finish */
+    /**
+     * Upsert columns per condition. Each condition's upsert only updates its own
+     * price pair, so rows for one printing can arrive in any order or chunk
+     * without nulling another condition's prices. Only NM refreshes
+     * tcgplayer_id; LP/MP set it on insert only.
+     *
+     * @var array<'nm'|'lp'|'mp', list<string>>
+     */
+    private const CONDITION_UPDATE_COLUMNS = [
+        'nm' => ['tcgplayer_id', 'justtcg_id', 'other_ids', 'image_url', 'nm_market_price', 'nm_low_price'],
+        'lp' => ['justtcg_id', 'other_ids', 'image_url', 'lp_market_price', 'lp_low_price'],
+        'mp' => ['justtcg_id', 'other_ids', 'image_url', 'mp_market_price', 'mp_low_price'],
+    ];
+
+    /** @var array<'nm'|'lp'|'mp', array<string, array<string, mixed>>> buffered printing upsert rows keyed by condition, then card identity + finish */
     private array $printingBuffer = [];
+
+    private int $bufferedPrintingCount = 0;
 
     public function __construct(private readonly int $chunkSize = 500) {}
 
@@ -51,12 +68,18 @@ class CatalogUpserter
             return;
         }
 
+        $condition = (string) ($row['Condition'] ?? '');
+        $conditionKey = $this->conditionKey($condition);
+
+        if ($conditionKey === null) {
+            return;
+        }
+
         $productId = $this->resolveProduct($productLine);
         $setId = $this->resolveSet($productId, $setName);
 
         $this->touchedProductIds[$productId] = true;
 
-        $condition = (string) ($row['Condition'] ?? '');
         $identityKey = $this->identityKey($setId, $productName, $number);
 
         $this->cardBuffer[$identityKey] = [
@@ -67,18 +90,24 @@ class CatalogUpserter
         ];
 
         $finish = $this->finishFromCondition($condition);
-        $this->printingBuffer[$identityKey."\0".$finish] = [
+        $printingKey = $identityKey."\0".$finish;
+
+        if (! isset($this->printingBuffer[$conditionKey][$printingKey])) {
+            $this->bufferedPrintingCount++;
+        }
+
+        $this->printingBuffer[$conditionKey][$printingKey] = [
             'identity_key' => $identityKey,
             'finish' => $finish,
             'tcgplayer_id' => $tcgplayerId,
             'justtcg_id' => null,
             'other_ids' => null,
             'image_url' => $this->nullableString($row['Photo URL'] ?? null),
-            'market_price' => CentsParser::parse($row['TCG Market Price'] ?? null),
-            'low_price' => CentsParser::parse($row['TCG Low Price'] ?? null),
+            "{$conditionKey}_market_price" => CentsParser::parse($row['TCG Market Price'] ?? null),
+            "{$conditionKey}_low_price" => CentsParser::parse($row['TCG Low Price'] ?? null),
         ];
 
-        if (count($this->printingBuffer) >= $this->chunkSize) {
+        if ($this->bufferedPrintingCount >= $this->chunkSize) {
             $this->flushBuffers();
         }
     }
@@ -142,43 +171,52 @@ class CatalogUpserter
         );
 
         $cardIds = $this->loadCardIds($this->cardBuffer);
-        $printings = [];
 
-        foreach ($this->printingBuffer as $printing) {
-            $cardId = $cardIds[$printing['identity_key']] ?? null;
+        foreach (self::CONDITION_UPDATE_COLUMNS as $conditionKey => $updateColumns) {
+            $printings = [];
 
-            if ($cardId === null) {
-                continue;
-            }
+            foreach ($this->printingBuffer[$conditionKey] ?? [] as $printing) {
+                $cardId = $cardIds[$printing['identity_key']] ?? null;
 
-            unset($printing['identity_key']);
-            $printings[] = ['card_id' => $cardId, ...$printing];
-        }
-
-        if ($printings !== []) {
-            foreach ($printings as $printing) {
-                if ($printing['tcgplayer_id'] === null) {
+                if ($cardId === null) {
                     continue;
                 }
 
-                Printing::query()
-                    ->where('tcgplayer_id', $printing['tcgplayer_id'])
-                    ->where(function ($query) use ($printing) {
-                        $query->where('card_id', '!=', $printing['card_id'])
-                            ->orWhere('finish', '!=', $printing['finish']);
-                    })
-                    ->delete();
+                unset($printing['identity_key']);
+                $printings[] = ['card_id' => $cardId, ...$printing];
             }
 
-            Printing::upsert(
-                $printings,
-                ['card_id', 'finish'],
-                ['tcgplayer_id', 'justtcg_id', 'other_ids', 'image_url', 'market_price', 'low_price'],
-            );
+            if ($printings !== []) {
+                $this->upsertPrintings($printings, $updateColumns);
+            }
         }
 
         $this->cardBuffer = [];
         $this->printingBuffer = [];
+        $this->bufferedPrintingCount = 0;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $printings  rows for a single condition, unique per (card_id, finish)
+     * @param  list<string>  $updateColumns
+     */
+    private function upsertPrintings(array $printings, array $updateColumns): void
+    {
+        foreach ($printings as $printing) {
+            if ($printing['tcgplayer_id'] === null) {
+                continue;
+            }
+
+            Printing::query()
+                ->where('tcgplayer_id', $printing['tcgplayer_id'])
+                ->where(function ($query) use ($printing) {
+                    $query->where('card_id', '!=', $printing['card_id'])
+                        ->orWhere('finish', '!=', $printing['finish']);
+                })
+                ->delete();
+        }
+
+        Printing::upsert($printings, ['card_id', 'finish'], $updateColumns);
     }
 
     /**
@@ -205,6 +243,21 @@ class CatalogUpserter
     private function identityKey(int $setId, string $name, string $number): string
     {
         return $setId."\0".$name."\0".$number;
+    }
+
+    /**
+     * @return 'nm'|'lp'|'mp'|null
+     */
+    private function conditionKey(string $condition): ?string
+    {
+        $normalized = strtolower(trim($condition));
+
+        return match (true) {
+            str_starts_with($normalized, 'near mint') => 'nm',
+            str_starts_with($normalized, 'lightly played') => 'lp',
+            str_starts_with($normalized, 'moderately played') => 'mp',
+            default => null,
+        };
     }
 
     private function finishFromCondition(string $condition): string
