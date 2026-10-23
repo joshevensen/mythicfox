@@ -31,6 +31,17 @@ defineProps<{
     gameStats: GameStat[];
 }>();
 
+function productLinkAttrs(stat: GameStat): Record<string, string> {
+    if (stat.product_id === null) {
+        return {};
+    }
+
+    return {
+        href: productShow(stat.product_id).url,
+        'data-test': `game-link-${stat.product_id}`,
+    };
+}
+
 function logoFor(game: string): string | null {
     const g = game.toLowerCase();
 
@@ -61,15 +72,8 @@ function logoFor(game: string): string | null {
         >
             <component
                 :is="stat.product_id !== null ? Link : 'div'"
-                v-bind="
-                    stat.product_id !== null
-                        ? {
-                              href: productShow(stat.product_id).url,
-                              'data-test': `game-link-${stat.product_id}`,
-                          }
-                        : {}
-                "
-                class="flex flex-col"
+                v-bind="productLinkAttrs(stat)"
+                class="block"
             >
                 <img
                     v-if="logoFor(stat.game)"
@@ -79,8 +83,7 @@ function logoFor(game: string): string | null {
                 />
                 <span
                     v-else
-                    class="text-base font-semibold text-foreground"
-                    :class="{ 'hover:underline': stat.product_id !== null }"
+                    class="text-base font-semibold text-foreground in-[a]:hover:underline"
                 >
                     {{ stat.game }}
                 </span>

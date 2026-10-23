@@ -52,6 +52,7 @@ test('the dashboard links each game card to its catalog product page', function 
 
     expect($source)
         ->toContain("from '@/routes/catalog/products'")
-        ->toContain('Link')
+        ->toContain(":is=\"stat.product_id !== null ? Link : 'div'\"")
+        ->toContain('productShow(stat.product_id).url')
         ->toContain('game-link-');
 });
