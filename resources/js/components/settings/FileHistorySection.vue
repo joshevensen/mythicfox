@@ -10,7 +10,7 @@ import type { ColumnDef } from '@/components/MfTable.types';
 import MfTable from '@/components/MfTable.vue';
 import { useMfToast } from '@/composables/useMfToast';
 import { useTableState } from '@/composables/useTableState';
-import { settings } from '@/routes';
+import { index as filesIndex } from '@/routes/settings/files';
 
 type FileRow = {
     id: number;
@@ -47,7 +47,7 @@ const { error } = useMfToast();
 // settings.md §Mobile layout — it stays visible on phones where the rest of
 // the filter panel collapses into a drawer.
 const tableState = useTableState({
-    endpoint: settings().url,
+    endpoint: filesIndex().url,
     filterKeys: [
         'direction',
         'purpose',
@@ -152,7 +152,10 @@ const onDownload = async (id: number) => {
             @update:sort="tableState.setSort"
         >
             <template #filters>
-                <MfFilterPanel :filters="filters" :endpoint="settings().url" />
+                <MfFilterPanel
+                    :filters="filters"
+                    :endpoint="filesIndex().url"
+                />
                 <label
                     class="mt-3 inline-flex items-center gap-2 text-sm text-foreground"
                     data-test="hide-expired-toggle"
@@ -212,7 +215,7 @@ const onDownload = async (id: number) => {
                 >
                     <p>No files match these filters.</p>
                     <Link
-                        :href="settings().url"
+                        :href="filesIndex().url"
                         class="text-mf-orange hover:underline"
                         data-test="clear-filters"
                     >
