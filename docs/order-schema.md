@@ -186,22 +186,18 @@ The import result toast aggregates the outcomes:
 
 When K > 0, the operator can investigate manually (typically a catalog rename or a card sold off-platform that was never tracked locally).
 
-Decrement runs **only for newly-created order_items rows**, never on re-imports — which combined with the "order_items are immutable once created" rule (§Idempotency) makes the decrement idempotent: re-importing the same batch never double-decrements.
+Decrement runs **only for newly-created order_items rows** — re-imports only fill empty fields on existing rows and never recreate them (§Idempotency), so re-importing the same batch never double-decrements.
 
 ### Idempotency
 
 | Re-import scenario | Behavior |
 |---|---|
 | Same batch uploaded twice | No-op for orders, no-op for order_items |
-| Status changes upstream (e.g. order canceled after first import) | `tcgplayer_status` updates in place |
-| Tracking added after first import | `tracking_number` and `carrier` update in place |
+| Status or amounts change upstream (e.g. order canceled after first import) | OrderList header fields update in place |
+| Shipping details or tracking added after first import | ShippingExport fields update in place; left untouched when the batch has no ShippingExport row for the order |
 | Order in OrderList but not in earlier import (newer order) | Inserted fresh, line items created |
-| Order had null line prices, later batch includes the PDF | **Line prices stay null.** Re-import does not refill `order_items` once they exist. Workaround: include the PDF in every batch from the start. |
-
-The "never refill" rule is intentional — it preserves the immutability of historical snapshots. The trade-off is acceptable because:
-
-- The recommended workflow uploads all four files together every time.
-- A null `unit_price` is recoverable manually if it matters for a specific report.
+| Existing order is missing PullSheet lines (e.g. PullSheet omitted earlier) | Missing line items are created |
+| Order had null line prices, later batch includes the PDF | **Null prices are filled.** Only empty fields (`unit_price`, `total_price`, `tcgplayer_sku_id`) are filled; existing values are never overwritten and line items are never deleted. |
 
 ---
 
@@ -247,5 +243,5 @@ All dates are stored as ISO `YYYY-MM-DD`.
 - **New TCGPlayer status strings.** Today only `Completed - Paid` and `Canceled` have been observed. Direct orders or future TCGPlayer features may emit values like `Pending`, `Refunded`, `Returned`. The schema stores the string verbatim, but the inventory-decrement logic only knows to skip `Canceled` — any other "shouldn't decrement" status would silently consume stock. When a new value first appears, audit the decrement logic.
 - **Snapshot-field matching can drift.** The inventory decrement match key (`product_line`, `set_name`, `product_name`, `number`, `condition`) is a fuzzy match against the catalog. If TCGPlayer renames a card *between* an order being placed and being imported, the decrement won't find the inventory row. The no-match warning in the import-result toast surfaces this, but watch for a creep of mysterious unmatched rows over time.
 - **Null `unit_price` on order_items.** Line prices stay null when the PDF wasn't included in the import batch. Any future revenue report that sums `unit_price × quantity` needs to handle null gracefully — either by falling back to `inventory.calculated_price` (less accurate) or by skipping the line.
-- **The "never refill" idempotency rule is asymmetric.** Mutable header fields (`tcgplayer_status`, tracking) update on re-import; line items don't. Make sure the operator understands this so they don't expect line-price corrections from re-uploading the PDF later.
+- **Re-import fills gaps but never corrects line prices.** A re-uploaded PDF fills null prices, but a price that was already set is never overwritten.
 - **Bulk re-imports never undo decrements.** If a buggy import accidentally decrements inventory wrong, fixing it requires manual reconciliation — there's no rollback. Consider a quick "show inventory delta from last import" admin tool if this ever bites.

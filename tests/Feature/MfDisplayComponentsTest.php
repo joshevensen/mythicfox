@@ -27,12 +27,12 @@ test('MfStatusPill maps the documented status pairs to brand-free Tailwind color
     expect($source)
         ->toContain("status === 'Completed - Paid'")
         ->toContain('bg-emerald-500')
-        ->toContain('bg-amber-500')
         ->toContain('bg-red-500')
         ->toContain('bg-slate-200')
         ->toContain('pi-check')
-        ->toContain('pi-clock')
-        ->toContain('pi-times');
+        ->toContain('pi-times')
+        ->not->toContain('Awaiting shipment')
+        ->not->toContain('trackingNumber');
 });
 
 test('MfMoney binds to useMoney and respects align prop', function () {

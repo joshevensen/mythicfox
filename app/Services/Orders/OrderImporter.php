@@ -129,8 +129,8 @@ class OrderImporter
             }
         }
 
-        // Step 3+4: upsert orders + create order_items for new orders. Single
-        // outer transaction; any unexpected failure rolls back the whole batch.
+        // Step 3+4: upsert orders + order_items. Single outer transaction; any
+        // unexpected failure rolls back the whole batch.
         DB::transaction(function () use ($orderListRows, $shippingByOrder, $pullSheetByOrder, $pdfByOrder, $result) {
             foreach ($orderListRows as $row) {
                 $existing = Order::where('tcgplayer_order_number', $row->tcgplayerOrderNumber)
@@ -139,7 +139,17 @@ class OrderImporter
                 $shipping = $shippingByOrder[$row->tcgplayerOrderNumber] ?? null;
 
                 if ($existing) {
-                    $this->updateExisting($existing, $row, $shipping, $result);
+                    $orderChanged = $this->updateExisting($existing, $row, $shipping);
+                    $itemsChanged = $this->syncOrderItems(
+                        $existing,
+                        $pullSheetByOrder[$row->tcgplayerOrderNumber] ?? [],
+                        $pdfByOrder[$row->tcgplayerOrderNumber] ?? [],
+                        $result,
+                    );
+
+                    if ($orderChanged || $itemsChanged) {
+                        $result->ordersUpdated++;
+                    }
 
                     continue;
                 }
@@ -174,30 +184,56 @@ class OrderImporter
         ]);
     }
 
-    private function updateExisting(Order $existing, OrderListRow $row, ?ShippingExportRow $shipping, OrderImportResult $result): void
+    /**
+     * Refresh an existing order's header fields from the latest batch. Shipping
+     * fields are only touched when the batch includes a ShippingExport row for
+     * this order, so a batch without that file never blanks them out.
+     */
+    private function updateExisting(Order $existing, OrderListRow $row, ?ShippingExportRow $shipping): bool
     {
-        $changed = false;
-
-        if ($existing->tcgplayer_status !== $row->tcgplayerStatus) {
-            $existing->tcgplayer_status = $row->tcgplayerStatus;
-            $changed = true;
-        }
+        $existing->fill([
+            'tcgplayer_status' => $row->tcgplayerStatus,
+            'buyer_name' => $row->buyerName,
+            'product_amount' => $row->productAmount,
+            'shipping_amount' => $row->shippingAmount,
+            'total_amount' => $row->totalAmount,
+            'buyer_paid' => $row->buyerPaid,
+        ]);
 
         if ($shipping !== null) {
-            if ($existing->tracking_number !== $shipping->trackingNumber) {
-                $existing->tracking_number = $shipping->trackingNumber;
-                $changed = true;
-            }
-            if ($existing->carrier !== $shipping->carrier) {
-                $existing->carrier = $shipping->carrier;
-                $changed = true;
-            }
+            $existing->fill($this->shippingAttributes($shipping));
         }
 
-        if ($changed) {
-            $existing->save();
-            $result->ordersUpdated++;
+        if (! $existing->isDirty()) {
+            return false;
         }
+
+        $existing->save();
+
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function shippingAttributes(ShippingExportRow $shipping): array
+    {
+        return [
+            'buyer_firstname' => $shipping->buyerFirstname,
+            'buyer_lastname' => $shipping->buyerLastname,
+            'address1' => $shipping->address1,
+            'address2' => $shipping->address2,
+            'city' => $shipping->city,
+            'state' => $shipping->state,
+            'postal_code' => $shipping->postalCode,
+            'country' => $shipping->country,
+            'order_date' => $shipping->orderDate,
+            'shipping_method' => $shipping->shippingMethod,
+            'item_count' => $shipping->itemCount,
+            'product_weight' => $shipping->productWeight,
+            'tracking_number' => $shipping->trackingNumber,
+            'carrier' => $shipping->carrier,
+        ];
     }
 
     private function insertNew(OrderListRow $row, ?ShippingExportRow $shipping): Order
@@ -228,6 +264,75 @@ class OrderImporter
             'carrier' => $shipping?->carrier,
             'imported_at' => Carbon::now(),
         ]);
+    }
+
+    /**
+     * Reconcile an existing order's line items with the latest batch. Pull sheet
+     * lines missing from the order are created; matching lines only have empty
+     * fields (prices, SKU) filled in. Existing values are never overwritten and
+     * no line is ever deleted.
+     *
+     * @param  list<PullSheetLineItem>  $pullSheetItems
+     * @param  list<PackingSlipLine>  $pdfLines
+     */
+    private function syncOrderItems(Order $order, array $pullSheetItems, array $pdfLines, OrderImportResult $result): bool
+    {
+        if ($pullSheetItems === []) {
+            return false;
+        }
+
+        $existingItems = $order->items()->get()->all();
+        $missing = [];
+        $changed = false;
+
+        foreach ($pullSheetItems as $pullItem) {
+            $matchIndex = null;
+            foreach ($existingItems as $index => $item) {
+                if ($this->isSameLine($item, $pullItem)) {
+                    $matchIndex = $index;
+                    break;
+                }
+            }
+
+            if ($matchIndex === null) {
+                $missing[] = $pullItem;
+
+                continue;
+            }
+
+            $item = $existingItems[$matchIndex];
+            unset($existingItems[$matchIndex]);
+
+            $pdfMatch = $this->matchPdfLine($pdfLines, $pullItem);
+            if ($pdfMatch !== null) {
+                $item->unit_price ??= $pdfMatch->unitPrice;
+                $item->total_price ??= $pdfMatch->totalPrice;
+            }
+            $item->tcgplayer_sku_id ??= $pullItem->tcgplayerSkuId;
+
+            if ($item->isDirty()) {
+                $item->save();
+                $result->lineItemsUpdated++;
+                $changed = true;
+            }
+        }
+
+        if ($missing !== []) {
+            $this->createOrderItems($order, $missing, $pdfLines, $result);
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    private function isSameLine(OrderItem $item, PullSheetLineItem $pullItem): bool
+    {
+        return $item->product_line === $pullItem->productLine
+            && $item->set_name === $pullItem->setName
+            && $item->product_name === $pullItem->productName
+            && $item->number === $pullItem->number
+            && $item->rarity === $pullItem->rarity
+            && $item->condition === $pullItem->condition;
     }
 
     /**

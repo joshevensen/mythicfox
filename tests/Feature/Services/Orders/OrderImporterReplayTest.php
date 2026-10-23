@@ -102,11 +102,31 @@ test('a new order appearing only in a later batch is inserted', function () {
     expect($result->ordersInserted)->toBe(2);
 });
 
-test('null line prices stay null on re-import even when PDF is now provided ("never refill")', function () {
+test('null line prices are filled on re-import when the PDF is now provided', function () {
     (new OrderImporter)->import(singleOrderInput());
 
     $line = OrderItem::firstOrFail();
     expect($line->unit_price)->toBeNull();
+
+    $second = (new OrderImporter)->import(new OrderImportInput(
+        orderListPath: replayFixture('merge-orderlist.csv'),
+        shippingExportPath: replayFixture('merge-shipping.csv'),
+        pullSheetPath: replayFixture('merge-pullsheet.csv'),
+        packingSlipPdfPath: replayFixture('packing-slips-sample.pdf'),
+    ));
+
+    expect($line->refresh()->unit_price)->toBe(690);
+    expect($line->total_price)->toBe(690);
+    expect($second->lineItemsUpdated)->toBe(1);
+    expect($second->ordersUpdated)->toBe(1);
+    expect(OrderItem::count())->toBe(1);
+});
+
+test('existing line prices are never overwritten on re-import', function () {
+    (new OrderImporter)->import(singleOrderInput());
+
+    $line = OrderItem::firstOrFail();
+    $line->update(['unit_price' => 123, 'total_price' => 123]);
 
     (new OrderImporter)->import(new OrderImportInput(
         orderListPath: replayFixture('merge-orderlist.csv'),
@@ -115,7 +135,44 @@ test('null line prices stay null on re-import even when PDF is now provided ("ne
         packingSlipPdfPath: replayFixture('packing-slips-sample.pdf'),
     ));
 
-    expect($line->refresh()->unit_price)->toBeNull();
+    expect($line->refresh()->unit_price)->toBe(123);
+    expect($line->total_price)->toBe(123);
+});
+
+test('line items are created on re-import for an existing order that has none', function () {
+    (new OrderImporter)->import(new OrderImportInput(
+        orderListPath: replayFixture('merge-orderlist.csv'),
+        shippingExportPath: replayFixture('merge-shipping.csv'),
+    ));
+    expect(OrderItem::count())->toBe(0);
+
+    $second = (new OrderImporter)->import(new OrderImportInput(
+        orderListPath: replayFixture('merge-orderlist.csv'),
+        shippingExportPath: replayFixture('merge-shipping.csv'),
+        pullSheetPath: replayFixture('merge-pullsheet.csv'),
+        packingSlipPdfPath: replayFixture('packing-slips-sample.pdf'),
+    ));
+
+    expect($second->ordersInserted)->toBe(0);
+    expect($second->lineItemsCreated)->toBe(1);
+    expect(OrderItem::firstOrFail()->unit_price)->toBe(690);
+});
+
+test('shipping details are refreshed on re-import but kept when the ShippingExport is omitted', function () {
+    (new OrderImporter)->import(new OrderImportInput(
+        orderListPath: replayFixture('merge-orderlist.csv'),
+    ));
+
+    $thomas = Order::where('tcgplayer_order_number', '623394E9-23CAFE-565FC')->firstOrFail();
+    expect($thomas->city)->toBeNull();
+
+    (new OrderImporter)->import(singleOrderInput());
+    expect($thomas->refresh()->city)->toBe('Newfield');
+
+    (new OrderImporter)->import(new OrderImportInput(
+        orderListPath: replayFixture('merge-orderlist.csv'),
+    ));
+    expect($thomas->refresh()->city)->toBe('Newfield');
 });
 
 test('re-uploading the same file produces a fresh files row with a fresh ULID-based path', function () {

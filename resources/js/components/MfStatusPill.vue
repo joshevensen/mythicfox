@@ -3,7 +3,6 @@ import { computed } from 'vue';
 
 type Props = {
     status: string;
-    trackingNumber: string | null;
 };
 
 const props = defineProps<Props>();
@@ -16,20 +15,11 @@ type PillVariant = {
 
 const variant = computed<PillVariant>(() => {
     if (props.status === 'Completed - Paid') {
-        if (props.trackingNumber) {
-            return {
-                classes:
-                    'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900',
-                icon: 'pi-check',
-                label: 'Shipped',
-            };
-        }
-
         return {
             classes:
-                'bg-amber-500 text-white dark:bg-amber-400 dark:text-slate-900',
-            icon: 'pi-clock',
-            label: 'Awaiting shipment',
+                'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900',
+            icon: 'pi-check',
+            label: props.status,
         };
     }
 
