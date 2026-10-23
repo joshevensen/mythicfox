@@ -13,8 +13,10 @@ class UpdateProductPricingRulesRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (is_string($this->input('display_name'))) {
-            $trimmed = trim($this->input('display_name'));
+        $displayName = $this->input('display_name');
+
+        if (is_string($displayName)) {
+            $trimmed = trim($displayName);
 
             $this->merge(['display_name' => $trimmed === '' ? null : $trimmed]);
         }

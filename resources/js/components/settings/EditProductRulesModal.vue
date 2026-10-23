@@ -66,8 +66,7 @@ const submit = () => {
     const savedLabel = displayName === '' ? props.product.name : displayName;
 
     form.transform((data) => ({
-        display_name:
-            data.display_name.trim() === '' ? null : data.display_name.trim(),
+        display_name: displayName === '' ? null : displayName,
         base_price: data.base_price ?? 0,
         high_price: data.high_price ?? 0,
         market_offset: data.market_offset ?? 0,
