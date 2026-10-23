@@ -26,15 +26,21 @@
 ## Bulk-upserting rows whose columns arrive in separate CSV rows or chunks
 - Buffer per column group and run one `upsert` per group, each with only that group's update columns — #66 — a single combined upsert nulls other groups' columns across chunk boundaries and depends on row order
 
-## Covering Inertia page template changes when the page has no vitest test
-- Pest Inertia prop assertions plus `file_get_contents` source assertions on the `.vue` file, with `types:check` — #66 — avoids building a component-test harness for one page
-- Pest Inertia prop assertions plus `file_get_contents` source assertions on the `.vue` file, with `types:check` — #70 — server normalizes and is behavior-tested; matches existing settings tests
-
 ## Showing a friendlier label for a record whose name is an import/sync match key
 - Separate nullable `display_name` column plus a model `display_label` accessor (`display_name ?? name`) sent in payloads — #70 — editing `name` would break import matching and create duplicates
 
 ## Naming a route that is also a prefix of existing nested route names
 - Suffix with `.index` (e.g. `settings.products.index`) — #70 — avoids a Wayfinder leaf-vs-namespace clash with `settings.products.*`; matches `catalog.index`
+- Use `.show`/`.index` leaves under namespace-only segments (`catalog.products.show`, `catalog.products.sets.show`) — #71 — no segment is both a route and a namespace
 
 ## Adding a settings area
 - Its own `settings/*` Inertia page listed in the settings sidebar (`layouts/settings/Layout.vue`) — #70 — `resolveLayout` only gives the settings shell to `settings/*` pages
+
+## Parsing sort/direction/per-page query params shared by several table controllers
+- Small final class with a static `fromRequest()` (`App\Catalog\CatalogTableParams`), spread into the query filters — #71 — removes copied constants/helpers; sort columns stay validated by each query class
+
+## Top-nav item that opens a submenu instead of linking
+- Optional `dropdown` flag on the `Section` entry plus a PrimeVue Popover (drawer lists sub-items indented) — #71 — keeps `SECTIONS` the single source of order/labels; no label string checks
+
+## Scoping a nested route model (child must belong to parent in the URL)
+- `->scopeBindings()` on the route with `whereNumber` on the IDs — #71 — mismatched parent/child returns 404 with no controller code

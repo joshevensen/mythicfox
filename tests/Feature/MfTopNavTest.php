@@ -39,3 +39,28 @@ test('MfTopNav exposes a global import button before the user menu', function ()
     expect(strpos($source, 'data-test="topnav-import-button"'))
         ->toBeLessThan(strpos($source, 'data-test="topnav-user-menu"'));
 });
+
+test('MfTopNav renders Catalog as a product dropdown from shared props', function () {
+    $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
+
+    expect($source)
+        ->toContain('catalog_products')
+        ->toContain('catalogPopover')
+        ->toContain('topnav-catalog-product-')
+        ->toContain('drawer-catalog-product-')
+        ->toContain('@/routes/catalog/products')
+        ->toContain('aria-haspopup')
+        ->toContain("label: 'Catalog'")
+        ->not->toContain("href: '/catalog'")
+        ->not->toContain("href: '/orders'")
+        ->not->toContain('TODO(phase-50/60)');
+});
+
+test('catalog dropdown is driven by a section flag, not its label', function () {
+    $source = file_get_contents(resource_path('js/components/MfTopNav.vue'));
+
+    expect($source)
+        ->toContain('dropdown: true')
+        ->toContain('section.dropdown')
+        ->not->toContain("section.label === 'Catalog'");
+});
