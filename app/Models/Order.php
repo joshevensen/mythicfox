@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'buyer_paid',
     'tracking_number',
     'carrier',
+    'imb_barcode',
     'imported_at',
 ])]
 class Order extends Model

@@ -19,6 +19,10 @@ use Symfony\Component\Process\Process;
  *
  * When a description wraps, the continuation appears on the very next line,
  * indented more deeply with no price columns.
+ *
+ * Each order's slip also carries a USPS Intelligent Mail barcode (IMb) rendered
+ * as a line of exactly 65 F/A/D/T characters; it is attached to every line item
+ * that follows it within the same order.
  */
 class PackingSlipPdfParser
 {
@@ -61,6 +65,7 @@ class PackingSlipPdfParser
         $lines = explode("\n", $text);
         $results = collect();
         $currentOrderNumber = null;
+        $currentImbBarcode = null;
         $validated = [];
         $count = count($lines);
 
@@ -74,12 +79,22 @@ class PackingSlipPdfParser
                     $this->sellerIdValidator->assertValid($orderNumber);
                     $validated[$orderNumber] = true;
                 }
+                if ($orderNumber !== $currentOrderNumber) {
+                    $currentImbBarcode = null;
+                }
                 $currentOrderNumber = $orderNumber;
 
                 continue;
             }
 
             if ($currentOrderNumber === null) {
+                continue;
+            }
+
+            // USPS Intelligent Mail barcode: a line of exactly 65 F/A/D/T characters.
+            if (preg_match('/^\s*([FADT]{65})\s*$/', $line, $m)) {
+                $currentImbBarcode = $m[1];
+
                 continue;
             }
 
@@ -113,7 +128,7 @@ class PackingSlipPdfParser
                 }
             }
 
-            $parsed = $this->parseDescription(trim($description), $currentOrderNumber, $quantity, $unitCents, $totalCents);
+            $parsed = $this->parseDescription(trim($description), $currentOrderNumber, $quantity, $unitCents, $totalCents, $currentImbBarcode);
             if ($parsed !== null) {
                 $results->push($parsed);
             }
@@ -128,6 +143,7 @@ class PackingSlipPdfParser
         int $quantity,
         int $unitCents,
         int $totalCents,
+        ?string $imbBarcode,
     ): ?PackingSlipLine {
         // Anchor on `#<Number>`. The number capture allows `//` for double-sided tokens.
         if (! preg_match('/^(.+?)\s+-\s+#([\w\/]+(?:\s*\/\/\s*[\w\/]+)*)\s+-\s+(.+)$/', $description, $parts)) {
@@ -149,6 +165,7 @@ class PackingSlipPdfParser
                         condition: '',
                         unitPrice: $unitCents,
                         totalPrice: $totalCents,
+                        imbBarcode: $imbBarcode,
                     );
                 }
             }
@@ -184,6 +201,7 @@ class PackingSlipPdfParser
                     condition: '',
                     unitPrice: $unitCents,
                     totalPrice: $totalCents,
+                    imbBarcode: $imbBarcode,
                 );
             }
 
@@ -203,6 +221,7 @@ class PackingSlipPdfParser
             condition: trim($afterParts[1]),
             unitPrice: $unitCents,
             totalPrice: $totalCents,
+            imbBarcode: $imbBarcode,
         );
     }
 

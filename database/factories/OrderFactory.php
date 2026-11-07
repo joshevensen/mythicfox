@@ -46,6 +46,7 @@ class OrderFactory extends Factory
             'buyer_paid' => true,
             'tracking_number' => null,
             'carrier' => null,
+            'imb_barcode' => null,
             'imported_at' => Carbon::now(),
         ];
     }

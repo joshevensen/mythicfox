@@ -119,6 +119,7 @@ class PackingSlipController extends Controller
             'order_date' => $order->order_date?->format('M j, Y'),
             'total_amount_formatted' => Number::currency(($order->total_amount ?? 0) / 100, 'USD', 'en'),
             'shipping_method' => $order->shipping_method,
+            'imb_barcode' => $order->imb_barcode,
             'sheets' => $sheets,
         ];
     }

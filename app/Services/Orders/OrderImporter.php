@@ -137,9 +137,11 @@ class OrderImporter
                     ->lockForUpdate()
                     ->first();
                 $shipping = $shippingByOrder[$row->tcgplayerOrderNumber] ?? null;
+                $firstPdfLine = $pdfByOrder[$row->tcgplayerOrderNumber][0] ?? null;
+                $imbBarcode = $firstPdfLine?->imbBarcode;
 
                 if ($existing) {
-                    $orderChanged = $this->updateExisting($existing, $row, $shipping);
+                    $orderChanged = $this->updateExisting($existing, $row, $shipping, $imbBarcode);
                     $itemsChanged = $this->syncOrderItems(
                         $existing,
                         $pullSheetByOrder[$row->tcgplayerOrderNumber] ?? [],
@@ -154,7 +156,7 @@ class OrderImporter
                     continue;
                 }
 
-                $order = $this->insertNew($row, $shipping);
+                $order = $this->insertNew($row, $shipping, $imbBarcode);
                 $result->ordersInserted++;
 
                 $this->createOrderItems(
@@ -187,9 +189,12 @@ class OrderImporter
     /**
      * Refresh an existing order's header fields from the latest batch. Shipping
      * fields are only touched when the batch includes a ShippingExport row for
-     * this order, so a batch without that file never blanks them out.
+     * this order, so a batch without that file never blanks them out. The IMb
+     * barcode is only written when the packing-slip PDF supplied one; a null
+     * barcode never overwrites a stored value, and an identical value is not
+     * counted as a change.
      */
-    private function updateExisting(Order $existing, OrderListRow $row, ?ShippingExportRow $shipping): bool
+    private function updateExisting(Order $existing, OrderListRow $row, ?ShippingExportRow $shipping, ?string $imbBarcode): bool
     {
         $existing->fill([
             'tcgplayer_status' => $row->tcgplayerStatus,
@@ -202,6 +207,10 @@ class OrderImporter
 
         if ($shipping !== null) {
             $existing->fill($this->shippingAttributes($shipping));
+        }
+
+        if ($imbBarcode !== null) {
+            $existing->imb_barcode = $imbBarcode;
         }
 
         if (! $existing->isDirty()) {
@@ -236,7 +245,7 @@ class OrderImporter
         ];
     }
 
-    private function insertNew(OrderListRow $row, ?ShippingExportRow $shipping): Order
+    private function insertNew(OrderListRow $row, ?ShippingExportRow $shipping, ?string $imbBarcode): Order
     {
         $orderDate = $shipping?->orderDate ?? $row->orderDate;
 
@@ -262,6 +271,7 @@ class OrderImporter
             'buyer_paid' => $row->buyerPaid,
             'tracking_number' => $shipping?->trackingNumber,
             'carrier' => $shipping?->carrier,
+            'imb_barcode' => $imbBarcode,
             'imported_at' => Carbon::now(),
         ]);
     }
