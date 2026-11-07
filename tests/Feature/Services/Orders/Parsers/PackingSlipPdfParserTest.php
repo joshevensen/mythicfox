@@ -108,11 +108,11 @@ test('IMb fixture: every line carries its order\'s 65-character IMb barcode', fu
     expect($byOrder['623394E9-85D84F-CA3FC'])->toHaveCount(1);
 
     foreach ($byOrder['623394E9-44ECCD-BE247'] as $line) {
-        expect($line->imbBarcode)->toBe('FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF');
+        expect($line->imbBarcode)->toBe('DFTFDATTDADTTDAATFFAFTDFFAATADFDFFFTFATFAAADADDDATTAFFFTADFATTTDD');
     }
 
     foreach ($byOrder['623394E9-85D84F-CA3FC'] as $line) {
-        expect($line->imbBarcode)->toBe('FFFFTDDAFDFAATDFDTFAADDTDFFATTATDTDTDDFAFFDDAFFFADDFFATFDFDATATDF');
+        expect($line->imbBarcode)->toBe('DDFFDDDFATDDDDTFTFDFAADTATATDFFFAAADTADFFTFTDAADDFTFDFDFFDDFFTDTD');
     }
 });
 

@@ -187,8 +187,8 @@ test('OrderImportResult::summaryLine handles the only-new case without unmatched
 
 const IMB_ORDER_A = '623394E9-44ECCD-BE247';
 const IMB_ORDER_B = '623394E9-85D84F-CA3FC';
-const IMB_BARCODE_A = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
-const IMB_BARCODE_B = 'FFFFTDDAFDFAATDFDTFAADDTDFFATTATDTDTDDFAFFDDAFFFADDFFATFDFDATATDF';
+const IMB_BARCODE_A = 'DFTFDATTDADTTDAATFFAFTDFFAATADFDFFFTFATFAAADADDDATTAFFFTADFATTTDD';
+const IMB_BARCODE_B = 'DDFFDDDFATDDDDTFTFDFAADTATATDFFFAAADTADFFTFTDAADDFTFDFDFFDDFFTDTD';
 
 /**
  * Writes a temporary OrderList CSV listing both orders present in the IMb packing-slip fixture.
@@ -199,8 +199,8 @@ function imbOrderListCsv(): string
 
     file_put_contents($path, implode("\n", [
         'Order #,Buyer Name,Order Date,Status,Shipping Type,Product Amt,Shipping Amt,Total Amt,Buyer Paid,Carrier Information',
-        '"623394E9-44ECCD-BE247","Connor Vanatta","Tuesday, 27 October 2026","Completed - Paid","Standard","6.07","1.31","7.38","True"',
-        '"623394E9-85D84F-CA3FC","Matthew Feeney","Wednesday, 4 November 2026","Completed - Paid","Standard","0.44","1.31","1.75","True"',
+        '"623394E9-44ECCD-BE247","Buyer 01 Test","Tuesday, 27 October 2026","Completed - Paid","Standard","6.07","1.31","7.38","True"',
+        '"623394E9-85D84F-CA3FC","Buyer 02 Test","Wednesday, 4 November 2026","Completed - Paid","Standard","0.44","1.31","1.75","True"',
     ])."\n");
 
     return $path;
@@ -253,6 +253,23 @@ test('IMb: re-import with the IMb packing slip fills barcodes on existing orders
     expect($second->ordersUpdated)->toBe(2);
     expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
     expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: a different barcode from a newer packing slip replaces the stored one', function () {
+    $orderList = imbOrderListCsv();
+
+    (new OrderImporter)->import(buildInput(orderList: $orderList, pdf: mergeFixture('packing-slips-imb-sample.pdf')));
+    Order::where('tcgplayer_order_number', IMB_ORDER_A)->update(['imb_barcode' => str_repeat('T', 65)]);
+
+    $second = (new OrderImporter)->import(buildInput(
+        orderList: $orderList,
+        pdf: mergeFixture('packing-slips-imb-sample.pdf'),
+    ));
+
+    expect($second->ordersUpdated)->toBe(1);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
 
     @unlink($orderList);
 });

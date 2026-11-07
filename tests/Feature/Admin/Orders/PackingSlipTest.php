@@ -473,7 +473,7 @@ test('orders table has a nullable imb_barcode column', function () {
 });
 
 test('imb_barcode is mass-assignable and persists a 65-character barcode', function () {
-    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+    $barcode = 'DFTFDATTDADTTDAATFFAFTDFFAATADFDFFFTFATFAAADADDDATTAFFFTADFATTTDD';
 
     expect((new Order)->fill(['imb_barcode' => $barcode])->imb_barcode)->toBe($barcode);
 
@@ -483,7 +483,7 @@ test('imb_barcode is mass-assignable and persists a 65-character barcode', funct
 });
 
 test('per-order packing-slip props include the order-level imb_barcode', function () {
-    $barcode = 'FFFFTDDAFDFAATDFDTFAADDTDFFATTATDTDTDDFAFFDDAFFFADDFFATFDFDATATDF';
+    $barcode = 'DDFFDDDFATDDDDTFTFDFAADTATATDFFFAAADTADFFTFTDAADDFTFDFDFFDDFFTDTD';
     $order = Order::factory()->create(['imb_barcode' => $barcode]);
 
     $this->get(route('orders.packing-slip.show', $order))
@@ -503,7 +503,7 @@ test('per-order packing-slip props include imb_barcode as null when the order ha
 });
 
 test('bulk packing-slip props include each order\'s imb_barcode (set and null)', function () {
-    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+    $barcode = 'DFTFDATTDADTTDAATFFAFTDFFAATADFDFFFTFATFAAADADDDATTAFFFTADFATTTDD';
     Order::factory()->create(['tcgplayer_order_number' => 'IMB-BULK-1', 'imb_barcode' => $barcode]);
     Order::factory()->create(['tcgplayer_order_number' => 'IMB-BULK-2', 'imb_barcode' => null]);
 
@@ -519,7 +519,7 @@ test('bulk packing-slip props include each order\'s imb_barcode (set and null)',
 });
 
 test('imb_barcode is order-level only and is not repeated inside sheets', function () {
-    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+    $barcode = 'DFTFDATTDADTTDAATFFAFTDFFAATADFDFFFTFATFAAADADDDATTAFFFTADFATTTDD';
     $order = Order::factory()
         ->has(OrderItem::factory()->count(21)->state(['quantity' => 1, 'unit_price' => 25]), 'items')
         ->create(['imb_barcode' => $barcode]);
