@@ -182,3 +182,117 @@ test('OrderImportResult::summaryLine handles the only-new case without unmatched
     $result = new OrderImportResult(ordersInserted: 1);
     expect($result->summaryLine())->toBe('Imported 1 order (1 new, 0 updated).');
 });
+
+// ── Intelligent Mail barcode (IMb) ────────────────────────────
+
+const IMB_ORDER_A = '623394E9-44ECCD-BE247';
+const IMB_ORDER_B = '623394E9-85D84F-CA3FC';
+const IMB_BARCODE_A = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+const IMB_BARCODE_B = 'FFFFTDDAFDFAATDFDTFAADDTDFFATTATDTDTDDFAFFDDAFFFADDFFATFDFDATATDF';
+
+/**
+ * Writes a temporary OrderList CSV listing both orders present in the IMb packing-slip fixture.
+ */
+function imbOrderListCsv(): string
+{
+    $path = sys_get_temp_dir().'/orderlist-imb-'.uniqid().'.csv';
+
+    file_put_contents($path, implode("\n", [
+        'Order #,Buyer Name,Order Date,Status,Shipping Type,Product Amt,Shipping Amt,Total Amt,Buyer Paid,Carrier Information',
+        '"623394E9-44ECCD-BE247","Connor Vanatta","Tuesday, 27 October 2026","Completed - Paid","Standard","6.07","1.31","7.38","True"',
+        '"623394E9-85D84F-CA3FC","Matthew Feeney","Wednesday, 4 November 2026","Completed - Paid","Standard","0.44","1.31","1.75","True"',
+    ])."\n");
+
+    return $path;
+}
+
+test('IMb: importing with the IMb packing slip stores each order\'s barcode on insert', function () {
+    $orderList = imbOrderListCsv();
+
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: $orderList,
+        pdf: mergeFixture('packing-slips-imb-sample.pdf'),
+    ));
+
+    expect($result->ordersInserted)->toBe(2);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: identical re-import keeps barcodes and does not count orders as updated', function () {
+    $orderList = imbOrderListCsv();
+    $input = buildInput(orderList: $orderList, pdf: mergeFixture('packing-slips-imb-sample.pdf'));
+
+    (new OrderImporter)->import($input);
+    $second = (new OrderImporter)->import($input);
+
+    expect($second->ordersInserted)->toBe(0);
+    expect($second->ordersUpdated)->toBe(0);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: re-import with the IMb packing slip fills barcodes on existing orders and counts them as updated', function () {
+    $orderList = imbOrderListCsv();
+
+    $first = (new OrderImporter)->import(buildInput(orderList: $orderList));
+    expect($first->ordersInserted)->toBe(2);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBeNull();
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBeNull();
+
+    $second = (new OrderImporter)->import(buildInput(
+        orderList: $orderList,
+        pdf: mergeFixture('packing-slips-imb-sample.pdf'),
+    ));
+
+    expect($second->ordersInserted)->toBe(0);
+    expect($second->ordersUpdated)->toBe(2);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: re-import without a PDF never overwrites a stored barcode with null', function () {
+    $orderList = imbOrderListCsv();
+
+    (new OrderImporter)->import(buildInput(orderList: $orderList, pdf: mergeFixture('packing-slips-imb-sample.pdf')));
+
+    $second = (new OrderImporter)->import(buildInput(orderList: $orderList));
+
+    expect($second->ordersUpdated)->toBe(0);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: re-import with an old-format (barcode-less) PDF never overwrites a stored barcode with null', function () {
+    $orderList = imbOrderListCsv();
+
+    (new OrderImporter)->import(buildInput(orderList: $orderList, pdf: mergeFixture('packing-slips-imb-sample.pdf')));
+
+    (new OrderImporter)->import(buildInput(orderList: $orderList, pdf: mergeFixture('packing-slips-sample.pdf')));
+
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_A)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_A);
+    expect(Order::where('tcgplayer_order_number', IMB_ORDER_B)->firstOrFail()->imb_barcode)->toBe(IMB_BARCODE_B);
+
+    @unlink($orderList);
+});
+
+test('IMb: happy-path import with the old-format PDF leaves imb_barcode null', function () {
+    (new OrderImporter)->import(buildInput(
+        orderList: mergeFixture('merge-orderlist.csv'),
+        shipping: mergeFixture('merge-shipping.csv'),
+        pull: mergeFixture('merge-pullsheet.csv'),
+        pdf: mergeFixture('packing-slips-sample.pdf'),
+    ));
+
+    $thomas = Order::where('tcgplayer_order_number', '623394E9-23CAFE-565FC')->firstOrFail();
+    expect($thomas->getAttributes())->toHaveKey('imb_barcode');
+    expect($thomas->imb_barcode)->toBeNull();
+});

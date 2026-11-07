@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -459,4 +460,97 @@ test('orders index page wires the select-all-matching flag through the bulk-acti
         ->toContain('buildSelectAllUrl')
         ->toContain("select_all: '1'")
         ->toContain('FILTER_SIGNATURE_KEYS');
+});
+
+// ── Intelligent Mail barcode (IMb) ────────────────────────────
+
+test('orders table has a nullable imb_barcode column', function () {
+    expect(Schema::hasColumn('orders', 'imb_barcode'))->toBeTrue();
+
+    $order = Order::factory()->create(['imb_barcode' => null]);
+    expect($order->fresh()->getAttributes())->toHaveKey('imb_barcode');
+    expect($order->fresh()->imb_barcode)->toBeNull();
+});
+
+test('imb_barcode is mass-assignable and persists a 65-character barcode', function () {
+    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+
+    expect((new Order)->fill(['imb_barcode' => $barcode])->imb_barcode)->toBe($barcode);
+
+    $order = Order::factory()->create(['imb_barcode' => $barcode]);
+
+    expect($order->fresh()->imb_barcode)->toBe($barcode);
+});
+
+test('per-order packing-slip props include the order-level imb_barcode', function () {
+    $barcode = 'FFFFTDDAFDFAATDFDTFAADDTDFFATTATDTDTDDFAFFDDAFFFADDFFATFDFDATATDF';
+    $order = Order::factory()->create(['imb_barcode' => $barcode]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('orders.0.imb_barcode', $barcode));
+});
+
+test('per-order packing-slip props include imb_barcode as null when the order has none', function () {
+    $order = Order::factory()->create(['imb_barcode' => null]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('orders.0.imb_barcode')
+            ->where('orders.0.imb_barcode', null)
+        );
+});
+
+test('bulk packing-slip props include each order\'s imb_barcode (set and null)', function () {
+    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+    Order::factory()->create(['tcgplayer_order_number' => 'IMB-BULK-1', 'imb_barcode' => $barcode]);
+    Order::factory()->create(['tcgplayer_order_number' => 'IMB-BULK-2', 'imb_barcode' => null]);
+
+    $this->get(route('orders.packing-slip.bulk', ['ids' => 'IMB-BULK-1,IMB-BULK-2']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orders.0.tcgplayer_order_number', 'IMB-BULK-1')
+            ->where('orders.0.imb_barcode', $barcode)
+            ->where('orders.1.tcgplayer_order_number', 'IMB-BULK-2')
+            ->has('orders.1.imb_barcode')
+            ->where('orders.1.imb_barcode', null)
+        );
+});
+
+test('imb_barcode is order-level only and is not repeated inside sheets', function () {
+    $barcode = 'FDATDDDFTFDFDATFTAFFTFFDFTFTTADADFFTTTTFTATAFDFTTDTFDFAAFAFTFTADF';
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(21)->state(['quantity' => 1, 'unit_price' => 25]), 'items')
+        ->create(['imb_barcode' => $barcode]);
+
+    $this->get(route('orders.packing-slip.show', $order))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orders.0.imb_barcode', $barcode)
+            ->has('orders.0.sheets', 2)
+            ->missing('orders.0.sheets.0.imb_barcode')
+            ->missing('orders.0.sheets.1.imb_barcode')
+        );
+});
+
+test('PackingSlip.vue renders the IMb barcode only on the first sheet, between address and recipient lines', function () {
+    $src = file_get_contents(resource_path('js/pages/Orders/PackingSlip.vue'));
+
+    expect($src)
+        ->toContain('imb_barcode: string | null')
+        ->toContain('order.imb_barcode && sheet.sheet_index === 1')
+        ->toContain('imb-barcode-${order.tcgplayer_order_number}')
+        ->toContain('shape-rendering="crispEdges"')
+        ->toContain('imbBars(order.imb_barcode)');
+
+    $addressPos = strpos($src, 'class="recipient-address"');
+    $barcodePos = strpos($src, 'class="imb-barcode"');
+    $linesPos = strpos($src, 'recipientLines(order)"');
+
+    expect($addressPos)->not->toBeFalse();
+    expect($barcodePos)->not->toBeFalse();
+    expect($linesPos)->not->toBeFalse();
+    expect($addressPos)->toBeLessThan($barcodePos);
+    expect($barcodePos)->toBeLessThan($linesPos);
 });
