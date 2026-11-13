@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import { abbreviateCondition } from '@/lib/conditionAbbreviation';
 import { abbreviateGame } from '@/lib/gameAbbreviations';
+import { IMB_HEIGHT, IMB_WIDTH, imbBars } from '@/lib/imbBarcode';
 
 type OrderItem = {
     product_line: string;
@@ -33,6 +34,7 @@ type OrderData = {
     order_date: string | null;
     total_amount_formatted: string;
     shipping_method: string | null;
+    imb_barcode: string | null;
     sheets: Sheet[];
 };
 
@@ -162,8 +164,33 @@ function sheetTotalPrice(sheet: Sheet): string {
                 <!-- Recipient address — lower window (5.75"–7") -->
                 <div
                     class="recipient-address"
+                    :class="{
+                        'recipient-address--with-imb':
+                            order.imb_barcode && sheet.sheet_index === 1,
+                    }"
                     :data-test="`recipient-address-${order.tcgplayer_order_number}`"
                 >
+                    <svg
+                        v-if="order.imb_barcode && sheet.sheet_index === 1"
+                        class="imb-barcode"
+                        :data-test="`imb-barcode-${order.tcgplayer_order_number}`"
+                        xmlns="http://www.w3.org/2000/svg"
+                        :width="`${IMB_WIDTH}in`"
+                        :height="`${IMB_HEIGHT}in`"
+                        :viewBox="`0 0 ${IMB_WIDTH} ${IMB_HEIGHT}`"
+                        shape-rendering="crispEdges"
+                        aria-hidden="true"
+                    >
+                        <rect
+                            v-for="(bar, i) in imbBars(order.imb_barcode)"
+                            :key="i"
+                            :x="bar.x"
+                            :y="bar.y"
+                            :width="bar.width"
+                            :height="bar.height"
+                            fill="#000"
+                        />
+                    </svg>
                     <div
                         v-for="(line, i) in recipientLines(order)"
                         :key="i"
@@ -411,6 +438,17 @@ function sheetTotalPrice(sheet: Sheet): string {
     flex-direction: column;
     justify-content: center;
     line-height: 1.4;
+}
+
+/* Tighter spacing when the IMb barcode shares the 1.25in window with the address */
+.recipient-address--with-imb {
+    line-height: 1.25;
+}
+
+.imb-barcode {
+    display: block;
+    flex: none;
+    margin-bottom: 0.03in;
 }
 
 .buyer-name {

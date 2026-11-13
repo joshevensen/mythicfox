@@ -16,10 +16,6 @@
 ## Asserting PrimeVue component props in a vitest component test
 - Explicit `defineComponent` stubs declaring the props under test — #65 — PrimeVue declares props on an extended base component, which `stubs: { X: true }` doesn't copy
 
-## Changing the columns of an existing table
-- New migration (add/drop columns); never edit the original create migration — #66 — deployed databases must migrate forward cleanly
-- New migration (add/drop columns); never edit the original create migration — #70 — added `products.display_name` in its own migration
-
 ## Sorting a paginated query by a nullable computed value with nulls last
 - `orderByRaw("{expr} IS NULL")` then `orderByRaw("{expr} {dir}")`, repeating the expression instead of its alias — #66 — portable across PostgreSQL/MySQL/SQLite; PostgreSQL rejects aliases inside ORDER BY expressions
 
@@ -63,3 +59,12 @@
 
 ## Collapsible sections on an admin page
 - Reuse `components/ui/collapsible` (reka-ui), one instance per section, default closed — #80 — already in the repo and gives each section independent open state with no extra wiring
+
+## Test fixtures derived from real customer documents (packing slips, exports)
+- Re-render with fake buyer names/addresses and synthetic barcodes, verifying parsed output is unchanged — #84 — keeps real customer data out of the repo
+
+## Carrying a per-order value parsed from the packing-slip PDF into the importer
+- Nullable field on `PackingSlipLine`, read from the order's first line — #84 — keeps `parse()`'s signature and one pdftotext pass
+
+## Testing state transitions in a private text-parsing method that real fixtures don't reach
+- Synthetic text through a closure bound to the private method — #84 — real fixtures can't produce the edge sequences; avoids widening visibility

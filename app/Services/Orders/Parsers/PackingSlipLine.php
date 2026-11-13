@@ -15,5 +15,6 @@ final readonly class PackingSlipLine
         public string $condition,
         public int $unitPrice,
         public int $totalPrice,
+        public ?string $imbBarcode = null,
     ) {}
 }
