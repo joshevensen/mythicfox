@@ -554,3 +554,11 @@ test('PackingSlip.vue renders the IMb barcode only on the first sheet, between a
     expect($addressPos)->toBeLessThan($barcodePos);
     expect($barcodePos)->toBeLessThan($linesPos);
 });
+
+test('PackingSlip.vue tightens recipient address spacing only when the IMb barcode is shown', function () {
+    $src = file_get_contents(resource_path('js/pages/Orders/PackingSlip.vue'));
+
+    expect($src)->toMatch("/'recipient-address--with-imb':\s*order\.imb_barcode && sheet\.sheet_index === 1/");
+    expect($src)->toMatch('/\.recipient-address--with-imb \{\s*line-height: 1\.25;/');
+    expect($src)->toMatch('/\.recipient-address \{[^}]*line-height: 1\.4;/');
+});

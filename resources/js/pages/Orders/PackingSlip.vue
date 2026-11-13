@@ -164,6 +164,10 @@ function sheetTotalPrice(sheet: Sheet): string {
                 <!-- Recipient address — lower window (5.75"–7") -->
                 <div
                     class="recipient-address"
+                    :class="{
+                        'recipient-address--with-imb':
+                            order.imb_barcode && sheet.sheet_index === 1,
+                    }"
                     :data-test="`recipient-address-${order.tcgplayer_order_number}`"
                 >
                     <svg
@@ -436,10 +440,15 @@ function sheetTotalPrice(sheet: Sheet): string {
     line-height: 1.4;
 }
 
+/* Tighter spacing when the IMb barcode shares the 1.25in window with the address */
+.recipient-address--with-imb {
+    line-height: 1.25;
+}
+
 .imb-barcode {
     display: block;
     flex: none;
-    margin-bottom: 0.05in;
+    margin-bottom: 0.03in;
 }
 
 .buyer-name {
