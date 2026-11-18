@@ -14,7 +14,21 @@ export function useMfToast() {
         });
     };
 
-    const warning = (message: string, title?: string): void => {
+    const warning = (
+        message: string,
+        title?: string,
+        options?: { sticky?: boolean },
+    ): void => {
+        if (options?.sticky) {
+            toast.add({
+                severity: 'warn',
+                summary: title ?? 'Warning',
+                detail: message,
+            });
+
+            return;
+        }
+
         toast.add({
             severity: 'warn',
             summary: title ?? 'Warning',

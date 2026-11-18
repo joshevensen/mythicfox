@@ -24,11 +24,13 @@ type OrdersImportResult =
           orders_inserted: number;
           orders_updated: number;
           completed_at: string;
+          warnings?: string[];
       }
     | {
           success: false;
           message?: string;
           completed_at: string;
+          warnings?: string[];
       };
 
 type GlobalImports = {
@@ -56,7 +58,7 @@ const emptyImports = (): GlobalImports => ({
 });
 
 const page = usePage<{ global_imports?: GlobalImports }>();
-const { success, error } = useMfToast();
+const { success, error, warning } = useMfToast();
 
 useFlashToast();
 
@@ -129,6 +131,24 @@ const ordersSuccessMessage = (
     return `Imported ${total} ${orderWord} (${last.orders_inserted} new, ${last.orders_updated} updated).`;
 };
 
+const MAX_ORDERS_IMPORT_WARNING_TOASTS = 3;
+
+const showOrdersImportWarnings = (last: OrdersImportResult): void => {
+    const warnings = last.warnings ?? [];
+
+    warnings.slice(0, MAX_ORDERS_IMPORT_WARNING_TOASTS).forEach((message) => {
+        warning(message, 'Import warning', { sticky: true });
+    });
+
+    if (warnings.length > MAX_ORDERS_IMPORT_WARNING_TOASTS) {
+        warning(
+            `${warnings.length - MAX_ORDERS_IMPORT_WARNING_TOASTS} more warning(s) not shown.`,
+            'Import warning',
+            { sticky: true },
+        );
+    }
+};
+
 watch(
     imports,
     (next) => {
@@ -168,8 +188,10 @@ watch(
 
             if (last?.success) {
                 success(ordersSuccessMessage(last));
+                showOrdersImportWarnings(last);
             } else if (last && !last.success) {
                 error(last.message ?? 'Order import failed.', 'Import failed');
+                showOrdersImportWarnings(last);
             }
         }
 
