@@ -1,7 +1,9 @@
 <?php
 
+use App\Exceptions\OrderImport\WrongSellerException;
 use App\Services\Orders\Parsers\PackingSlipLine;
 use App\Services\Orders\Parsers\PackingSlipPdfParser;
+use App\Services\Orders\SellerIdValidator;
 use Illuminate\Support\Collection;
 
 function packingSlipFixture(): string
@@ -213,4 +215,336 @@ test('a multi-page order keeps its barcode on pages after the first', function (
 
     expect($lines)->toHaveCount(2);
     expect($lines->firstWhere('number', 'ELE004')->imbBarcode)->toBe($barcode);
+});
+
+// ── Nov 13 layout (footer-only order label, three-line items) ──────────
+
+/**
+ * A Nov 13-layout item: description lines above and below a bare qty+prices row.
+ *
+ * @param  list<string>  $above
+ * @param  list<string>  $below
+ * @return list<string>
+ */
+function nov13Item(array $above, int $quantity, string $unitPrice, string $totalPrice, array $below): array
+{
+    $indent = fn (string $line): string => '         '.$line;
+
+    return [
+        ...array_map($indent, $above),
+        '     '.$quantity.str_repeat(' ', 66).'$'.$unitPrice.'             $'.$totalPrice,
+        ...array_map($indent, $below),
+    ];
+}
+
+/**
+ * @return list<string>
+ */
+function nov13ChannelMountItem(string $number = 'ELE117'): array
+{
+    return nov13Item(
+        ['Flesh & Blood TCG - Tales of Aria - Channel Mount Heroic -'],
+        1,
+        '0.50',
+        '0.50',
+        ["#{$number} - Majestic - Near Mint 1st Edition Normal"],
+    );
+}
+
+/**
+ * One synthetic pdftotext page in the Nov 13 shape. The bare order number sits
+ * on line 1 and the only labeled `Order Number:` occurrences are in $footerLabels.
+ *
+ * @param  list<string>  $itemLines
+ * @param  list<string>  $footerLabels
+ */
+function nov13Page(string $bareOrderNumber, ?string $barcode, array $itemLines, array $footerLabels, string $totalLine = '$0.50'): string
+{
+    $lines = [
+        str_repeat(' ', 104).$bareOrderNumber,
+        '',
+        ...($barcode === null ? [] : ["        {$barcode}"]),
+        '        BUYER 99 TEST',
+        '        199 EXAMPLE STREET',
+        '        SPRINGFIELD, IL 62701',
+        '',
+        '                                                    Fold Line',
+        '',
+        'ORDER DATE        SHIPPING METHOD        BUYER        SELLER',
+        'Nov 12, 2026      Standard (7-10 days)   BUYER 99 TEST  Mythic Fox Games',
+        '',
+        ' QTY     DESCRIPTION                                                   PRICE             TOTAL',
+        '',
+        ...$itemLines,
+        '     1      Total                                                                           '.$totalLine,
+        '',
+        'For Any Questions about Your Order',
+        '',
+    ];
+
+    foreach ($footerLabels as $label) {
+        $lines[] = "Order Number: {$label}                                                      Page 1 of 1";
+    }
+
+    return implode("\n", $lines);
+}
+
+function nov13Fixture(): string
+{
+    return base_path('tests/fixtures/orders/packing-slips-nov13-sample.pdf');
+}
+
+test('Nov 13 layout: an order number that appears only in the page footer applies to the barcode and items above it', function () {
+    $barcode = 'TTDT'.str_repeat('FADT', 15).'F';
+
+    $lines = parseImbText(nov13Page(
+        '623394E9-AAAAAA-AAAAA',
+        $barcode,
+        nov13ChannelMountItem(),
+        ['623394E9-AAAAAA-AAAAA'],
+    ));
+
+    expect($lines)->toHaveCount(1);
+
+    $line = $lines->first();
+    expect($line->tcgplayerOrderNumber)->toBe('623394E9-AAAAAA-AAAAA');
+    expect($line->imbBarcode)->toBe($barcode);
+    expect($line->productLine)->toBe('Flesh & Blood TCG');
+    expect($line->setName)->toBe('Tales of Aria');
+    expect($line->productName)->toBe('Channel Mount Heroic');
+    expect($line->number)->toBe('ELE117');
+    expect($line->rarity)->toBe('Majestic');
+    expect($line->condition)->toBe('Near Mint 1st Edition Normal');
+    expect($line->quantity)->toBe(1);
+    expect($line->unitPrice)->toBe(50);
+    expect($line->totalPrice)->toBe(50);
+});
+
+test('Nov 13 layout: the three-line item path wins over the same-line match on the qty-only row', function () {
+    $text = 'Order Number: 623394E9-AAAAAA-AAAAA'."\n".nov13Page(
+        '623394E9-AAAAAA-AAAAA',
+        null,
+        nov13ChannelMountItem(),
+        ['623394E9-AAAAAA-AAAAA'],
+    );
+
+    $lines = parseImbText($text);
+
+    expect($lines)->toHaveCount(1);
+    expect($lines->first()->number)->toBe('ELE117');
+    expect($lines->first()->productName)->toBe('Channel Mount Heroic');
+    expect($lines->first()->setName)->toBe('Tales of Aria');
+    expect($lines->first()->condition)->toBe('Near Mint 1st Edition Normal');
+});
+
+test('Nov 13 fixture: lines are grouped per order with each page\'s barcode', function () {
+    $lines = (new PackingSlipPdfParser)->parse(nov13Fixture());
+
+    $byOrder = $lines->groupBy('tcgplayerOrderNumber');
+
+    expect($byOrder->keys()->sort()->values()->all())
+        ->toBe(['623394E9-13A0B1-C0FFE', '623394E9-13B2C3-BEEF2']);
+    expect($byOrder['623394E9-13A0B1-C0FFE'])->toHaveCount(2);
+    expect($byOrder['623394E9-13B2C3-BEEF2'])->toHaveCount(1);
+
+    foreach ($byOrder['623394E9-13A0B1-C0FFE'] as $line) {
+        expect($line->imbBarcode)->toBe('FDFFDTFFTTFAADFATDFTTFDTATDTTTAAFTDDDDTTTDATTTFFFAFTTAFFFDTATFDAD');
+    }
+
+    foreach ($byOrder['623394E9-13B2C3-BEEF2'] as $line) {
+        expect($line->imbBarcode)->toBe('TTATADFDFDDFDDDATDDTTDTFFAAFTFDFTTTDADATFDTAAADADFTFFFFTDDADAADAF');
+    }
+});
+
+test('Nov 13 fixture: a multi-item order splits descriptions between adjacent qty rows (ELE117, ELE147)', function () {
+    $lines = (new PackingSlipPdfParser)->parse(nov13Fixture());
+
+    $channelMount = $lines->firstWhere('number', 'ELE117');
+    expect($channelMount)->not->toBeNull();
+    expect($channelMount->tcgplayerOrderNumber)->toBe('623394E9-13A0B1-C0FFE');
+    expect($channelMount->productName)->toBe('Channel Mount Heroic');
+    expect($channelMount->rarity)->toBe('Majestic');
+    expect($channelMount->condition)->toBe('Near Mint 1st Edition Normal');
+    expect($channelMount->quantity)->toBe(1);
+    expect($channelMount->unitPrice)->toBe(50);
+    expect($channelMount->totalPrice)->toBe(50);
+
+    $blizzard = $lines->firstWhere('number', 'ELE147');
+    expect($blizzard)->not->toBeNull();
+    expect($blizzard->tcgplayerOrderNumber)->toBe('623394E9-13A0B1-C0FFE');
+    expect($blizzard->productName)->toBe('Blizzard');
+    expect($blizzard->setName)->toBe('Tales of Aria');
+    expect($blizzard->rarity)->toBe('Majestic');
+    expect($blizzard->condition)->toBe('Near Mint 1st Edition Normal');
+    expect($blizzard->quantity)->toBe(2);
+    expect($blizzard->unitPrice)->toBe(312);
+    expect($blizzard->totalPrice)->toBe(624);
+});
+
+test('Nov 13 fixture: a long description wrapped two lines above and two below the qty row is joined (PEN227)', function () {
+    $lines = (new PackingSlipPdfParser)->parse(nov13Fixture());
+
+    $crown = $lines->firstWhere('number', 'PEN227');
+    expect($crown)->not->toBeNull();
+    expect($crown->tcgplayerOrderNumber)->toBe('623394E9-13B2C3-BEEF2');
+    expect($crown->productLine)->toBe('Flesh & Blood TCG');
+    expect($crown->setName)->toBe('Compendium of Rathe');
+    expect($crown->productName)->toBe('Crown Of Frozen Thoughts (Marvel Cold Foil Extended Art Variant)');
+    expect($crown->rarity)->toBe('Majestic');
+    expect($crown->condition)->toBe('Near Mint Rainbow Foil');
+    expect($crown->quantity)->toBe(1);
+    expect($crown->unitPrice)->toBe(44);
+    expect($crown->totalPrice)->toBe(44);
+});
+
+test('Nov 13 layout: a barcode-less order on the next page does not inherit the previous page\'s barcode', function () {
+    $barcode = str_repeat('FADT', 16).'F';
+
+    $text = implode("\f", [
+        nov13Page('623394E9-AAAAAA-AAAAA', $barcode, nov13ChannelMountItem('ELE001'), ['623394E9-AAAAAA-AAAAA']),
+        nov13Page('623394E9-BBBBBB-BBBBB', null, nov13ChannelMountItem('ELE002'), ['623394E9-BBBBBB-BBBBB']),
+    ]);
+
+    $lines = parseImbText($text);
+
+    expect($lines)->toHaveCount(2);
+    expect($lines->firstWhere('number', 'ELE001')->tcgplayerOrderNumber)->toBe('623394E9-AAAAAA-AAAAA');
+    expect($lines->firstWhere('number', 'ELE001')->imbBarcode)->toBe($barcode);
+    expect($lines->firstWhere('number', 'ELE002')->tcgplayerOrderNumber)->toBe('623394E9-BBBBBB-BBBBB');
+    expect($lines->firstWhere('number', 'ELE002')->imbBarcode)->toBeNull();
+});
+
+test('Nov 13 layout: an order spanning two pages keeps page 1\'s barcode on page 2', function () {
+    $barcode = str_repeat('DTAF', 16).'D';
+
+    $text = implode("\f", [
+        nov13Page('623394E9-CCCCCC-CCCCC', $barcode, nov13ChannelMountItem('ELE003'), ['623394E9-CCCCCC-CCCCC']),
+        nov13Page('623394E9-CCCCCC-CCCCC', null, nov13ChannelMountItem('ELE004'), ['623394E9-CCCCCC-CCCCC']),
+    ]);
+
+    $lines = parseImbText($text);
+
+    expect($lines)->toHaveCount(2);
+    foreach (['ELE003', 'ELE004'] as $number) {
+        $line = $lines->firstWhere('number', $number);
+        expect($line)->not->toBeNull();
+        expect($line->tcgplayerOrderNumber)->toBe('623394E9-CCCCCC-CCCCC');
+        expect($line->imbBarcode)->toBe($barcode);
+    }
+});
+
+test('a page without any Order Number label yields no lines, even after a labeled page', function () {
+    $labeledPage = implode("\n", [
+        'Order Number: 623394E9-AAAAAA-AAAAA',
+        imbItemLine('ELE020'),
+        'Order Number: 623394E9-AAAAAA-AAAAA                Page 1 of 1',
+    ]);
+
+    $unlabeledPage = implode("\n", [
+        'Some unrelated page',
+        imbItemLine('ELE022'),
+        '',
+        ...nov13ChannelMountItem('ELE021'),
+    ]);
+
+    $lines = parseImbText($labeledPage."\f".$unlabeledPage);
+
+    expect($lines->pluck('number')->all())->toBe(['ELE020']);
+});
+
+test('a page with two distinct labeled order numbers is not pre-resolved to the first label', function () {
+    $text = implode("\n", [
+        ' QTY     DESCRIPTION                                                   PRICE             TOTAL',
+        '',
+        ...nov13ChannelMountItem('ELE010'),
+        '',
+        'Order Number: 623394E9-AAAAAA-AAAAA                Page 1 of 1',
+        'Order Number: 623394E9-BBBBBB-BBBBB',
+        imbItemLine('ELE011'),
+    ]);
+
+    $lines = parseImbText($text);
+
+    expect($lines->firstWhere('number', 'ELE010'))->toBeNull();
+    expect($lines)->toHaveCount(1);
+    expect($lines->firstWhere('number', 'ELE011')->tcgplayerOrderNumber)->toBe('623394E9-BBBBBB-BBBBB');
+});
+
+test('Nov 13 layout: seller validation runs once per distinct order across pages', function () {
+    $validator = new class extends SellerIdValidator
+    {
+        public int $calls = 0;
+
+        public function assertValid(string $orderNumber): void
+        {
+            $this->calls++;
+            parent::assertValid($orderNumber);
+        }
+    };
+
+    $text = implode("\f", [
+        nov13Page('623394E9-AAAAAA-AAAAA', null, nov13ChannelMountItem('ELE031'), ['623394E9-AAAAAA-AAAAA']),
+        nov13Page('623394E9-AAAAAA-AAAAA', null, nov13ChannelMountItem('ELE032'), ['623394E9-AAAAAA-AAAAA']),
+        nov13Page('623394E9-BBBBBB-BBBBB', null, nov13ChannelMountItem('ELE033'), ['623394E9-BBBBBB-BBBBB']),
+    ]);
+
+    $lines = (fn (string $text) => $this->parseText($text))->call(new PackingSlipPdfParser($validator), $text);
+
+    expect($lines)->toHaveCount(3);
+    expect($validator->calls)->toBe(2);
+});
+
+test('Nov 13 layout: a wrong seller prefix that appears only in the footer label throws', function () {
+    config(['services.tcgplayer.seller_id' => '623394E9']);
+
+    $text = nov13Page('DEADBEEF-AAAAAA-AAAAA', null, nov13ChannelMountItem(), ['DEADBEEF-AAAAAA-AAAAA']);
+
+    expect(fn () => parseImbText($text))->toThrow(WrongSellerException::class);
+});
+
+test('Nov 13 layout: a deep-indented Order Number label directly above a qty row is not taken as description', function () {
+    $itemLines = [
+        '          Order Number: 623394E9-AAAAAA-AAAAA',
+        ...nov13Item(
+            [],
+            1,
+            '0.50',
+            '0.50',
+            [
+                'Flesh & Blood TCG - Tales of Aria - Channel Mount Heroic -',
+                '#ELE117 - Majestic - Near Mint 1st Edition Normal',
+            ],
+        ),
+    ];
+
+    $lines = parseImbText(nov13Page('623394E9-AAAAAA-AAAAA', null, $itemLines, ['623394E9-AAAAAA-AAAAA']));
+
+    expect($lines)->toHaveCount(1);
+
+    $line = $lines->first();
+    expect($line->tcgplayerOrderNumber)->toBe('623394E9-AAAAAA-AAAAA');
+    expect($line->productLine)->toBe('Flesh & Blood TCG');
+    expect($line->setName)->toBe('Tales of Aria');
+    expect($line->productName)->toBe('Channel Mount Heroic');
+    expect($line->number)->toBe('ELE117');
+    expect($line->condition)->toBe('Near Mint 1st Edition Normal');
+});
+
+test('Nov 13 layout: a deep-indented line containing a $ amount above an item is not prepended to its description', function () {
+    $itemLines = [
+        '            Shipping $0.00',
+        ...nov13ChannelMountItem(),
+    ];
+
+    $lines = parseImbText(nov13Page('623394E9-AAAAAA-AAAAA', null, $itemLines, ['623394E9-AAAAAA-AAAAA']));
+
+    expect($lines)->toHaveCount(1);
+
+    $line = $lines->first();
+    expect($line->productLine)->toBe('Flesh & Blood TCG');
+    expect($line->setName)->toBe('Tales of Aria');
+    expect($line->productName)->toBe('Channel Mount Heroic');
+    expect($line->number)->toBe('ELE117');
+    expect($line->rarity)->toBe('Majestic');
+    expect($line->condition)->toBe('Near Mint 1st Edition Normal');
 });

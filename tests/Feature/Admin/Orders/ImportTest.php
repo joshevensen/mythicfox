@@ -148,3 +148,36 @@ test('the dashboard shortcut /orders?import=1 is rendered as a route the modal l
     // ?import=1 and open the dialog).
     $this->get(route('orders.index', ['import' => 1, 'date_window' => '90']))->assertOk();
 });
+
+test('the job caches a successful result whose warnings include the unrecognized packing-slip warning', function () {
+    Storage::put(
+        'imports/orders/2026/11/orderlist.csv',
+        file_get_contents(base_path('tests/fixtures/orders/merge-orderlist.csv')),
+    );
+    Storage::put(
+        'imports/orders/2026/11/packingslips.pdf',
+        file_get_contents(base_path('tests/fixtures/orders/packing-slips-unrecognized-sample.pdf')),
+    );
+
+    $orderListFile = File::create([
+        'type' => 'import',
+        'file_path' => 'imports/orders/2026/11/orderlist.csv',
+        'original_filename' => 'orderlist.csv',
+        'uploaded_at' => now(),
+    ]);
+    $packingSlipFile = File::create([
+        'type' => 'import',
+        'file_path' => 'imports/orders/2026/11/packingslips.pdf',
+        'original_filename' => 'packingslips.pdf',
+        'uploaded_at' => now(),
+    ]);
+
+    (new ImportOrdersJob($orderListFile->id, packingSlipFileId: $packingSlipFile->id))
+        ->handle(app(OrderImporter::class));
+
+    $payload = Cache::get(ImportOrdersJob::LAST_RESULT_CACHE_KEY);
+
+    expect($payload['success'])->toBeTrue();
+    expect($payload['warnings'])->toContain(OrderImporter::PDF_UNRECOGNIZED_WARNING);
+    expect(Order::query()->count())->toBeGreaterThan(0);
+});

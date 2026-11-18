@@ -313,3 +313,108 @@ test('IMb: happy-path import with the old-format PDF leaves imb_barcode null', f
     expect($thomas->getAttributes())->toHaveKey('imb_barcode');
     expect($thomas->imb_barcode)->toBeNull();
 });
+
+// ── Nov 13 layout + packing-slip PDF warnings ─────────────────
+
+/**
+ * Writes a temporary OrderList CSV listing both orders present in the Nov 13 packing-slip fixture.
+ */
+function nov13OrderListCsv(): string
+{
+    $path = sys_get_temp_dir().'/orderlist-nov13-'.uniqid().'.csv';
+
+    file_put_contents($path, implode("\n", [
+        'Order #,Buyer Name,Order Date,Status,Shipping Type,Product Amt,Shipping Amt,Total Amt,Buyer Paid,Carrier Information',
+        '"623394E9-13A0B1-C0FFE","Buyer 13 Test","Thursday, 12 November 2026","Completed - Paid","Standard","6.74","1.31","8.05","True"',
+        '"623394E9-13B2C3-BEEF2","Buyer 14 Test","Thursday, 12 November 2026","Completed - Paid","Standard","0.44","1.31","1.75","True"',
+    ])."\n");
+
+    return $path;
+}
+
+/**
+ * @return list<string>
+ */
+function packingSlipPdfWarnings(OrderImportResult $result): array
+{
+    return array_values(array_filter(
+        $result->warnings,
+        fn (string $warning): bool => str_starts_with($warning, 'Packing slip PDF:'),
+    ));
+}
+
+test('Nov 13: importing the Nov 13 packing slip stores each order\'s barcode without a PDF warning', function () {
+    $orderList = nov13OrderListCsv();
+
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: $orderList,
+        pdf: mergeFixture('packing-slips-nov13-sample.pdf'),
+    ));
+
+    expect($result->errors)->toBe([]);
+    expect($result->ordersInserted)->toBe(2);
+    expect(Order::where('tcgplayer_order_number', '623394E9-13A0B1-C0FFE')->firstOrFail()->imb_barcode)
+        ->toBe('FDFFDTFFTTFAADFATDFTTFDTATDTTTAAFTDDDDTTTDATTTFFFAFTTAFFFDTATFDAD');
+    expect(Order::where('tcgplayer_order_number', '623394E9-13B2C3-BEEF2')->firstOrFail()->imb_barcode)
+        ->toBe('TTATADFDFDDFDDDATDDTTDTFFAAFTFDFTTTDADATFDTAAADADFTFFFFTDDADAADAF');
+    expect(packingSlipPdfWarnings($result))->toBe([]);
+
+    @unlink($orderList);
+});
+
+test('PDF warning: a packing slip with no recognized lines warns once and still imports the OrderList', function () {
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: mergeFixture('merge-orderlist.csv'),
+        pdf: mergeFixture('packing-slips-unrecognized-sample.pdf'),
+    ));
+
+    expect($result->errors)->toBe([]);
+    expect($result->ordersInserted)->toBe(2);
+    expect(Order::where('tcgplayer_order_number', '623394E9-23CAFE-565FC')->exists())->toBeTrue();
+
+    expect(OrderImporter::PDF_UNRECOGNIZED_WARNING)
+        ->toBe("Packing slip PDF: no orders or line items were recognized — TCGPlayer's layout may have changed.");
+    expect(array_count_values($result->warnings)[OrderImporter::PDF_UNRECOGNIZED_WARNING] ?? 0)->toBe(1);
+    expect($result->warnings)->not->toContain(OrderImporter::PDF_NO_MATCHING_ORDERS_WARNING);
+});
+
+test('PDF warning: a packing slip whose orders are all missing from the OrderList warns once', function () {
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: mergeFixture('merge-orderlist.csv'),
+        pdf: mergeFixture('packing-slips-imb-sample.pdf'),
+    ));
+
+    expect($result->errors)->toBe([]);
+    expect($result->ordersInserted)->toBe(2);
+
+    expect(OrderImporter::PDF_NO_MATCHING_ORDERS_WARNING)
+        ->toBe('Packing slip PDF: none of its orders are in this OrderList.');
+    expect(array_count_values($result->warnings)[OrderImporter::PDF_NO_MATCHING_ORDERS_WARNING] ?? 0)->toBe(1);
+    expect($result->warnings)->not->toContain(OrderImporter::PDF_UNRECOGNIZED_WARNING);
+});
+
+test('PDF warning: a packing slip that overlaps the OrderList adds no PDF warning', function () {
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: mergeFixture('merge-orderlist.csv'),
+        pdf: mergeFixture('packing-slips-sample.pdf'),
+    ));
+
+    expect($result->errors)->toBe([]);
+    expect(packingSlipPdfWarnings($result))->toBe([]);
+});
+
+test('PDF warning: a packing slip the parser cannot read records an error but no PDF warning', function () {
+    $brokenPdf = sys_get_temp_dir().'/packing-slips-broken-'.uniqid().'.pdf';
+    file_put_contents($brokenPdf, 'this is not a pdf');
+
+    $result = (new OrderImporter)->import(buildInput(
+        orderList: mergeFixture('merge-orderlist.csv'),
+        pdf: $brokenPdf,
+    ));
+
+    expect($result->ordersInserted)->toBe(2);
+    expect(implode(' ', $result->errors))->toContain('PackingSlips');
+    expect(packingSlipPdfWarnings($result))->toBe([]);
+
+    @unlink($brokenPdf);
+});

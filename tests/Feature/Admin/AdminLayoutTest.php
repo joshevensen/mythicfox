@@ -150,3 +150,16 @@ test('admin layout reloads catalog data and the nav product list after an import
         ->toContain("page.component === 'Catalog/Empty'")
         ->toContain('router.visit(catalogIndex().url)');
 });
+
+test('admin layout shows orders-import warnings as sticky toasts after both success and failure', function () {
+    $source = file_get_contents(resource_path('js/layouts/AdminLayout.vue'));
+
+    expect(substr_count($source, 'warnings?: string[]'))->toBe(2);
+    expect(substr_count($source, 'showOrdersImportWarnings(last)'))->toBe(2);
+
+    expect($source)
+        ->toContain('warning } = useMfToast()')
+        ->toContain('last.warnings ?? []')
+        ->toContain("'Import warning'")
+        ->toContain('sticky: true');
+});
