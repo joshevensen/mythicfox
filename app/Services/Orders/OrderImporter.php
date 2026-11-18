@@ -22,6 +22,10 @@ use Throwable;
 
 class OrderImporter
 {
+    public const PDF_UNRECOGNIZED_WARNING = "Packing slip PDF: no orders or line items were recognized — TCGPlayer's layout may have changed.";
+
+    public const PDF_NO_MATCHING_ORDERS_WARNING = 'Packing slip PDF: none of its orders are in this OrderList.';
+
     public function import(OrderImportInput $input): OrderImportResult
     {
         $result = new OrderImportResult;
@@ -111,6 +115,10 @@ class OrderImporter
                 foreach ((new PackingSlipPdfParser)->parse($input->packingSlipPdfPath) as $line) {
                     $pdfByOrder[$line->tcgplayerOrderNumber][] = $line;
                 }
+
+                if ($pdfByOrder === []) {
+                    $result->warnings[] = self::PDF_UNRECOGNIZED_WARNING;
+                }
             } catch (Throwable $e) {
                 $result->errors[] = 'PackingSlips: '.$e->getMessage();
             }
@@ -118,6 +126,9 @@ class OrderImporter
 
         // Warn for orders that appear in non-OrderList sources but not in OrderList.
         $orderListSet = $orderListRows->pluck('tcgplayerOrderNumber')->flip();
+        if ($pdfByOrder !== [] && array_intersect_key($pdfByOrder, $orderListSet->all()) === []) {
+            $result->warnings[] = self::PDF_NO_MATCHING_ORDERS_WARNING;
+        }
         foreach (array_keys($shippingByOrder) as $orderNumber) {
             if (! isset($orderListSet[$orderNumber])) {
                 $result->warnings[] = "ShippingExport order [{$orderNumber}] not found in OrderList; skipped.";
