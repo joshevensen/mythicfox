@@ -14,15 +14,27 @@ use Symfony\Component\Process\Process;
  * The -layout flag preserves column alignment so buyer address text (right column)
  * never bleeds into item descriptions (left column).
  *
- * Expected line-item format (one or two visual lines):
- *   {qty}  ProductLine - Set - ProductName - #Number - Rarity - Condition  $unit  $total
+ * Three layouts are supported:
  *
- * When a description wraps, the continuation appears on the very next line,
- * indented more deeply with no price columns.
+ * - Original: an "Order Number: XXX" label at the top and bottom of every page, and
+ *   same-line items (one or two visual lines):
+ *     {qty}  ProductLine - Set - ProductName - #Number - Rarity - Condition  $unit  $total
+ *   When a description wraps, the continuation appears on the very next line,
+ *   indented more deeply with no price columns.
+ * - Nov 7 2026 (IMb): as the original, plus a USPS Intelligent Mail barcode (IMb)
+ *   rendered as a line of exactly 65 F/A/D/T characters.
+ * - Nov 13 2026: the label appears only in the page footer, below the barcode and
+ *   items, and each item spans three or more lines: description fragment(s) above
+ *   a bare "{qty}  $unit  $total" row and the rest of the description below it.
+ *   TCGPlayer vertically centers that row, so at most as many lines are taken
+ *   below it as were found above it (unlimited when none were above).
  *
- * Each order's slip also carries a USPS Intelligent Mail barcode (IMb) rendered
- * as a line of exactly 65 F/A/D/T characters; it is attached to every line item
- * that follows it within the same order.
+ * The pdftotext output is processed page by page (split on form feeds). A page with
+ * exactly one distinct labeled order number is attributed to that order from its
+ * first line; a page with none yields nothing; a page with several only switches
+ * order at each label. Within an order the barcode is attached to every line item
+ * that follows it, carries over to the order's next page, and resets when the
+ * order changes. Seller validation runs once per distinct order number.
  */
 class PackingSlipPdfParser
 {
@@ -62,79 +74,196 @@ class PackingSlipPdfParser
      */
     private function parseText(string $text): Collection
     {
-        $lines = explode("\n", $text);
         $results = collect();
         $currentOrderNumber = null;
         $currentImbBarcode = null;
         $validated = [];
-        $count = count($lines);
 
-        for ($i = 0; $i < $count; $i++) {
-            $line = $lines[$i];
+        foreach (explode("\f", $text) as $page) {
+            $lines = explode("\n", $page);
+            $count = count($lines);
+            $lastConsumedIndex = -1;
 
-            // Detect "Order Number: XXX" (appears at top and bottom of each page).
-            if (preg_match('/Order\s+Number:\s+([A-Z0-9][A-Z0-9-]+)/i', $line, $m)) {
-                $orderNumber = strtoupper(preg_replace('/[^A-Z0-9-]/', '', $m[1]));
-                if (! isset($validated[$orderNumber])) {
-                    $this->sellerIdValidator->assertValid($orderNumber);
-                    $validated[$orderNumber] = true;
-                }
+            // Resolve the page's order up front when it carries exactly one distinct
+            // labeled order number, so lines above a footer-only label are attributed.
+            $labeled = $this->distinctLabeledOrderNumbers($lines);
+            if (count($labeled) === 1) {
+                $orderNumber = $this->resolveOrderNumber($labeled[0], $validated);
                 if ($orderNumber !== $currentOrderNumber) {
                     $currentImbBarcode = null;
                 }
                 $currentOrderNumber = $orderNumber;
-
-                continue;
+            } else {
+                $currentOrderNumber = null;
+                $currentImbBarcode = null;
             }
 
-            if ($currentOrderNumber === null) {
-                continue;
-            }
+            for ($i = 0; $i < $count; $i++) {
+                $line = $lines[$i];
 
-            // USPS Intelligent Mail barcode: a line of exactly 65 F/A/D/T characters.
-            if (preg_match('/^\s*([FADT]{65})\s*$/', $line, $m)) {
-                $currentImbBarcode = $m[1];
+                // Detect "Order Number: XXX" (header and/or footer of each page).
+                $labeledOrderNumber = $this->labeledOrderNumber($line);
+                if ($labeledOrderNumber !== null) {
+                    $orderNumber = $this->resolveOrderNumber($labeledOrderNumber, $validated);
+                    if ($orderNumber !== $currentOrderNumber) {
+                        $currentImbBarcode = null;
+                    }
+                    $currentOrderNumber = $orderNumber;
 
-                continue;
-            }
-
-            // Primary line items: leading spaces (1–8) + qty (digits) + description + two prices.
-            if (! preg_match('/^\s{1,8}(\d+)\s+(.+?)\s+\$(\d+\.\d{2})\s+\$(\d+\.\d{2})\s*$/', $line, $m)) {
-                continue;
-            }
-
-            $quantity = (int) $m[1];
-            $description = $m[2];
-            $unitCents = (int) round(((float) $m[3]) * 100);
-            $totalCents = (int) round(((float) $m[4]) * 100);
-
-            // Skip the per-order "1  Total  $X.XX" summary line.
-            if (trim($description) === 'Total') {
-                continue;
-            }
-
-            // Continuation: a non-empty next line that has deep indentation,
-            // no price columns, and is not itself a primary line item.
-            if (isset($lines[$i + 1])) {
-                $next = $lines[$i + 1];
-                if (
-                    trim($next) !== ''
-                    && preg_match('/^\s{5,}/', $next)
-                    && ! str_contains($next, '$')
-                    && ! preg_match('/^\s{1,8}\d+\s+/', $next)
-                ) {
-                    $description .= ' '.trim($next);
-                    $i++;
+                    continue;
                 }
-            }
 
-            $parsed = $this->parseDescription(trim($description), $currentOrderNumber, $quantity, $unitCents, $totalCents, $currentImbBarcode);
-            if ($parsed !== null) {
-                $results->push($parsed);
+                if ($currentOrderNumber === null) {
+                    continue;
+                }
+
+                // USPS Intelligent Mail barcode: a line of exactly 65 F/A/D/T characters.
+                if (preg_match('/^\s*([FADT]{65})\s*$/', $line, $m)) {
+                    $currentImbBarcode = $m[1];
+
+                    continue;
+                }
+
+                // Three-line item: a bare qty + two prices row with the description split
+                // above and below it. Must run before the same-line path, which also
+                // matches this row (its lazy description capture takes a single space).
+                if (preg_match('/^\s{1,8}(\d+)\s+\$(\d+\.\d{2})\s+\$(\d+\.\d{2})\s*$/', $line, $m)) {
+                    $above = [];
+                    for ($j = $i - 1; $j > $lastConsumedIndex && $this->isDescriptionLine($lines[$j]); $j--) {
+                        array_unshift($above, $lines[$j]);
+                    }
+
+                    $below = [];
+                    $belowLimit = count($above) > 0 ? count($above) : PHP_INT_MAX;
+                    for ($k = $i + 1; $k < $count && count($below) < $belowLimit && $this->isDescriptionLine($lines[$k]); $k++) {
+                        $below[] = $lines[$k];
+                    }
+
+                    $i += count($below);
+                    $lastConsumedIndex = $i;
+
+                    $description = implode(' ', array_map('trim', [...$above, ...$below]));
+                    if ($description === '') {
+                        Log::warning("PackingSlipPdfParser: price row without description for order {$currentOrderNumber}: ".trim($line));
+
+                        continue;
+                    }
+
+                    $parsed = $this->parseDescription(
+                        $description,
+                        $currentOrderNumber,
+                        (int) $m[1],
+                        (int) round(((float) $m[2]) * 100),
+                        (int) round(((float) $m[3]) * 100),
+                        $currentImbBarcode,
+                    );
+                    if ($parsed !== null) {
+                        $results->push($parsed);
+                    }
+
+                    continue;
+                }
+
+                // Primary line items: leading spaces (1–8) + qty (digits) + description + two prices.
+                if (! preg_match('/^\s{1,8}(\d+)\s+(.+?)\s+\$(\d+\.\d{2})\s+\$(\d+\.\d{2})\s*$/', $line, $m)) {
+                    continue;
+                }
+
+                $quantity = (int) $m[1];
+                $description = $m[2];
+                $unitCents = (int) round(((float) $m[3]) * 100);
+                $totalCents = (int) round(((float) $m[4]) * 100);
+
+                // Skip the per-order "1  Total  $X.XX" summary line.
+                if (trim($description) === 'Total') {
+                    continue;
+                }
+
+                // Continuation: a non-empty next line that has deep indentation,
+                // no price columns, and is not itself a primary line item.
+                if (isset($lines[$i + 1])) {
+                    $next = $lines[$i + 1];
+                    if (
+                        trim($next) !== ''
+                        && preg_match('/^\s{5,}/', $next)
+                        && ! str_contains($next, '$')
+                        && ! preg_match('/^\s{1,8}\d+\s+/', $next)
+                    ) {
+                        $description .= ' '.trim($next);
+                        $i++;
+                    }
+                }
+
+                $lastConsumedIndex = $i;
+
+                $parsed = $this->parseDescription(trim($description), $currentOrderNumber, $quantity, $unitCents, $totalCents, $currentImbBarcode);
+                if ($parsed !== null) {
+                    $results->push($parsed);
+                }
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Distinct normalized labeled order numbers on a page, in order of appearance.
+     *
+     * @param  list<string>  $pageLines
+     * @return list<string>
+     */
+    private function distinctLabeledOrderNumbers(array $pageLines): array
+    {
+        $orderNumbers = [];
+        foreach ($pageLines as $line) {
+            $orderNumber = $this->labeledOrderNumber($line);
+            if ($orderNumber !== null && ! in_array($orderNumber, $orderNumbers, true)) {
+                $orderNumbers[] = $orderNumber;
+            }
+        }
+
+        return $orderNumbers;
+    }
+
+    /**
+     * The normalized order number from an "Order Number: XXX" line, or null.
+     */
+    private function labeledOrderNumber(string $line): ?string
+    {
+        if (! preg_match('/Order\s+Number:\s+([A-Z0-9][A-Z0-9-]+)/i', $line, $m)) {
+            return null;
+        }
+
+        return strtoupper(preg_replace('/[^A-Z0-9-]/', '', $m[1]));
+    }
+
+    /**
+     * Validates the seller prefix the first time an order number is seen and returns it.
+     *
+     * @param  array<string, true>  $validated
+     */
+    private function resolveOrderNumber(string $orderNumber, array &$validated): string
+    {
+        if (! isset($validated[$orderNumber])) {
+            $this->sellerIdValidator->assertValid($orderNumber);
+            $validated[$orderNumber] = true;
+        }
+
+        return $orderNumber;
+    }
+
+    /**
+     * A deep-indented, non-blank line that carries no prices, qty, barcode, or order label:
+     * one fragment of a three-line item's description.
+     */
+    private function isDescriptionLine(string $line): bool
+    {
+        return trim($line) !== ''
+            && preg_match('/^\s{5,}\S/', $line) === 1
+            && ! str_contains($line, '$')
+            && preg_match('/^\s{1,8}\d+\s/', $line) !== 1
+            && preg_match('/^\s*[FADT]{65}\s*$/', $line) !== 1
+            && preg_match('/Order\s+Number:/i', $line) !== 1;
     }
 
     private function parseDescription(
